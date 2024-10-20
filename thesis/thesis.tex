@@ -1,5 +1,5 @@
-\documentclass[german,master,buw]{webisthesis} % Weimar
-% \documentclass[german,bachelor,fsu]{webisthesis} % Jena
+% \documentclass[german,master,buw]{webisthesis} % Weimar
+\documentclass[german,bachelor,fsu]{webisthesis} % Jena
 % \documentclass[german,bachelor,ul]{webisthesis} % Leipzig
 % \documentclass[german,master,buw,web]{webisthesis} % Weimar, for web page
 % \documentclass[german,bachelor,fsu,web]{webisthesis} % Jena, for web page
@@ -19,19 +19,20 @@
 %
 % Values
 % ------
-\ThesisSetTitle{The Title of the Thesis}
-\ThesisSetKeywords{These, are, my, Keywords} % only for PDF meta attributes
-\ThesisSetLocation{Where  I Live} 
+\ThesisSetTitle{Transferring Relevance Judgments from Older to Newer Web Crawls}
+%\ThesisSetTitle{Integrating Pairwise Preferences into State-of-the-Art Information Retrieval Systems}
+\ThesisSetKeywords{pairwise preferenes, IR} % only for PDF meta attributes
+\ThesisSetLocation{Jena 07743, Germany} 
 
-\ThesisSetAuthor{FirstName LastName}
-\ThesisSetStudentNumber{01234}
-\ThesisSetDateOfBirth{1}{1}{1984}
-\ThesisSetPlaceOfBirth{Duckburg}
+\ThesisSetAuthor{Fabian Hofer}
+\ThesisSetStudentNumber{199111}
+\ThesisSetDateOfBirth{22}{8}{2002}
+\ThesisSetPlaceOfBirth{Eisenach}
 
 % Supervisors should usually be Professors from the candidate's university. A second supervisor is not always needed. 
-\ThesisSetSupervisors{Prof.\ Dr.\ Unkown Yet,Prof.\ Dr.\ Also Unknown}
+\ThesisSetSupervisors{Maik Fröbe,Prof.\ Dr.\ Unknown Yet}
 
-\ThesisSetSubmissionDate{31}{2}{2022}
+\ThesisSetSubmissionDate{31}{2}{2024}
 
 %
 % Suggested Packages
@@ -77,7 +78,7 @@
 \begin{document}
 \begin{frontmatter}
 \begin{abstract}
-This is the \LaTeX{} template for Bachelor and Master theses at Webis. This template contains several hints and conventions on how to structure a thesis, how to cite the work of others, and how to display your results besides plain text. 
+\include{abstract}
 \end{abstract}
 
 \tableofcontents
@@ -97,6 +98,9 @@ This is the \LaTeX{} template for Bachelor and Master theses at Webis. This temp
 
 \include{chapter1}
 \include{chapter2}
+
+\include{help1}
+\include{help2}
 
 \include{appendixA}
 
