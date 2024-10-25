@@ -1,5 +1,7 @@
 pyenv
 __pycache__
+formatted_docs.csv
+chunked-docs.json
 
 ## Core latex/pdflatex auxiliary files:
 *.aux
