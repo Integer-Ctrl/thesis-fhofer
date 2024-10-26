@@ -4,8 +4,6 @@ import pandas as pd
 from tqdm import tqdm
 from spacy_passage_chunker import SpacyPassageChunker
 import json
-import zipfile
-import os
 
 '''
 for doc in dataset.docs_iter():
@@ -89,13 +87,13 @@ class PassageChunker:
         with open(file_name, 'a') as f_out:
             f_out.write('{"documents": [\n{"id": "", "url": "", "title": "", "contents": [{"body": "", "id": ""}]}')
 
-            for doc in tqdm(self.dataset.docs_iter()[:100], desc='Chunking and saving documents', unit='doc'):
+            for doc in tqdm(self.dataset.docs_iter()[:4000], desc='Chunking and saving documents', unit='doc'):
                 # Format the document
                 formatted_doc = {
                     'id': doc.source_id,
                     'url': doc.source_url,
                     'title': doc.source_title,
-                    'contents': doc.source_text
+                    'contents': doc.default_text()
                 }
 
                 # Add the document to the current batch
@@ -131,14 +129,5 @@ class PassageChunker:
         print(f"Processed and saved {doc_count} documents to {file_name}")
 
 
-# check_for_ducplicates(100) - contains many duplicates
-
-
-# example usage of static_document_segmentation - slow
-# chunked_docs = static_document_segmentation(300, 20)
-# print(chunked_docs[0])
-
-
-# example usage of dynamic_document_segmentation - fast
 chunker = PassageChunker()
-chunker.dynamic_document_segmentation(file_name='chunked-docs.json', batch_size=10)
+chunker.dynamic_document_segmentation(file_name='chunked-docs-medium.json', batch_size=4000)
