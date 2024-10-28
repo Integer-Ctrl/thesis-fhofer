@@ -2,6 +2,7 @@ pyenv
 __pycache__
 formatted-docs*
 chunked-docs*
+indices/
 
 ## Core latex/pdflatex auxiliary files:
 *.aux
