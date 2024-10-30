@@ -30,8 +30,6 @@ class PassageChunker:
                 # Format the document
                 formatted_doc = {
                     'docno': doc.doc_id,
-                    'url': doc.source_url,
-                    'title': doc.source_title,
                     'contents': doc.default_text()
                 }
 

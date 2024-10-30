@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Dict, List
 
+# TODO: add author/url
+
 
 class AbstractPassageChunker(ABC):
 

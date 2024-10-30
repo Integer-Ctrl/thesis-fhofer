@@ -11,8 +11,8 @@ def read_json():
         data = json.load(f)
 
     for doc in data['documents']:
-        if doc['id'] == 'S16db688b-A11fae2f9' or doc['id'] == 'S16db688b' or doc['id'] == 'A11fae2f9':
-            print('ID:', doc['id'])
+        if doc['docno'] == 'S2db48a61-A430a7cb1':
+            print('ID:', doc['docno'])
             print(doc['contents'], '\n')
 
 
@@ -29,10 +29,11 @@ def docs_pyterrier():
 
 def docs_ir_dataset():
     dataset = ir_datasets.load('argsme/2020-04-01')
-    for doc in dataset.docs_iter()[:7]:
+    for doc in dataset.docs_iter()[:1]:
         print(doc, '\n')
         break
 
 
 # docs_pyterrier()
-docs_ir_dataset()
+# docs_ir_dataset()
+read_json()

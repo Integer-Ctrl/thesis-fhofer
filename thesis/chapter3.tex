@@ -1,0 +1,11 @@
+\chapter{Evaluation}\label{evaluation}
+
+This chapter will evaluate the methods used for document segmentation and relevance assignment.
+
+\section{Inter-annotator Agreement}\label{inter-annotator-agreement}
+
+In order to guarantee the validity of the inferred relevance assignments and the suitability of the dataset for training purposes, it is essential to evaluate the accuracy of the assigned labels, particularly in the context of natural language processing applications. This evaluation is typically performed by calculating the Inter-Annotator Agreement (IAA) between the annotators who labelled the dataset.
+
+The Inter-Annotator Agreement is a statistical measure that quantifies the consistency between the annotations provided by multiple annotators in a collaborative annotation project. It quantifies the level of agreement or disagreement between annotators when labelling the same dataset, thereby providing insight into the objectivity and quality of the annotations. A high IAA indicates the presence of reliable and transparent annotation guidelines, whereas a low IAA may be indicative of task ambiguity or inconsistencies in annotator interpretation.
+
+There are a variety of methods for calculating IAA, each with its strengths and weaknesses. In this thesis, I will utilise the Cohen's Kappa coefficient, which is a statistical measure that can be used to assess the degree of agreement between annotators when categorising data. In this research, each document query pair will be assigned a relevance score of 0, 1, or 2. A score of 0 indicates that the document is not relevant to the query, a score of 1 indicates that the document is somewhat relevant, and a score of 2 indicates that the document is highly relevant. 

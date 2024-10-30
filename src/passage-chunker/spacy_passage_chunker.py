@@ -10,6 +10,8 @@ nlp = spacy.load("en_core_web_sm", exclude=[
 nlp.enable_pipe("senter")
 nlp.max_length = 2000000  # for documents that are longer than the spacy character limit
 
+# TODO: add author/url
+
 
 class SpacyPassageChunker(AbstractPassageChunker):
 
