@@ -34,6 +34,22 @@ def docs_ir_dataset():
         break
 
 
+def ir_read_qrels():
+    dataset = ir_datasets.load("argsme/2020-04-01/touche-2020-task-1")
+    for qrel in dataset.qrels_iter():
+        print(qrel, '\n')
+
+
+def pt_read_qrels():
+    dataset = pt.get_dataset("irds:argsme/2020-04-01/touche-2020-task-1")
+    count = 0
+    for index, row in dataset.get_qrels().iterrows():
+        count += 1
+    print(count)
+
+
 # docs_pyterrier()
 # docs_ir_dataset()
-read_json()
+# read_json()
+# ir_read_qrels()
+pt_read_qrels()
