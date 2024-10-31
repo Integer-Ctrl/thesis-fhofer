@@ -1,7 +1,8 @@
+# https://github.com/grill-lab/trec-cast-tools.git
+# copied from: https://github.com/grill-lab/trec-cast-tools/tree/master/corpus_processing/passage_chunkers
+
 from abc import ABC, abstractmethod
 from typing import Dict, List
-
-# TODO: add author/url
 
 
 class AbstractPassageChunker(ABC):

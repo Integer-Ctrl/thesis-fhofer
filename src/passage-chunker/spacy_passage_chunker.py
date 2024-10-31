@@ -1,3 +1,6 @@
+# https://github.com/grill-lab/trec-cast-tools.git
+# copied from: https://github.com/grill-lab/trec-cast-tools/tree/master/corpus_processing/passage_chunkers
+
 from operator import ge
 import spacy
 from tqdm import tqdm
@@ -9,8 +12,6 @@ nlp = spacy.load("en_core_web_sm", exclude=[
                  "parser", "tagger", "ner", "attribute_ruler", "lemmatizer", "tok2vec"])
 nlp.enable_pipe("senter")
 nlp.max_length = 2000000  # for documents that are longer than the spacy character limit
-
-# TODO: add author/url
 
 
 class SpacyPassageChunker(AbstractPassageChunker):

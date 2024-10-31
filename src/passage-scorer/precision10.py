@@ -4,8 +4,8 @@ import pyterrier as pt
 import re
 from tqdm import tqdm
 
-INDEX_PATH = './indices/argsme_2020-04-01'
-PASSAGE_PATH = '../data/chunked-docs-small.json'
+INDEX_PATH = '../data/argsme/document-dataset/indices/'
+PASSAGE_PATH = '../data/argsme/passage-dataset/passages.jsonl.gz'
 
 if not pt.java.started():
     pt.java.init()
@@ -19,7 +19,7 @@ def yield_docs(dataset):
             yield {'docno': i.doc_id, 'text': i.default_text()}
 
 
-dataset = pt.get_dataset('irds:argsme/2020-04-01')
+dataset = pt.get_dataset('irds:argsme/2020-04-01/touche-2020-task-1')
 # Index argsme/2020-04-01
 if not os.path.exists(INDEX_PATH + '/data.properties'):
     indexer = pt.IterDictIndexer(INDEX_PATH)

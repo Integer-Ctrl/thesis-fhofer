@@ -1,7 +1,9 @@
 pyenv
 __pycache__
-formatted-docs*
-chunked-docs*
+*.json
+*.json.gz
+*.jsonl
+*.jsonl.gz
 indices/
 
 ## Core latex/pdflatex auxiliary files:
