@@ -3,16 +3,18 @@ import autoqrels.zeroshot
 import pandas as pd
 from typing import List
 import gzip
+import json
 import pyterrier as pt
 
 PASSAGE_SCORES_PATH = '../data/argsme/passage-dataset/bm25-scores.jsonl.gz'
+PASSAGE_QRELS_PATH = '../data/argsme/passage-dataset/qrels.jsonl.gz'
 DATASET_ID = 'irds:argsme/2020-04-01/touche-2020-task-1'
 
 
 def get_passage_scores():
     with gzip.open(PASSAGE_SCORES_PATH, 'rt', encoding='UTF-8') as file:
         scores = pd.read_json(file, lines=True)
-        return scores.rename(columns={'qid': 'query_id', 'docno': 'doc_id', 'score': 'score'})
+        return scores.rename(columns={'qid': 'query_id', 'docno': 'doc_id', 'p10': 'score'})
 
 
 def get_document_qrels():
@@ -30,7 +32,7 @@ def zero_shot_labeler(run):
         query_run = run[(run['query_id'] == query_id) & (run['doc_id'].isin(unk_doc_ids))]
 
         # Classify each document as relevant (1) if score > 0.8, else not relevant (0)
-        qrels = [1 if score > 0.8 else 0 for score in query_run['score']]
+        qrels = [1 if score >= 0.6 else 0 for score in query_run['score']]
 
         return qrels
 
@@ -60,4 +62,12 @@ def one_shot_labeler(run, qrels):
 run = get_passage_scores()
 # result = one_shot_labeler(run, qrels)
 result = zero_shot_labeler(run)
-print(result)
+
+with gzip.open(PASSAGE_QRELS_PATH, 'at', encoding='UTF-8') as f_out:
+    for _, row in result.iterrows():
+        # Check if relevance is greater than or equal to 0.6
+        if row['relevance'] >= 1:
+            # Convert the row to a dictionary
+            row_dict = row.to_dict()
+            # Write the dictionary as a JSON line
+            f_out.write(json.dumps(row_dict) + '\n')
