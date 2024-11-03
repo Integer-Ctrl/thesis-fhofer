@@ -1,11 +1,57 @@
-\chapter{Evaluation}\label{evaluation}
+\chapter{Methodology}\label{methodology}
 
-This chapter will evaluate the methods used for document segmentation and relevance assignment.
+Workflow of the research:
+\begin{itemize}
+    \item Datasets
+    \item Documents to passages
+    \item Inferring relevance scores of passages
+    \item Relevance labels of passages
+    \item Transfering relevance labels across datasets
+\end{itemize}
 
-\section{Inter-annotator Agreement}\label{inter-annotator-agreement}
+\section{Datasets}\label{datasets}
 
-In order to guarantee the validity of the inferred relevance assignments and the suitability of the dataset for training purposes, it is essential to evaluate the accuracy of the assigned labels, particularly in the context of natural language processing applications. This evaluation is typically performed by calculating the Inter-Annotator Agreement (IAA) between the annotators who labelled the dataset.
+For the selection of datasets, it was important to choosen datasets that are widely used in the field of information retrieval and that already contain relevance judgements. For that reason I decided to use the ClueWeb09 and ClueWeb12 datasets.
 
-The Inter-Annotator Agreement is a statistical measure that quantifies the consistency between the annotations provided by multiple annotators in a collaborative annotation project. It quantifies the level of agreement or disagreement between annotators when labelling the same dataset, thereby providing insight into the objectivity and quality of the annotations. A high IAA indicates the presence of reliable and transparent annotation guidelines, whereas a low IAA may be indicative of task ambiguity or inconsistencies in annotator interpretation.
+\begin{itemize}
+    \item What were realy choosen in the final thesis?
+    \item Age
+    \item Number of queries, documents, qrels
+    \item Ancestor datasets (maybe used for transfering relevance labels)
+\end{itemize}
 
-There are a variety of methods for calculating IAA, each with its strengths and weaknesses. In this thesis, I will utilise the Cohen's Kappa coefficient, which is a statistical measure that can be used to assess the degree of agreement between annotators when categorising data. In this research, each document query pair will be assigned a relevance score of 0, 1, or 2. A score of 0 indicates that the document is not relevant to the query, a score of 1 indicates that the document is somewhat relevant, and a score of 2 indicates that the document is highly relevant. 
+\section{Documents to Passages}\label{documents-to-passages}
+
+The first step in the research process was to convert the documents in the datasets to passages. This was done to reduce the size of the documents and to make the relevance judgements more fine-grained.
+
+\begin{itemize}
+    \item Why was this step necessary?
+    \item How were the documents split into passages?
+    \item Usage of \href{https://github.com/grill-lab/trec-cast-tools/tree/master/corpus_processing/passage_chunkers}{trec-cast-tools}
+    \item Passage length
+    \item Number of passages per document
+\end{itemize}
+
+\section{Inferring Relevance Scores of Passages}\label{inferring-relevance-scores-of-passages}
+
+The next step was to infer relevance scores for the passages. This was done by using the relevance judgements, qrels, of the documents in the original datasets. For each qrel in the dataset with a label of 1 or 2, the corresponding passages of the document were used as a query to retrieve the documents of the dataset. 
+
+\begin{itemize}
+    \item Why was this step done?
+    \item How were the relevance scores inferred?
+    \item Usage of \href{https://github.com/joaopalotti/trectools}{trectools}
+    \item What is a qrel?
+    \item Number of retrieved documents per query
+    \item What metrics were used to evaluate the retrieval performance?
+\end{itemize}
+
+\section{Relevance Labels of Passages}\label{relevance-labels-of-passages}
+
+The relevance scores of the passages were then used to assign relevance labels to the passages. To do this, I used to open source tool \href{https://github.com/seanmacavaney/autoqrels}{autoqrels}. The tool can be used to automatically assign relevance labels to passages based on the relevance scores of the passages.
+
+\begin{itemize}
+    \item Why was this step done?
+    \item How were the relevance labels assigned?
+    \item Usage of \href{https://github.com/seanmacavaney/autoqrels}{autoqrels}
+    \item What is a relevance label?
+\end{itemize}
