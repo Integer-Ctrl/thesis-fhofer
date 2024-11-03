@@ -7,12 +7,12 @@ from trectools import TrecQrel, TrecRun, TrecEval
 
 INDEX_PATH = '../data/argsme/document-dataset/indices/'
 PASSAGE_PATH = '../data/argsme/passage-dataset/passages.jsonl.gz'
-PASSAGE_SCORES_PATH = '../data/argsme/passage-dataset/passage-scores.jsonl.gz'
+PASSAGE_SCORES_PATH = '../data/argsme/passage-dataset/bm25-scores.jsonl.gz'
 
 if not pt.java.started():
     pt.java.init()
 
-tokeniser = pt.java.autoclass("org.terrier.indexing.tokenisation.Tokeniser").getTokeniser()
+tokeniser = pt.java.autoclass('org.terrier.indexing.tokenisation.Tokeniser').getTokeniser()
 
 
 def yield_docs(dataset):
@@ -55,49 +55,34 @@ qrels_cache = {}
 with gzip.open(PASSAGE_SCORES_PATH, 'at', encoding='UTF-8') as f_out:
     for index, row in tqdm(qrels.iterrows(), desc='Scoring and saving passages', unit='qrel'):
         if row['label'] > 0:  # only relevant docs
+
             # Get all relevant documents for query
             # Check if the query ID is already cached
             if row['qid'] not in qrels_cache:
                 # Cache the relevant entries for the query ID
                 qrels_cache[row['qid']] = qrels.loc[
                     (qrels['qid'] == row['qid']) & (qrels['label'] > 0)
-                    ].rename(columns={"qid": "query", "docno": "docid", "label": "rel"})
+                    ].rename(columns={'qid': 'query', 'docno': 'docid', 'label': 'rel'})
 
             # Access the cached results
             qrels_for_query = TrecQrel()
             qrels_for_query.qrels_data = qrels_cache[row['qid']]
+            qrels_for_query.qrels_data['query'] = 0
 
             # Get passages for relevant doc
             for passage in passages:
                 if passage['docno'].startswith(row['docno']):
                     run = TrecRun()
                     run.run_data = bm25.search(pt_tokenize(passage['text'])).loc[
-                        :, ['qid', 'docno', 'score']].rename(
-                        columns={"qid": "query", "docno": "docid", "score": "score"})
+                        :, ['qid', 'docno', 'rank', 'score']].rename(
+                        columns={'qid': 'query', 'docno': 'docid', 'score': 'score'}).head(10)
+                    run.run_data['query'] = 0  # dummy value to fix merge of run and qrels
+                    run.run_data['q0'] = 'Q0'  # dummy value to get ndcg score
+                    run.run_data['system'] = 'bm25'  # dummy value to get ndcg score
                     te = TrecEval(run, qrels_for_query)
-                    score = te.get_precision(depth=10, removeUnjudged=True)
-                    f_out.write((json.dumps({"docno": passage['docno'], "score": score}) + '\n'))
-
-
-# passages
-# --> save to new file
-# iter over qrels exclude all not relevant docs
-# for relevant doc get all passages from json
-# use passage as query against dataset - tokenize query before submitting to bm25
-# ranking with bm25 retriev
-# see dc chat - 1. qrels 2. run (result of bm25, see comment before) 3. eval (precision, ndcg, ...)
-# --> save to new file
-# use score for autoqrels to infer new rel for passage-dataset (json)
-# --> save to new file
-
-
-# print("\n\n")
-# print(index.getDocumentIndex().getDocumentEntry(0), '\n')
-# print(index.getDocumentIndex().getDocumentLength(0), '\n')
-# print(index.getDocumentIndex().getNumberOfDocuments(), '\n')
-
-# print(index.getMetaIndex().getKeys(), '\n')
-# print(index.getLexicon()["chemic"].getDocumentFrequency(), '\n')
-
-# bm25 = pt.terrier.Retriever(index, wmodel='BM25')
-# print(bm25.transform("Actually again lol NO."))
+                    p10_score = te.get_precision(depth=10, removeUnjudged=True)
+                    ndcg10_score = te.get_ndcg(depth=10, removeUnjudged=True)
+                    f_out.write((json.dumps({'qid': row['qid'],
+                                             'docno': passage['docno'],
+                                             'p10': p10_score,
+                                             'ndcg10': ndcg10_score}) + '\n'))
