@@ -9,6 +9,9 @@ INDEX_PATH = '../data/argsme/document-dataset/indices/'
 PASSAGE_PATH = '../data/argsme/passage-dataset/passages.jsonl.gz'
 PASSAGE_SCORES_PATH = '../data/argsme/passage-dataset/bm25-scores.jsonl.gz'
 
+# TODO: nested code
+# TODO: fun with param for retrieval model (bm25, tfidf, ...)
+
 if not pt.java.started():
     pt.java.init()
 
@@ -42,17 +45,21 @@ index = pt.IndexFactory.of(index_ref)
 bm25 = pt.terrier.Retriever(index, wmodel='BM25')
 
 # Read passages - chunked documents
-passages = []
+passages = {}
 with gzip.open(PASSAGE_PATH, 'rt', encoding='UTF-8') as file:
     for line in file:
-        passages.append(json.loads(line))
+        line = json.loads(line)
+        docno, passageno = line['docno'].split('_')
+        if docno not in passages:
+            passages[docno] = []
+        passages[docno] += [line]
 
 # Read qrels
 qrels = dataset.get_qrels()
 qrels_cache = {}
 
 # Write passage scores to file
-with gzip.open(PASSAGE_SCORES_PATH, 'at', encoding='UTF-8') as f_out:
+with gzip.open(PASSAGE_SCORES_PATH, 'wt', encoding='UTF-8') as f_out:
     for index, row in tqdm(qrels.iterrows(), desc='Scoring and saving passages', unit='qrel'):
         if row['label'] > 0:  # only relevant docs
 
@@ -70,19 +77,21 @@ with gzip.open(PASSAGE_SCORES_PATH, 'at', encoding='UTF-8') as f_out:
             qrels_for_query.qrels_data['query'] = 0
 
             # Get passages for relevant doc
-            for passage in passages:
-                if passage['docno'].startswith(row['docno']):
-                    run = TrecRun()
-                    run.run_data = bm25.search(pt_tokenize(passage['text'])).loc[
-                        :, ['qid', 'docno', 'rank', 'score']].rename(
-                        columns={'qid': 'query', 'docno': 'docid', 'score': 'score'}).head(10)
-                    run.run_data['query'] = 0  # dummy value to fix merge of run and qrels
-                    run.run_data['q0'] = 'Q0'  # dummy value to get ndcg score
-                    run.run_data['system'] = 'bm25'  # dummy value to get ndcg score
-                    te = TrecEval(run, qrels_for_query)
-                    p10_score = te.get_precision(depth=10, removeUnjudged=True)
-                    ndcg10_score = te.get_ndcg(depth=10, removeUnjudged=True)
-                    f_out.write((json.dumps({'qid': row['qid'],
-                                             'docno': passage['docno'],
-                                             'p10': p10_score,
-                                             'ndcg10': ndcg10_score}) + '\n'))
+            # 
+            for passage in passages[row['docno']]:
+                run = TrecRun()
+                run.run_data = bm25.search(pt_tokenize(passage['text'])).loc[
+                    :, ['qid', 'docno', 'rank', 'score']].rename(
+                    columns={'qid': 'query', 'docno': 'docid', 'score': 'score'}).head(10)
+                run.run_data['query'] = 0  # dummy value to fix merge of run and qrels
+                run.run_data['q0'] = 'Q0'  # dummy value to get ndcg score
+                run.run_data['system'] = 'bm25'  # dummy value to get ndcg score
+                te = TrecEval(run, qrels_for_query)
+                p10_score = te.get_precision(depth=10, removeUnjudged=True)
+                ndcg10_score = te.get_ndcg(depth=10, removeUnjudged=True)
+                # TODO: score without original document p10 and ndcg10
+                # TODO: reciprocal rank of original document
+                f_out.write((json.dumps({'qid': row['qid'],
+                                            'docno': passage['docno'],
+                                            'p10': p10_score,
+                                            'ndcg10': ndcg10_score}) + '\n'))
