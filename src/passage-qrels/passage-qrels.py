@@ -10,9 +10,6 @@ PASSAGE_SCORES_PATH = '../data/argsme/passage-dataset/bm25-scores.jsonl.gz'
 PASSAGE_QRELS_PATH = '../data/argsme/passage-dataset/qrels.jsonl.gz'
 DATASET_ID = 'irds:argsme/2020-04-01/touche-2020-task-1'
 
-# TODO: use new seperator
-
-
 
 def get_passage_scores():
     with gzip.open(PASSAGE_SCORES_PATH, 'rt', encoding='UTF-8') as file:

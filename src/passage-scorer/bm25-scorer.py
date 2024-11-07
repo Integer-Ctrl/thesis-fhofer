@@ -9,8 +9,6 @@ INDEX_PATH = '../data/argsme/document-dataset/indices/'
 PASSAGE_PATH = '../data/argsme/passage-dataset/passages.jsonl.gz'
 PASSAGE_SCORES_PATH = '../data/argsme/passage-dataset/bm25-scores.jsonl.gz'
 
-# TODO: nested code
-# TODO: fun with param for retrieval model (bm25, tfidf, ...)
 
 if not pt.java.started():
     pt.java.init()
@@ -49,7 +47,7 @@ passages = {}
 with gzip.open(PASSAGE_PATH, 'rt', encoding='UTF-8') as file:
     for line in file:
         line = json.loads(line)
-        docno, passageno = line['docno'].split('_')
+        docno, passageno = line['docno'].split('___')
         if docno not in passages:
             passages[docno] = []
         passages[docno] += [line]
@@ -76,9 +74,11 @@ with gzip.open(PASSAGE_SCORES_PATH, 'wt', encoding='UTF-8') as f_out:
             qrels_for_query.qrels_data = qrels_cache[row['qid']]
             qrels_for_query.qrels_data['query'] = 0
 
+            count = 0
             # Get passages for relevant doc
-            # 
             for passage in passages[row['docno']]:
+                count += 1
+                print(count)
                 run = TrecRun()
                 run.run_data = bm25.search(pt_tokenize(passage['text'])).loc[
                     :, ['qid', 'docno', 'rank', 'score']].rename(
@@ -89,9 +89,7 @@ with gzip.open(PASSAGE_SCORES_PATH, 'wt', encoding='UTF-8') as f_out:
                 te = TrecEval(run, qrels_for_query)
                 p10_score = te.get_precision(depth=10, removeUnjudged=True)
                 ndcg10_score = te.get_ndcg(depth=10, removeUnjudged=True)
-                # TODO: score without original document p10 and ndcg10
-                # TODO: reciprocal rank of original document
                 f_out.write((json.dumps({'qid': row['qid'],
-                                            'docno': passage['docno'],
-                                            'p10': p10_score,
-                                            'ndcg10': ndcg10_score}) + '\n'))
+                                         'docno': passage['docno'],
+                                         'p10': p10_score,
+                                         'ndcg10': ndcg10_score}) + '\n'))

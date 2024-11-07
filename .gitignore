@@ -5,6 +5,7 @@ __pycache__
 *.jsonl
 *.jsonl.gz
 indices/
+data/
 
 ## Core latex/pdflatex auxiliary files:
 *.aux

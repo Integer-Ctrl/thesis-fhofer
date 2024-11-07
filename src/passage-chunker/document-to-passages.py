@@ -10,7 +10,10 @@ for doc in dataset.docs_iter():
     doc -> namedtuple<https://ir-datasets.com/argsme.html#argsme/2020-04-01>
 '''
 
+# DATASET_NAME = 'argsme/2020-04-01/touche-2020-task-1'  # Python API dataset name
+DATASET_NAME = 'argsme/2020-04-01/touche-2021-task-1'  # Python API dataset name
 DATASET_PATH = '../data'
+SEPARATOR = '___'
 
 
 class PassageChunker:
@@ -29,7 +32,7 @@ class PassageChunker:
         path = os.path.join(DATASET_PATH, file_name)
 
         # Open the output file in append mode
-        with gzip.open(path, 'at', encoding='UTF-8') as f_out:
+        with gzip.open(path, 'wt', encoding='UTF-8') as f_out:
 
             for doc in tqdm(self.dataset.docs_iter(), desc='Chunking and saving documents', unit='doc'):
                 # Format the document
@@ -49,7 +52,7 @@ class PassageChunker:
                     for chunked_doc in chunked_batch:
                         # Write each passage as a JSON object
                         for passage in chunked_doc['contents']:
-                            passage_id = chunked_doc['docno'] + '_' + str(passage['id'])
+                            passage_id = chunked_doc['docno'] + SEPARATOR + str(passage['id'])
                             f_out.write(
                                 (json.dumps({"docno": passage_id, "text": passage['body']}) + '\n'))
 
@@ -66,7 +69,7 @@ class PassageChunker:
                 for chunked_doc in chunked_batch:
                     # Write each passage as a JSON object
                     for passage in chunked_doc['contents']:
-                        passage_id = chunked_doc['docno'] + '_' + str(passage['id'])
+                        passage_id = chunked_doc['docno'] + SEPARATOR + str(passage['id'])
                         f_out.write(
                             (json.dumps({"docno": passage_id, "text": passage['body']}) + '\n'))
 
@@ -75,5 +78,5 @@ class PassageChunker:
         print(f"Processed and saved {doc_count} documents to {file_name}")
 
 
-chunker = PassageChunker('argsme/2020-04-01/touche-2020-task-1')
-chunker.dynamic_document_segmentation(file_name='argsme/passage-dataset/passages.jsonl.gz', batch_size=4000)
+chunker = PassageChunker(DATASET_NAME)
+chunker.dynamic_document_segmentation(file_name=DATASET_NAME + '/passage-dataset/passages.jsonl.gz', batch_size=4000)
