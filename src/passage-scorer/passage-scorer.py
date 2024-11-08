@@ -59,7 +59,6 @@ for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
     # Only relevant qrels
     if row['label'] > 0:
         if row['qid'] not in qrels_cache:
-            print(row['qid'])
             qrels_cache[row['qid']] = qrels.loc[
                 (qrels['qid'] == row['qid']) & (qrels['label'] > 0)  # All relevant entries for the query ID
             ].rename(columns={'qid': 'query', 'docno': 'docid', 'label': 'rel'})  # Rename columns
@@ -70,38 +69,53 @@ bm25 = pt.terrier.Retriever(dataset_index, wmodel='BM25')
 tfidf = pt.terrier.Retriever(dataset_index, wmodel='TF_IDF')
 
 
-# Infer run from passage text and retrieve top 10 passages
-def get_infered_run(retriever, passage_text, system_name, docno=None):
-    run = TrecRun()
+# Get reciprocal rank of the original document in a run
+def get_reciprocal_rank_of_docno(run_data, docno):
+    for index, row in run_data.iterrows():
+        if row['docid'] == docno:
+            return 1 / (index + 1)
+    return 0
 
-    # Retrieve the top 10 or 11 entries based on docno presence
-    num_results = 11 if docno else 10
+
+# Infer run from passage text and retrieve top 10 passages
+def get_infered_run(retriever, passage_text, system_name, docno):
+    run = TrecRun()
+    run_wod = TrecRun()
+
+    # Retrieve the top 11 entries
     run.run_data = retriever.search(pt_tokenize(passage_text)).loc[
         :, ['qid', 'docno', 'rank', 'score']].rename(
-        columns={'qid': 'query', 'docno': 'docid', 'score': 'score'}).head(num_results)
-
-    # If docno is specified, remove it if present in the top 11; otherwise, remove the last entry
-    if docno:
-        if docno in run.run_data['docid'].values:
-            run.run_data = run.run_data[run.run_data['docid'] != docno]
-        else:
-            run.run_data = run.run_data.iloc[:-1]  # Drop the last row to keep top 10
+        columns={'qid': 'query', 'docno': 'docid', 'score': 'score'}).head(11)
 
     run.run_data['query'] = 0  # Dummy value to enable merge of run and qrels (TrecEval)
     run.run_data['q0'] = 'Q0'  # Dummy value to get ndcg score (TrecEval)
     run.run_data['system'] = system_name  # Dummy value to get ndcg score (TrecEval)
 
-    return run
+    # Drop the last row to keep top 10, can contain orginal document
+    run.run_data = run.run_data.iloc[:-1]
+
+    reciprocal_rank_docno = get_reciprocal_rank_of_docno(run.run_data, docno)
+
+    # If docno is in top 10, remove it; otherwise, remove the last entry
+    if docno in run.run_data['docid'].values:
+        run_wod.run_data = run.run_data[run.run_data['docid'] != docno]
+    else:
+        run_wod.run_data = run.run_data
+
+    return run, run_wod, reciprocal_rank_docno
 
 
+# Get all qrels for a query and remove original document if specified
 def get_qrels_for_query(qid, include_original_document):
     qrels_for_query = TrecQrel()
     qrels_for_query.qrels_data = qrels_cache[qid]
+    # Remove original document if specified
     if not include_original_document:
         qrels_for_query.qrels_data = qrels_for_query.qrels_data[qrels_for_query.qrels_data['docid'] != qid]
     return qrels_for_query
 
 
+# Evaluate run using TrecEval
 def evaluate_run(run, qrels_for_query):
     te = TrecEval(run, qrels_for_query)
     p10_score = float(te.get_precision(depth=10, removeUnjudged=True))
@@ -118,11 +132,10 @@ with gzip.open(PASSAGE_SCORES_PATH, 'wt', encoding='UTF-8') as f_out:
                 qrels_for_query = get_qrels_for_query(qid, include_original_document=True)
                 qrels_for_query_wod = get_qrels_for_query(qid, include_original_document=False)
 
-                run_bm25 = get_infered_run(bm25, passage['text'], 'bm25')
-                run_bm25_wod = get_infered_run(bm25, passage['text'], 'bm25', docno)
-
-                run_tfidf = get_infered_run(tfidf, passage['text'], 'tfidf')
-                run_tfidf_wod = get_infered_run(tfidf, passage['text'], 'tfidf', docno)
+                run_bm25, run_bm25_wod, reciprocal_rank_docno_bm25 = get_infered_run(
+                    bm25, passage['text'], 'bm25', docno)
+                run_tfidf, run_tfidf_wod, reciprocal_rank_docno_tfidf = get_infered_run(
+                    tfidf, passage['text'], 'tfidf', docno)
 
                 # Evaluate passage scores
                 p10_bm25, ndcg10_bm25 = evaluate_run(run_bm25, qrels_for_query)
@@ -131,27 +144,15 @@ with gzip.open(PASSAGE_SCORES_PATH, 'wt', encoding='UTF-8') as f_out:
                 p10_tfidf, ndcg10_tfidf = evaluate_run(run_tfidf, qrels_for_query)
                 p10_tfidf_wod, ndcg10_tfidf_wod = evaluate_run(run_tfidf_wod, qrels_for_query_wod)
 
-                # TODO: reciprocal rank of original document only calculated for bm25 and tfidf
-                # TODO: create new file with mmr values
-                # ['docno' ,'p10_bm25', 'p10_bm25_wod', 'p10_tfidf', 'p10_tfidf_wod',
-                # 'ndcg10_bm25', 'ndcg10_bm25_wod', 'ndcg10_tfidf', 'ndcg10_tfidf_wod']
-                print({'qid': qid,
-                       'docno': passage['docno'],
-                       'p10_bm25': p10_bm25,
-                       'p10_bm25_wod': p10_bm25_wod,
-                       'p10_tfidf': p10_tfidf,
-                       'p10_tfidf_wod': p10_tfidf_wod,
-                       'ndcg10_bm25': ndcg10_bm25,
-                       'ndcg10_bm25_wod': ndcg10_bm25_wod,
-                       'ndcg10_tfidf': ndcg10_tfidf,
-                       'ndcg10_tfidf_wod': ndcg10_tfidf_wod})
-                # f_out.write((json.dumps({'qid': qid,
-                #                          'docno': passage['docno'],
-                #                          'p10_bm25': p10_bm25,
-                #                          'p10_bm25_wod': p10_bm25_wod,
-                #                          'p10_tfidf': p10_tfidf,
-                #                          'p10_tfidf_wod': p10_tfidf_wod,
-                #                          'ndcg10_bm25': ndcg10_bm25,
-                #                          'ndcg10_bm25_wod': ndcg10_bm25_wod,
-                #                          'ndcg10_tfidf': ndcg10_tfidf,
-                #                          'ndcg10_tfidf_wod': ndcg10_tfidf_wod}) + '\n'))
+                f_out.write((json.dumps({'qid': qid,
+                                         'docno': passage['docno'],
+                                         'p10_bm25': p10_bm25,
+                                         'p10_bm25_wod': p10_bm25_wod,
+                                         'p10_tfidf': p10_tfidf,
+                                         'p10_tfidf_wod': p10_tfidf_wod,
+                                         'ndcg10_bm25': ndcg10_bm25,
+                                         'ndcg10_bm25_wod': ndcg10_bm25_wod,
+                                         'ndcg10_tfidf': ndcg10_tfidf,
+                                         'ndcg10_tfidf_wod': ndcg10_tfidf_wod,
+                                         'reciprocal_rank_docno_bm25': reciprocal_rank_docno_bm25,
+                                         'reciprocal_rank_docno_tfidf': reciprocal_rank_docno_tfidf}) + '\n'))
