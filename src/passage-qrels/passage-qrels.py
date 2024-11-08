@@ -63,11 +63,11 @@ run = get_passage_scores()
 # result = one_shot_labeler(run, qrels)
 result = zero_shot_labeler(run)
 
-with gzip.open(PASSAGE_QRELS_PATH, 'at', encoding='UTF-8') as f_out:
+with gzip.open(PASSAGE_QRELS_PATH, 'at', encoding='UTF-8') as file:
     for _, row in result.iterrows():
         # Check if relevance is greater than or equal to 0.6
         if row['relevance'] >= 1:
             # Convert the row to a dictionary
             row_dict = row.to_dict()
             # Write the dictionary as a JSON line
-            f_out.write(json.dumps(row_dict) + '\n')
+            file.write(json.dumps(row_dict) + '\n')

@@ -61,8 +61,7 @@ for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
         if row['qid'] not in qrels_cache:
             qrels_cache[row['qid']] = qrels.loc[
                 (qrels['qid'] == row['qid']) & (qrels['label'] > 0)  # All relevant entries for the query ID
-            ].rename(columns={'qid': 'query', 'docno': 'docid', 'label': 'rel'})  # Rename columns
-            qrels_cache[row['qid']]['query'] = 0  # Dummy value to enable merge of run and qrels (TrecEval)
+            ]
 
 # retrieval models
 bm25 = pt.terrier.Retriever(dataset_index, wmodel='BM25')
@@ -124,7 +123,7 @@ def evaluate_run(run, qrels_for_query):
 
 
 # Write passage scores to file
-with gzip.open(PASSAGE_SCORES_PATH, 'wt', encoding='UTF-8') as f_out:
+with gzip.open(PASSAGE_SCORES_PATH, 'wt', encoding='UTF-8') as file:
     for qid, docnos in tqdm(qrels_cache.items(), desc='Scoring and saving passages', unit='qid'):
         for docno in docnos['docid']:
             for passage in passages_cache[docno]:
@@ -144,15 +143,15 @@ with gzip.open(PASSAGE_SCORES_PATH, 'wt', encoding='UTF-8') as f_out:
                 p10_tfidf, ndcg10_tfidf = evaluate_run(run_tfidf, qrels_for_query)
                 p10_tfidf_wod, ndcg10_tfidf_wod = evaluate_run(run_tfidf_wod, qrels_for_query_wod)
 
-                f_out.write((json.dumps({'qid': qid,
-                                         'docno': passage['docno'],
-                                         'p10_bm25': p10_bm25,
-                                         'p10_bm25_wod': p10_bm25_wod,
-                                         'p10_tfidf': p10_tfidf,
-                                         'p10_tfidf_wod': p10_tfidf_wod,
-                                         'ndcg10_bm25': ndcg10_bm25,
-                                         'ndcg10_bm25_wod': ndcg10_bm25_wod,
-                                         'ndcg10_tfidf': ndcg10_tfidf,
-                                         'ndcg10_tfidf_wod': ndcg10_tfidf_wod,
-                                         'reciprocal_rank_docno_bm25': reciprocal_rank_docno_bm25,
-                                         'reciprocal_rank_docno_tfidf': reciprocal_rank_docno_tfidf}) + '\n'))
+                file.write((json.dumps({'qid': qid,
+                                        'docno': passage['docno'],
+                                        'p10_bm25': p10_bm25,
+                                        'p10_bm25_wod': p10_bm25_wod,
+                                        'p10_tfidf': p10_tfidf,
+                                        'p10_tfidf_wod': p10_tfidf_wod,
+                                        'ndcg10_bm25': ndcg10_bm25,
+                                        'ndcg10_bm25_wod': ndcg10_bm25_wod,
+                                        'ndcg10_tfidf': ndcg10_tfidf,
+                                        'ndcg10_tfidf_wod': ndcg10_tfidf_wod,
+                                        'reciprocal_rank_docno_bm25': reciprocal_rank_docno_bm25,
+                                        'reciprocal_rank_docno_tfidf': reciprocal_rank_docno_tfidf}) + '\n'))

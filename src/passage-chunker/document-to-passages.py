@@ -32,7 +32,7 @@ class PassageChunker:
         path = os.path.join(DATASET_PATH, file_name)
 
         # Open the output file in append mode
-        with gzip.open(path, 'wt', encoding='UTF-8') as f_out:
+        with gzip.open(path, 'wt', encoding='UTF-8') as file:
 
             for doc in tqdm(self.dataset.docs_iter(), desc='Chunking and saving documents', unit='doc'):
                 # Format the document
@@ -53,7 +53,7 @@ class PassageChunker:
                         # Write each passage as a JSON object
                         for passage in chunked_doc['contents']:
                             passage_id = chunked_doc['docno'] + SEPARATOR + str(passage['id'])
-                            f_out.write(
+                            file.write(
                                 (json.dumps({"docno": passage_id, "text": passage['body']}) + '\n'))
 
                     # Reset the batch after saving
@@ -70,7 +70,7 @@ class PassageChunker:
                     # Write each passage as a JSON object
                     for passage in chunked_doc['contents']:
                         passage_id = chunked_doc['docno'] + SEPARATOR + str(passage['id'])
-                        f_out.write(
+                        file.write(
                             (json.dumps({"docno": passage_id, "text": passage['body']}) + '\n'))
 
                 doc_count += len(batch)
