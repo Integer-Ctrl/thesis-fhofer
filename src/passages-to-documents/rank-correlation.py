@@ -5,6 +5,7 @@ import json
 import numpy as np
 import pyterrier as pt
 from scipy.stats import pearsonr, kendalltau, spearmanr
+import copy
 
 DATASET_NAME = 'irds:argsme/2020-04-01/touche-2021-task-1'  # PyTerrier dataset name
 PASSAGE_PATH = '../data/' + DATASET_NAME.replace('irds:', '') + '/passage-dataset/passages.jsonl.gz'
@@ -28,8 +29,7 @@ for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
         if row['qid'] not in qrels_cache:
             qrels_cache[row['qid']] = qrels.loc[
                 (qrels['qid'] == row['qid']) & (qrels['label'] > 0)  # All relevant entries for the query ID
-            ].rename(columns={'qid': 'query', 'docno': 'docid', 'label': 'rel'})  # Rename columns
-            qrels_cache[row['qid']]['query'] = 0  # Dummy value to enable merge of run and qrels (TrecEval)
+            ]
 
 
 # Read passsage scores and cache them
@@ -68,11 +68,6 @@ def get_docno_qid_aggregated_scores(docno_qid_passages_scores_cache, aggregation
                     aggregated_doc_scores[metric] = float(np.min(scores))
 
             aggregated_scores.append(aggregated_doc_scores)
-        # if docno == 'S6555987d-Ad4128081':
-        #     f = open("aggregated_scores.txt", "w")
-        #     f.write(str(aggregated_scores))
-        #     f.close()
-        #     exit()
 
     return aggregated_scores
 
@@ -80,19 +75,17 @@ def get_docno_qid_aggregated_scores(docno_qid_passages_scores_cache, aggregation
 # Function to get transformed scores
 def get_docno_qid_transformed_scores(docno_qid_aggregated_scores, transformation_method='id', bins=[0.3, 0.7]):
 
-    for entry in docno_qid_aggregated_scores:
+    docno_qid_aggregated_scores_transformed = copy.deepcopy(docno_qid_aggregated_scores)
+    for entry in docno_qid_aggregated_scores_transformed:
         for metric in METRICS:
             if transformation_method == 'id':
                 pass
-            elif transformation_method == 'log':
-                if entry[metric] == 0:
-                    entry[metric] = 0
-                else:
-                    entry[metric] = float(np.log(entry[metric]))
+            elif transformation_method == 'log' and entry[metric] != 0:
+                entry[metric] = float(np.log(entry[metric]))
             elif transformation_method == 'binned':
                 entry[metric] = float(np.digitize(entry[metric], bins))
 
-    return docno_qid_aggregated_scores
+    return docno_qid_aggregated_scores_transformed
 
 
 # Function to get evaluated score based on the specified metric and evaluation method (pearson, spearman, kendall)
@@ -112,13 +105,15 @@ def get_evaluated_score(docno_qid_transformed_scores, qrels_cache,
             qrels_doc = qrels_cache[qid]
 
             # Find the matching row in qrels for this docno
-            qrels_match = qrels_doc[qrels_doc['docid'] == docno]
+            qrels_match = qrels_doc[qrels_doc['docno'] == docno]
 
             # If there is a match, append scores to lists
             if not qrels_match.empty:
-                relevance_score = qrels_match['rel'].values[0]
+                relevance_score = qrels_match['label'].values[0]
                 transformed_scores.append(entry[metric])
-                relevance_scores.append(relevance_score)
+                relevance_scores.append(float(relevance_score))
+        else:
+            print('QID not in qrels_cache:', qid)
 
     # Ensure we have pairs to evaluate correlation
     if len(transformed_scores) > 1:
@@ -143,6 +138,13 @@ def get_evaluated_score(docno_qid_transformed_scores, qrels_cache,
         return correlation
 
 
+def check_scores_smaller_zero(scores, location=''):
+    for entry in scores:
+        for metric in METRICS:
+            if entry[metric] < 0:
+                print(location, metric, entry[metric])
+
+
 correlation_scores = []
 for aggregation_method in AGGREGATION_METHODS:
     docno_qid_aggregated_scores = get_docno_qid_aggregated_scores(
@@ -154,16 +156,9 @@ for aggregation_method in AGGREGATION_METHODS:
 
         for evaluation_method in EVALUATION_METHODS:
             for metric in METRICS:
-                # correlation_pandas = get_evaluated_score_pandas(docno_qid_transformed_scores,
-                #                                                 qrels_cache, metric, evaluation_method)
-                # correlation_scores.append({'aggregation_method': aggregation_method,
-                #                            'transformation_method': transformation_method,
-                #                            'evaluation_method': evaluation_method,
-                #                            'metric': metric,
-                #                            'lib': 'pandas',
-                #                            'correlation': correlation_pandas})
                 correlation = get_evaluated_score(docno_qid_transformed_scores,
                                                   qrels_cache, metric, evaluation_method)
+
                 correlation_scores.append({'aggregation_method': aggregation_method,
                                            'transformation_method': transformation_method,
                                            'evaluation_method': evaluation_method,

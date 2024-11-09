@@ -25,3 +25,46 @@ There are a variety of methods for calculating IAA, each with its strengths and 
         \item \href{https://surge-ai.medium.com/inter-annotator-agreement-an-introduction-to-cohens-kappa-statistic-dcc15ffa5ac4}{Medium}
     \end{itemize}
 \end{itemize}
+
+\section{Rank Correlation}\label{rank-correlation}  
+
+To assess the relationship between the relevance labels and the calculated scores, a correlation analysis was conducted. Relevance labels represent an ordinal scale with values of 0, 1, and 2, denoting increasing levels of relevance, while calculated scores range from -1 to 1, representing the model's prediction for each document's relevance with respect to the query. Given the distinct nature of these data types, it was necessary to select a correlation measure that could accommodate both ordinal and continuous data without assuming a linear relationship.
+
+\subsection{Spearman's Rank Correlation Coefficient}\label{spearmans-rank-correlation-coefficient}
+
+Among the common correlation measures—Pearson's, Spearman's, and Kendall's—the Spearman's rank correlation coefficient was selected as the most appropriate measure for this analysis. Spearman's correlation is particularly suited to this context for several reasons:
+
+\begin{enumerate}
+    \item Ordinal Nature of Relevance Labels: The relevance labels are ordinal, meaning they indicate an ordered relationship (0 < 1 < 2), but the intervals between values may not represent equal differences in relevance. Spearman's correlation is designed for ranked or ordinal data, making it ideal for assessing relationships where the exact distance between values is less meaningful than the order.
+    \item Monotonic Relationship Requirement: Spearman's correlation assesses whether there is a monotonic relationship between two variables rather than a strict linear relationship. This is important given that the relevance labels and calculated scores may not vary linearly but are expected to follow a general trend (e.g., higher relevance labels should be associated with higher calculated scores).
+    \item Robustness to Outliers and Non-Normality: Unlike Pearson's correlation, Spearman's correlation does not assume normally distributed data or homoscedasticity, which is suitable given the categorical nature of relevance labels and potential non-normal distribution of the calculated scores.
+\end{enumerate}
+
+\begin{itemize}
+    \item +1: perfect monotonic agreement between rankings
+    \item above \~ 0.6: strong monotonic relationship
+    \item 0: no monotonic relationship
+    \item -1: perfect monotonic decrease
+\end{itemize}
+
+\subsection{Kendall's Tau Rank Correlation Coefficient}\label{kendalls-tau-rank-correlation-coefficient}
+
+Kendall's Tau measures the ordinal association between two variables by comparing the number of concordant and discordant pairs of data. It's especially useful for small datasets and ordinal data, offering a more nuanced view of monotonic relationships. The Kendall coefficient ranges from -1 to +1, with higher absolute values indicating stronger associations.
+
+\begin{itemize}
+    \item +1: perfect agreement between rankings
+    \item above \~ 0.5: strong positive association
+    \item 0: no association between rankings
+    \item -1: perfect disagreement between rankings
+\end{itemize}
+
+\subsection{Pearson's Correlation Coefficient}\label{pearsons-correlation-coefficient}
+
+Pearson's Correlation measures the linear relationship between two continuous variables. It assumes that the data is normally distributed and is sensitive to outliers. The result, called the Pearson correlation coefficient (r), ranges from -1 (perfect negative correlation) to +1 (perfect positive correlation), with 0 indicating no linear correlation.
+
+\begin{itemize}
+    \item +1: perfect positive linear relationship
+    \item above \~ 0.7: strong positive linear relationship
+    \item 0: no linear relationship
+    \item -1: perfect negative linear relationship
+\end{itemize}
