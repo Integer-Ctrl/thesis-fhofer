@@ -61,7 +61,9 @@ for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
         if row['qid'] not in qrels_cache:
             qrels_cache[row['qid']] = qrels.loc[
                 (qrels['qid'] == row['qid']) & (qrels['label'] > 0)  # All relevant entries for the query ID
-            ]
+            ].rename(columns={'qid': 'query', 'docno': 'docid', 'label': 'rel'})  # Rename columns
+            qrels_cache[row['qid']]['query'] = 0  # Dummy value to enable merge of run and qrels (TrecEval)
+
 
 # retrieval models
 bm25 = pt.terrier.Retriever(dataset_index, wmodel='BM25')
@@ -141,6 +143,7 @@ with gzip.open(PASSAGE_SCORES_PATH, 'wt', encoding='UTF-8') as file:
                 p10_bm25_wod, ndcg10_bm25_wod = evaluate_run(run_bm25_wod, qrels_for_query_wod)
 
                 p10_tfidf, ndcg10_tfidf = evaluate_run(run_tfidf, qrels_for_query)
+                print(p10_tfidf, ndcg10_tfidf)
                 p10_tfidf_wod, ndcg10_tfidf_wod = evaluate_run(run_tfidf_wod, qrels_for_query_wod)
 
                 file.write((json.dumps({'qid': qid,
