@@ -7,7 +7,8 @@ import json
 import numpy as np
 from tqdm import tqdm
 import copy
-import sys
+import pyterrier as pt
+from sklearn.metrics import cohen_kappa_score
 
 DATASET_NAME = 'irds:argsme/2020-04-01/touche-2021-task-1'
 PASSAGE_SCORES_PATH = '../data/' + DATASET_NAME.replace('irds:', '') + '/passage-dataset/passage-scores.jsonl.gz'
@@ -33,6 +34,18 @@ def get_best_scoring_methods():
     with gzip.open(PASSAGE_TO_DOCUMENT_CORRELATION_SCORES_PATH, 'rt', encoding='UTF-8') as file:
         for line in file:  # already decending sorted
             return json.loads(line)  # return only best scoring method
+
+
+dataset = pt.get_dataset(DATASET_NAME)
+qrels = dataset.get_qrels()
+qrels_cache = {}
+for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
+    # Only relevant qrels
+    if row['label'] > 0:
+        if row['qid'] not in qrels_cache:
+            qrels_cache[row['qid']] = qrels.loc[
+                (qrels['qid'] == row['qid']) & (qrels['label'] > 0)  # All relevant entries for the query ID
+            ]
 
 
 # Function to get dictonary of aggregated score for a document using passage scores
@@ -106,6 +119,42 @@ def zero_shot_labeler(run, boundaries):
     return result
 
 
+# Calculate Cohen's Kappa
+def calculate_cohen_kappa(qrels, qrels_cache):
+    # Lists to store relevance values and labels
+    relevance_array = []
+    label_array = []
+
+    # Iterate over the qrels dataframe row by row
+    for _, row in qrels.iterrows():
+        query_id = row['query_id']
+        doc_id = row['doc_id']
+        relevance = row['relevance']
+
+        # Include all relevance labels, also 0
+        # Check if the query_id exists in qrels_cache
+        if query_id in qrels_cache:
+            # Get the cached qrels for this query_id
+            cached_qrels = qrels_cache[query_id]
+
+            # Find the row in cached_qrels that matches the current doc_id
+            cached_row = cached_qrels[cached_qrels['docno'] == doc_id]
+
+            if not cached_row.empty:
+                # Get the label (assuming single match per doc_id)
+                label = cached_row['label'].values[0]
+
+                # Append to arrays
+                relevance_array.append(relevance)
+                label_array.append(label)
+
+    # Convert lists to numpy arrays
+    relevance_array = np.array(relevance_array)
+    label_array = np.array(label_array)
+
+    return cohen_kappa_score(relevance_array, label_array)
+
+
 best_scoring_methods = get_best_scoring_methods()
 docno_qid_aggregated_scores = get_docno_qid_aggregated_scores(
     docno_qid_passages_scores_cache, best_scoring_methods['aggregation_method'], best_scoring_methods['metric'])
@@ -120,4 +169,6 @@ run = pd.DataFrame(docno_qid_transformed_scores).rename(
     columns={'docno': 'doc_id', 'qid': 'query_id', best_scoring_methods['metric']: 'score'})
 
 qrels = zero_shot_labeler(run, boundaries)
-print(qrels)
+
+score = calculate_cohen_kappa(qrels, qrels_cache)
+print(score)
