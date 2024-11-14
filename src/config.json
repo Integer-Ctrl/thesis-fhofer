@@ -1,0 +1,23 @@
+{
+    "DOCUMENT_DATASET_NAME": "argsme/2020-04-01/touche-2021-task-1",
+    "DOCUMENT_DATASET_NAME_PYTERRIER": "irds:argsme/2020-04-01/touche-2021-task-1",
+    "DOCUMENT_DATASET_NAME_PYTHON_API": "argsme/2020-04-01/touche-2021-task-1",
+
+    "DATA_PATH": "/mnt/ceph/storage/data-in-progress/data-teaching/theses/thesis-fhofer/data",
+    "DOCUMENT_DATASET_INDEX_PATH": "document-dataset/indices/data.properties",
+
+    "PASSAGE_ID_SEPARATOR": "___",
+    "PASSAGE_DATASET_PATH": "passage-dataset/passages.jsonl.gz",
+    "PASSAGE_DATASET_SCORE_PATH": "passage-dataset/retrieval-scores.jsonl.gz",
+
+    "PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH": "document-dataset/passages-to-document-correlation-scores.jsonl.gz",
+
+    "AGGREGATION_METHODS": ["mean", "max", "min"],
+    "TRANSFORMATION_METHODS": ["id", "log", "binned"],
+    "EVALUATION_METHODS": ["pearson", "spearman", "kendall"],
+    "METRICS": [
+        "p10_bm25", "p10_bm25_wod", "p10_tfidf", "p10_tfidf_wod",
+        "ndcg10_bm25", "ndcg10_bm25_wod", "ndcg10_tfidf", "ndcg10_tfidf_wod",
+        "reciprocal_rank_docno_bm25", "reciprocal_rank_docno_tfidf"
+    ]
+}

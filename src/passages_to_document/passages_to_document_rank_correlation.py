@@ -4,23 +4,39 @@ from tqdm import tqdm
 import json
 import numpy as np
 import pyterrier as pt
-from scipy.stats import pearsonr, kendalltau, spearmanr
+import os
 import copy
 
-DATASET_NAME = 'irds:argsme/2020-04-01/touche-2021-task-1'  # PyTerrier dataset name
-PASSAGE_PATH = '../data/' + DATASET_NAME.replace('irds:', '') + '/passage-dataset/passages.jsonl.gz'
-PASSAGE_SCORES_PATH = '../data/' + DATASET_NAME.replace('irds:', '') + '/passage-dataset/passage-scores.jsonl.gz'
-PASSAGE_TO_DOCUMENT_SCORES_PATH = '../data/' + \
-    DATASET_NAME.replace('irds:', '') + '/document-dataset/passages-to-document/correlation-scores.jsonl.gz'
 
-AGGREGATION_METHODS = ['mean', 'max', 'min']
-TRANSFORMATION_METHODS = ['id', 'log', 'binned']
-EVALUATION_METHODS = ['pearson_pd', 'pearson_scipy', 'kendall_pd', 'kendall_scipy', 'spearman_pd', 'spearman_scipy']
-METRICS = ['p10_bm25', 'p10_bm25_wod', 'p10_tfidf', 'p10_tfidf_wod',
-           'ndcg10_bm25', 'ndcg10_bm25_wod', 'ndcg10_tfidf', 'ndcg10_tfidf_wod']
+# Load the configuration settings
+def load_config(filename="config.json"):
+    with open(filename, "r") as f:
+        config = json.load(f)
+    return config
+
+
+# Get the configuration settings
+config = load_config()
+
+DOCUMENT_DATASET_NAME = config['DOCUMENT_DATASET_NAME']
+DOCUMENT_DATASET_NAME_PYTERRIER = config['DOCUMENT_DATASET_NAME_PYTERRIER']
+
+DATA_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_NAME)
+
+PASSAGE_DATASET_SCORE_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_SCORE_PATH'])
+PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
+
+PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH = os.path.join(
+    DATA_PATH, config['PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH'])
+
+
+AGGREGATION_METHODS = config['AGGREGATION_METHODS']
+TRANSFORMATION_METHODS = config['TRANSFORMATION_METHODS']
+EVALUATION_METHODS = config['EVALUATION_METHODS']
+METRICS = config['METRICS']
 
 # Read qrels and cache relevant qrels
-dataset = pt.get_dataset(DATASET_NAME)
+dataset = pt.get_dataset(DOCUMENT_DATASET_NAME_PYTERRIER)
 qrels = dataset.get_qrels()
 qrels_cache = {}
 for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
@@ -34,10 +50,10 @@ for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
 
 # Read passsage scores and cache them
 docno_qid_passages_scores_cache = {}
-with gzip.open(PASSAGE_SCORES_PATH, 'rt', encoding='UTF-8') as file:
+with gzip.open(PASSAGE_DATASET_SCORE_PATH, 'rt', encoding='UTF-8') as file:
     for line in tqdm(file, desc='Caching passage scores', unit='passage'):
         line = json.loads(line)
-        docno, passageno = line['docno'].split('___')
+        docno, passageno = line['docno'].split(PASSAGE_ID_SEPARATOR)
         qid = line['qid']
         if docno not in docno_qid_passages_scores_cache:
             docno_qid_passages_scores_cache[docno] = {}
@@ -90,7 +106,7 @@ def get_docno_qid_transformed_scores(docno_qid_aggregated_scores, transformation
 
 # Function to get evaluated score based on the specified metric and evaluation method (pearson, spearman, kendall)
 def get_evaluated_score(docno_qid_transformed_scores, qrels_cache,
-                        metric='ndcg10_bm25', evaluation_method='pearson_pd'):
+                        metric='ndcg10_bm25', evaluation_method='pearson'):
     # Lists to store the matched scores for correlation calculation
     transformed_scores = []
     relevance_scores = []
@@ -122,18 +138,12 @@ def get_evaluated_score(docno_qid_transformed_scores, qrels_cache,
         relevance_series = pd.Series(relevance_scores)
 
         # Calculate correlation based on the specified method
-        if evaluation_method == 'pearson_pd':
+        if evaluation_method == 'pearson':
             correlation = transformed_series.corr(relevance_series, method='pearson')
-        elif evaluation_method == 'kendall_pd':
+        elif evaluation_method == 'kendall':
             correlation = transformed_series.corr(relevance_series, method='kendall')
-        elif evaluation_method == 'spearman_pd':
+        elif evaluation_method == 'spearman':
             correlation = transformed_series.corr(relevance_series, method='spearman')
-        elif evaluation_method == 'pearson_scipy':
-            correlation, _ = pearsonr(transformed_scores, relevance_scores)
-        elif evaluation_method == 'kendall_scipy':
-            correlation, _ = kendalltau(transformed_scores, relevance_scores)
-        elif evaluation_method == 'spearman_scipy':
-            correlation, _ = spearmanr(transformed_scores, relevance_scores)
 
         return correlation
 
@@ -166,6 +176,6 @@ for aggregation_method in AGGREGATION_METHODS:
                                            'correlation': correlation})
 
 correlation_scores = sorted(correlation_scores, key=lambda x: x['correlation'], reverse=True)
-with gzip.open(PASSAGE_TO_DOCUMENT_SCORES_PATH, 'wt', encoding='UTF-8') as file:
+with gzip.open(PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH, 'wt', encoding='UTF-8') as file:
     for evaluation_entry in correlation_scores:
         file.write(json.dumps(evaluation_entry) + '\n')

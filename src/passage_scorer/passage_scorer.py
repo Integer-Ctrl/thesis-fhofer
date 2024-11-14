@@ -5,11 +5,27 @@ from tqdm import tqdm
 import gzip
 from trectools import TrecQrel, TrecRun, TrecEval
 
-# DATASET_NAME = 'irds:argsme/2020-04-01/touche-2020-task-1'  # PyTerrier dataset name
-DATASET_NAME = 'irds:argsme/2020-04-01/touche-2021-task-1'  # PyTerrier dataset name
-INDEX_PATH = '../data/' + DATASET_NAME.replace('irds:', '') + '/document-dataset/indices/'
-PASSAGE_PATH = '../data/' + DATASET_NAME.replace('irds:', '') + '/passage-dataset/passages.jsonl.gz'
-PASSAGE_SCORES_PATH = '../data/' + DATASET_NAME.replace('irds:', '') + '/passage-dataset/passage-scores.jsonl.gz'
+
+# Load the configuration settings
+def load_config(filename="config.json"):
+    with open(filename, "r") as f:
+        config = json.load(f)
+    return config
+
+
+# Get the configuration settings
+config = load_config()
+
+DOCUMENT_DATASET_NAME = config['DOCUMENT_DATASET_NAME']
+DOCUMENT_DATASET_NAME_PYTERRIER = config['DOCUMENT_DATASET_NAME_PYTERRIER']
+
+DATA_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_NAME)
+DOCUMENT_DATASET_INDEX_PATH = os.path.join(DATA_PATH, config['DOCUMENT_DATASET_INDEX_PATH'])
+
+PASSAGE_DATASET_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_PATH'])
+PASSAGE_DATASET_SCORE_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_SCORE_PATH'])
+PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
+
 
 # Initialize PyTerrier and Tokenizer
 if not pt.java.started():
@@ -32,22 +48,22 @@ def yield_docs(dataset):
 
 
 # Index dataset
-dataset = pt.get_dataset(DATASET_NAME)
-if not os.path.exists(INDEX_PATH + '/data.properties'):
-    indexer = pt.IterDictIndexer(INDEX_PATH)
+dataset = pt.get_dataset(DOCUMENT_DATASET_NAME_PYTERRIER)
+if not os.path.exists(DOCUMENT_DATASET_INDEX_PATH):
+    indexer = pt.IterDictIndexer(DOCUMENT_DATASET_INDEX_PATH)
     index_ref = indexer.index(yield_docs(dataset),
                               meta={'docno': 50, 'text': 20000})
 else:
-    index_ref = pt.IndexRef.of(INDEX_PATH + '/data.properties')
+    index_ref = pt.IndexRef.of(DOCUMENT_DATASET_INDEX_PATH + '/data.properties')
 
 dataset_index = pt.IndexFactory.of(index_ref)
 
 # Read passages and cache them
 passages_cache = {}
-with gzip.open(PASSAGE_PATH, 'rt', encoding='UTF-8') as file:
+with gzip.open(PASSAGE_DATASET_PATH, 'rt', encoding='UTF-8') as file:
     for line in tqdm(file, desc='Caching passages', unit='passage'):
         line = json.loads(line)
-        docno, passageno = line['docno'].split('___')
+        docno, passageno = line['docno'].split(PASSAGE_ID_SEPARATOR)
         if docno not in passages_cache:
             passages_cache[docno] = []
         passages_cache[docno] += [line]
@@ -125,7 +141,7 @@ def evaluate_run(run, qrels_for_query):
 
 
 # Write passage scores to file
-with gzip.open(PASSAGE_SCORES_PATH, 'wt', encoding='UTF-8') as file:
+with gzip.open(PASSAGE_DATASET_SCORE_PATH, 'wt', encoding='UTF-8') as file:
     for qid, docnos in tqdm(qrels_cache.items(), desc='Scoring and saving passages', unit='qid'):
         for docno in docnos['docid']:
             for passage in passages_cache[docno]:

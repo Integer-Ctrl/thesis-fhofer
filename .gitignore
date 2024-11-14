@@ -1,6 +1,5 @@
 pyenv
 __pycache__
-*.json
 *.json.gz
 *.jsonl
 *.jsonl.gz

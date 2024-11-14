@@ -5,15 +5,24 @@ import json
 import os
 import gzip
 
-'''
-for doc in dataset.docs_iter():
-    doc -> namedtuple<https://ir-datasets.com/argsme.html#argsme/2020-04-01>
-'''
 
-# DATASET_NAME = 'argsme/2020-04-01/touche-2020-task-1'  # Python API dataset name
-DATASET_NAME = 'argsme/2020-04-01/touche-2021-task-1'  # Python API dataset name
-DATASET_PATH = '../data'
-SEPARATOR = '___'
+# Load the configuration settings
+def load_config(filename="config.json"):
+    with open(filename, "r") as f:
+        config = json.load(f)
+    return config
+
+
+# Get the configuration settings
+config = load_config()
+
+DOCUMENT_DATASET_NAME = config['DOCUMENT_DATASET_NAME']
+DOCUMENT_DATASET_NAME_PYTHON_API = config['DOCUMENT_DATASET_NAME_PYTHON_API']
+
+DATA_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_NAME)
+
+PASSAGE_DATASET_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_PATH'])
+PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
 
 
 class PassageChunker:
@@ -21,7 +30,7 @@ class PassageChunker:
     def __init__(self, ir_dataset):
         self.dataset = ir_datasets.load(ir_dataset)
 
-    def dynamic_document_segmentation(self, file_name, batch_size=1000):
+    def dynamic_document_segmentation(self, batch_size=1000):
         # Initialize the passage chunker
         chunker = SpacyPassageChunker()
 
@@ -29,10 +38,8 @@ class PassageChunker:
         batch = []
         doc_count = 0
 
-        path = os.path.join(DATASET_PATH, file_name)
-
         # Open the output file in append mode
-        with gzip.open(path, 'wt', encoding='UTF-8') as file:
+        with gzip.open(PASSAGE_DATASET_PATH, 'wt', encoding='UTF-8') as file:
 
             for doc in tqdm(self.dataset.docs_iter(), desc='Chunking and saving documents', unit='doc'):
                 # Format the document
@@ -52,7 +59,7 @@ class PassageChunker:
                     for chunked_doc in chunked_batch:
                         # Write each passage as a JSON object
                         for passage in chunked_doc['contents']:
-                            passage_id = chunked_doc['docno'] + SEPARATOR + str(passage['id'])
+                            passage_id = chunked_doc['docno'] + PASSAGE_ID_SEPARATOR + str(passage['id'])
                             file.write(
                                 (json.dumps({"docno": passage_id, "text": passage['body']}) + '\n'))
 
@@ -69,14 +76,14 @@ class PassageChunker:
                 for chunked_doc in chunked_batch:
                     # Write each passage as a JSON object
                     for passage in chunked_doc['contents']:
-                        passage_id = chunked_doc['docno'] + SEPARATOR + str(passage['id'])
+                        passage_id = chunked_doc['docno'] + PASSAGE_ID_SEPARATOR + str(passage['id'])
                         file.write(
                             (json.dumps({"docno": passage_id, "text": passage['body']}) + '\n'))
 
                 doc_count += len(batch)
 
-        print(f"Processed and saved {doc_count} documents to {file_name}")
+        print(f"Processed and saved {doc_count} documents to {PASSAGE_DATASET_PATH}")
 
 
-chunker = PassageChunker(DATASET_NAME)
-chunker.dynamic_document_segmentation(file_name=DATASET_NAME + '/passage-dataset/passages.jsonl.gz', batch_size=4000)
+chunker = PassageChunker(DOCUMENT_DATASET_NAME_PYTHON_API)
+chunker.dynamic_document_segmentation(batch_size=4000)
