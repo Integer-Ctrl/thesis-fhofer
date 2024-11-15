@@ -7,7 +7,7 @@ from trectools import TrecQrel, TrecRun, TrecEval
 
 
 # Load the configuration settings
-def load_config(filename="config.json"):
+def load_config(filename="../config.json"):
     with open(filename, "r") as f:
         config = json.load(f)
     return config
@@ -159,7 +159,6 @@ with gzip.open(PASSAGE_DATASET_SCORE_PATH, 'wt', encoding='UTF-8') as file:
                 p10_bm25_wod, ndcg10_bm25_wod = evaluate_run(run_bm25_wod, qrels_for_query_wod)
 
                 p10_tfidf, ndcg10_tfidf = evaluate_run(run_tfidf, qrels_for_query)
-                print(p10_tfidf, ndcg10_tfidf)
                 p10_tfidf_wod, ndcg10_tfidf_wod = evaluate_run(run_tfidf_wod, qrels_for_query_wod)
 
                 file.write((json.dumps({'qid': qid,

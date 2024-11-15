@@ -3,7 +3,7 @@ import os
 
 
 # Load the configuration settings
-def load_config(filename="config.json"):
+def load_config(filename="../config.json"):
     with open(filename, "r") as f:
         config = json.load(f)
     return config
