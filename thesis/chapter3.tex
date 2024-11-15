@@ -55,3 +55,16 @@ The relevance scores of the passages were then used to assign relevance labels t
     \item Usage of \href{https://github.com/seanmacavaney/autoqrels}{autoqrels}
     \item What is a relevance label?
 \end{itemize}
+
+
+\section{Pairwise Transfering Relevance Labels Across Datasets}\label{pairwise-transfering-relevance-labels-across-datasets}
+
+To transfer relevance labels from the old dataset to the new dataset, the DuoT5 transformer model was utilized. This model takes a query and two documents as input and outputs a relevance score, which represents the probability that the first document is more relevant than the second. Here, a "document" refers to a passage. To assign a relevance label to a passage in the new dataset, it is compared against the top 20 to 30 passages for the same query in the old dataset. Pairwise comparison results and their associated queries are cached to avoid redundant calculations, and the final relevance score is determined by averaging the pairwise results. Two approaches are used to select passages for comparison, as detailed below.
+
+\subsection{Pairwise Preferences Approach 1}\label{pairwise-preferences-approach-1}
+
+This approach identifies 20 to 30 passages from the old dataset most relevant to the query for which the new passage is being labeled. To prevent biases from comparing passages within the same document, all passages from the same document as the first passage are excluded. The first passage is the highest-scoring passage from its document, the second passage is the next highest-scoring passage from another document, and so on. The relevance score for the new passage is then calculated by averaging the scores from pairwise comparisons with the selected top passages.
+
+\subsection{Pairwise Preferences Approach 2}\label{pairwise-preferences-approach-2}
+
+This approach is similar to the first but employs an additional step to eliminate overlaps with the same document. After selecting the highest-scoring passage for a query, the retrieval scores for all passages are recomputed, excluding the document of the already-selected passage from the retrieved documents. This ensures no passages from the same document are used more than once in the comparison. As with the first approach, the final relevance score is obtained by averaging the pairwise comparison scores between the new passage and the top 20 to 30 passages from the old dataset.
