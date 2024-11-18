@@ -9,8 +9,12 @@
     "PASSAGE_ID_SEPARATOR": "___",
     "PASSAGE_DATASET_PATH": "passage-dataset/passages.jsonl.gz",
     "PASSAGE_DATASET_SCORE_PATH": "passage-dataset/retrieval-scores.jsonl.gz",
+    "PASSAGE_DATASET_SCORE_ALL_QRELS_PATH": "passage-dataset/retrieval-scores-all-qrels.jsonl.gz",
 
     "PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH": "document-dataset/passages-to-document-correlation-scores.jsonl.gz",
+    "PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PQ_PATH": "document-dataset/passages-to-document-correlation-scores-pq.jsonl.gz",
+
+    "DUOT5_QID_DOC_DOC_SCORES_PATH": "document-dataset/duot5-qid-doc-doc-scores.jsonl.gz",
 
     "AGGREGATION_METHODS": ["mean", "max", "min"],
     "TRANSFORMATION_METHODS": ["id", "log", "binned"],
