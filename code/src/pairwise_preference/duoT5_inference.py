@@ -3,37 +3,46 @@ from transformers import T5ForConditionalGeneration, AutoTokenizer
 import autoqrels
 import more_itertools
 import torch
-import ir_datasets
+import gzip
 import json
 import os
 
 
 # Load the configuration settings
-def load_config(filename="../config.json"):
+# def load_config(filename="../config.json"): does not work with debug
+def load_config(filename="/mnt/ceph/storage/data-tmp/current/ho62zoq/thesis-fhofer/code/src/config.json"):
     with open(filename, "r") as f:
         config = json.load(f)
     return config
 
 
+# Get the configuration settings
 config = load_config()
-logger = ir_datasets.log.easy()
 
 DOCUMENT_DATASET_NAME = config['DOCUMENT_DATASET_NAME']
 DATA_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_NAME)
-DUOT5_QID_DOC_DOC_SCORES_PATH = os.path.join(DATA_PATH, config['DUOT5_QID_DOC_DOC_SCORES_PATH'])
+DUOT5_QID_DOC_DOC_SYSTEM_SCORES_PATH = os.path.join(DATA_PATH, config['DUOT5_QID_DOC_DOC_SYSTEM_SCORES_PATH'])
 
+KEY_SEP = config['KEY_SEPARATOR']
 PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
 
 
+def get_key(query_id: str, rel_doc_id: str, unk_doc_id: str, system: str) -> str:
+    return f"{query_id}{KEY_SEP}{rel_doc_id}{KEY_SEP}{unk_doc_id}{KEY_SEP}{system}"
+
+
 class RelevanceInference(autoqrels.oneshot.OneShotLabeler):
-    def __init__(self, model, tokenizer, queries_cache, passages_text_cache, batch_size=8):
+    def __init__(self, model, model_name, tokenizer, queries_cache, passages_text_cache, pairwise_cache, batch_size=8):
         """
         :param model: Pre-trained DuoT5 model
         :param tokenizer: Corresponding tokenizer for the model
         :param queries_cache: A dictionary mapping query_id to query text
         :param passages_text_cache: A nested dictionary mapping query_id -> doc_id -> document text
+        :param batch_size: The batch size for inference
+        :param pairwise_cache: A dictionary to cache pairwise scores
         """
         self.model = model
+        self.model_name = model_name
         self.tokenizer = tokenizer
         self.queries_cache = queries_cache
         self.passages_text_cache = passages_text_cache
@@ -41,14 +50,28 @@ class RelevanceInference(autoqrels.oneshot.OneShotLabeler):
         self.REL = self.tokenizer.encode('true')[0]
         self.NREL = self.tokenizer.encode('false')[0]
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.cache = {}  # TODO: Implement caching from disk
+
+        # cache for qid, docno1, docno2, system/model -> score
+        self.cache = pairwise_cache
 
     def _infer_oneshot(self, query_id: str, unk_doc_id: str, rel_doc_ids: List[str]) -> List[float]:
-        # Extract `unk_docno` from `unk_doc_id`
+
+        cached_scores = []
+        uncached_doc_ids = []
+
+        # check cache
+        for rel_doc_id in rel_doc_ids:
+            key = get_key(query_id, unk_doc_id, rel_doc_id, self.model_name)
+            if key in self.cache:
+                cached_scores.append(self.cache[key])
+            else:
+                uncached_doc_ids.append(rel_doc_id)
+
+        # Extract unk_docno from unk_doc_id
         unk_docno, _ = unk_doc_id.split(PASSAGE_ID_SEPARATOR)
 
-        # Extract `rel_docnos` from `rel_doc_ids`
-        rel_docnos = [rel_doc_id.split(PASSAGE_ID_SEPARATOR)[0] for rel_doc_id in rel_doc_ids]
+        # Extract rel_docnos from rel_doc_ids
+        rel_docnos = [rel_doc_id.split(PASSAGE_ID_SEPARATOR)[0] for rel_doc_id in uncached_doc_ids]
 
         # Retrieve the text for the unknown document
         unk_doc_text = next(
@@ -58,12 +81,35 @@ class RelevanceInference(autoqrels.oneshot.OneShotLabeler):
         # Retrieve the text for the relevant documents
         rel_doc_texts = [
             next(item['text'] for item in self.passages_text_cache[rel_docno] if item['docno'] == rel_doc_id)
-            for rel_docno, rel_doc_id in zip(rel_docnos, rel_doc_ids)
+            for rel_docno, rel_doc_id in zip(rel_docnos, uncached_doc_ids)
         ]
-        return self.infer_oneshot_text(
-            self.queries_cache[query_id],
-            unk_doc_text,
-            rel_doc_texts)
+
+        # infer uncached scores
+        computed_scores = []
+        if uncached_doc_ids:
+            computed_scores = self.infer_oneshot_text(
+                self.queries_cache[query_id],
+                unk_doc_text,
+                rel_doc_texts
+            )
+
+            # update cache
+            for rel_doc_id, score in zip(uncached_doc_ids, computed_scores):
+                key = get_key(query_id, unk_doc_id, rel_doc_id, self.model_name)
+                self.cache[key] = score
+
+        # combine cached and computed scores
+        infered_scores = []
+        uncached_idx = 0  # to respect the order
+        for rel_doc_id in rel_doc_ids:
+            key = get_key(query_id, unk_doc_id, rel_doc_id, self.model_name)
+            if key in self.cache:
+                infered_scores.append(self.cache[key])
+            else:
+                infered_scores.append(computed_scores[uncached_idx])
+                uncached_idx += 1
+
+        return infered_scores
 
     def infer_oneshot_text(self, query_text: str, unk_doc_text: str, rel_doc_texts: List[str]) -> List[float]:
         it = ((query_text, unk_doc_text, d) for d in rel_doc_texts)
@@ -85,35 +131,3 @@ class RelevanceInference(autoqrels.oneshot.OneShotLabeler):
                 scores = scores.softmax(dim=1)[:, 0].cpu().tolist()
                 result.extend(scores)
         return result
-
-# def _infer_oneshot(self, query_id: str, unk_doc_id: str, rel_doc_ids: List[str]) -> List[float]:
-#         """
-#         Compute scores for a query, an unknown document, and a list of relevant documents.
-#         :param query_id: ID of the query
-#         :param unk_doc_id: ID of the document to be labeled
-#         :param rel_doc_ids: List of document IDs known to be relevant for the query
-#         :return: List of relevance scores
-#         """
-#         # Retrieve query text
-#         query_text = self.queries_cache[query_id]
-
-#         # Retrieve document texts
-#         unk_doc_text = self.passages_text_cache[query_id][unk_doc_id]
-#         rel_doc_texts = [self.passages_text_cache[query_id][doc_id] for doc_id in rel_doc_ids]
-
-#         # Prepare inputs for the DuoT5 model
-#         scores = []
-#         # Score for unknown document
-#         unk_input = f"query: {query_text} document: {unk_doc_text}"
-#         unk_tokens = self.tokenizer(unk_input, return_tensors="pt", truncation=True, padding=True)
-#         unk_score = self.model(**unk_tokens).logits.item()  # Assume the model outputs logits as relevance scores
-#         scores.append(unk_score)
-
-#         # Scores for relevant documents
-#         for rel_doc_text in rel_doc_texts:
-#             rel_input = f"query: {query_text} document: {rel_doc_text}"
-#             rel_tokens = self.tokenizer(rel_input, return_tensors="pt", truncation=True, padding=True)
-#             rel_score = self.model(**rel_tokens).logits.item()
-#             scores.append(rel_score)
-
-#         return scores

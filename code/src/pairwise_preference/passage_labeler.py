@@ -15,7 +15,8 @@ from duoT5_inference import RelevanceInference
 
 
 # Load the configuration settings
-def load_config(filename="../config.json"):
+# def load_config(filename="../config.json"): does not work with debug
+def load_config(filename="/mnt/ceph/storage/data-tmp/current/ho62zoq/thesis-fhofer/code/src/config.json"):
     with open(filename, "r") as f:
         config = json.load(f)
     return config
@@ -37,6 +38,9 @@ PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH = os.path.join(
     DATA_PATH, config['PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH'])
 PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
 
+KEY_SEPARATOR = config['KEY_SEPARATOR']
+DUOT5_QID_DOC_DOC_SYSTEM_SCORES_PATH = os.path.join(DATA_PATH, config['DUOT5_QID_DOC_DOC_SYSTEM_SCORES_PATH'])
+
 
 # Read passages and cache them
 passages_text_cache = {}
@@ -44,6 +48,11 @@ passages_score_cache = {}
 qrels_cache = {}
 queries_cache = {}
 queries_best_passages_cache = {}
+pairwise_cache = {}
+
+
+def get_key(query_id: str, rel_doc_id: str, unk_doc_id: str, system: str) -> str:
+    return f"{query_id}___{rel_doc_id}___{unk_doc_id}___{system}"
 
 
 # 1. get all passages in dictionary format docno: text
@@ -115,11 +124,38 @@ def get_queries_best_passages_one_per_document(cache, scores):
         cache[qid] = best_passagenos
 
 
+# 7. get all pairwise scores in dictionary format qid: {qid, docno1, docno2, system, score}
+def read_pairwise_cache():
+    cache = {}
+    if os.path.isfile(DUOT5_QID_DOC_DOC_SYSTEM_SCORES_PATH):
+        with gzip.open(DUOT5_QID_DOC_DOC_SYSTEM_SCORES_PATH, 'rt', encoding='UTF-8') as file:
+            for line in file:
+                line = json.loads(line)
+                key = get_key(line['qid'], line['rel_doc_id'], line['unk_doc_id'], line['system'])
+                cache[key] = line['score']
+    return cache
+
+
+# save cache to file
+def save_pairwise_cache(cache):
+    with gzip.open(DUOT5_QID_DOC_DOC_SYSTEM_SCORES_PATH, 'wt', encoding='UTF-8') as file:
+        for key, score in cache.items():
+            query_id, rel_doc_id, unk_doc_id, system = key.split(KEY_SEPARATOR)
+            file.write(json.dumps({
+                'qid': query_id,
+                'rel_doc_id': rel_doc_id,
+                'unk_doc_id': unk_doc_id,
+                'system': system,
+                'score': score
+            }) + '\n')
+
+
 get_passages_text(passages_text_cache)
 best_scoring_method = get_best_scoring_methods()
 get_passages_scores(passages_score_cache, best_scoring_method['metric'])
 get_qrels(qrels_cache)
 get_queries(queries_cache)
+read_pairwise_cache()
 # dict of query_id: [docnos]
 get_queries_best_passages_one_per_document(queries_best_passages_cache, passages_score_cache)
 
@@ -128,7 +164,7 @@ tokeniser_name = 't5-base'
 model = T5ForConditionalGeneration.from_pretrained(model_name)
 tokenizer = T5Tokenizer.from_pretrained(tokeniser_name)
 
-inference = RelevanceInference(model, tokenizer, queries_cache, passages_text_cache)
+inference = RelevanceInference(model, model_name, tokenizer, queries_cache, passages_text_cache, pairwise_cache)
 
 
 for qid, scores in passages_score_cache.items():
@@ -142,4 +178,6 @@ for qid, scores in passages_score_cache.items():
         scores = inference._infer_oneshot(query_id, unk_doc_id, rel_doc_ids)
         score = sum(scores) / len(scores)
         print(score)
+        # save to cache
+        save_pairwise_cache(pairwise_cache)
         exit()
