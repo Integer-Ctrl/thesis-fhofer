@@ -8,51 +8,26 @@ class TestSpearman(unittest.TestCase):
 
     def test_spearman_near_one_a(self):
         correlation = self.scores.corr(self.scores, method='spearman')
-        self.assertGreaterEqual(correlation, 0.90)
+        self.assertAlmostEqual(correlation, 1.0, places=3)
         print('spearman_near_one_a:', correlation)
 
     def test_spearman_near_one_b(self):
         scores_b = pd.Series([0, 2, 2, 1, 0])
         correlation = self.scores.corr(scores_b, method='spearman')
-        self.assertGreaterEqual(correlation, 0.90)
+        self.assertAlmostEqual(correlation, 0.9486, places=3)
         print('spearman_near_one_b:', correlation)
 
     def test_spearman_near_one_c(self):
         scores_c = pd.Series([0, 1, 2, 1, 0])
         correlation = self.scores.corr(scores_c, method='spearman')
-        self.assertGreaterEqual(correlation, 0.90)
+        self.assertAlmostEqual(correlation, 0.9486, places=3)
         print('spearman_near_one_c:', correlation)
 
     def test_spearman_near_one_d(self):
         scores_d = pd.Series([0, 0, 1, 0, 0])
         correlation = self.scores.corr(scores_d, method='spearman')
-        self.assertGreaterEqual(correlation, 0.90)
+        self.assertAlmostEqual(correlation, 0.7071, places=3)
         print('spearman_near_one_d:', correlation)
-
-    # scores_a = pd.Series([0.2, 0.4, 0.8])  # ground truth
-    # scores_b = pd.Series([0.4, 0.8, 0.9])  # high correlation with scores_a
-    # scores_c = pd.Series([0.9, 0.6, 0.3])  # negative correlation with scores_a
-
-    # # Test cases for spearman rank correlation
-    # def test_spearman_near_one_ab(self):
-    #     correlation = self.scores_a.corr(self.scores_b, method='spearman')
-    #     self.assertGreaterEqual(correlation, 0.95)
-    #     print('test_spearman_near_one_ab:', correlation)
-
-    # def test_spearman_near_one_ba(self):
-    #     correlation = self.scores_b.corr(self.scores_a, method='spearman')
-    #     self.assertGreaterEqual(correlation, 0.95)
-    #     print('test_spearman_near_one_ba:', correlation)
-
-    # def test_spearman_near_negative_one_ac(self):
-    #     correlation = self.scores_a.corr(self.scores_c, method='spearman')
-    #     self.assertGreaterEqual(-0.95, correlation)
-    #     print('test_spearman_near_negative_one_ac:', correlation)
-
-    # def test_spearman_near_negative_one_ca(self):
-    #     correlation = self.scores_c.corr(self.scores_a, method='spearman')
-    #     self.assertGreaterEqual(-0.95, correlation)
-    #     print('test_spearman_near_negative_one_ca:', correlation)
 
 
 if __name__ == '__main__':

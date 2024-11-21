@@ -68,3 +68,36 @@ Pearson's Correlation measures the linear relationship between two continuous va
     \item 0: no linear relationship
     \item -1: perfect negative linear relationship
 \end{itemize}
+
+\subsection{Unit testing of correlation measures}\label{unit-testing-of-correlation-measures}
+
+% Define the inputs
+\textbf{Input Definitions:}
+\begin{itemize}
+    \item \textbf{A}: \texttt{scores\_a = [0.2, 0.4, 0.8]} (ground truth)
+    \item \textbf{B}: \texttt{scores\_b = [0.4, 0.8, 0.9]} (high correlation with A)
+    \item \textbf{C}: \texttt{scores\_c = [0.9, 0.6, 0.3]} (negative correlation with A)
+\end{itemize}
+
+% Table of results
+\begin{table}[h!]
+    \caption{Evaluation of Rank Correlation Methods with Unit Test Cases}
+    \label{tab:rank_correlation_results}
+    \centering
+    \begin{tabular}{|l|c|c|c|c|}
+        \hline
+        \textbf{Rank Correlation Method} & \textbf{Input} & \textbf{Expected Result}       & \textbf{Actual Result} \\ \hline
+        Kendall                          & A, B           & Correlation $\geq$ 0.7       & 1.0          \\ \hline
+        Kendall                          & B, A           & Correlation $\geq$ 0.7       & 1.0          \\ \hline
+        Kendall                          & A, C           & Correlation $\leq$ -0.7      & -1.0         \\ \hline
+        Kendall                          & C, A           & Correlation $\leq$ -0.7      & -1.0         \\ \hline
+        Pearson                          & A, B           & Correlation $\geq$ 0.7       & 0.866        \\ \hline
+        Pearson                          & B, A           & Correlation $\geq$ 0.7       & 0.866        \\ \hline
+        Pearson                          & A, C           & Correlation $\leq$ -0.7      & -0.982       \\ \hline
+        Pearson                          & C, A           & Correlation $\leq$ -0.7      & -0.982       \\ \hline
+        Spearman                         & A, B           & Correlation $\geq$ 0.7       & 1.0          \\ \hline
+        Spearman                         & B, A           & Correlation $\geq$ 0.7       & 1.0          \\ \hline
+        Spearman                         & A, C           & Correlation $\leq$ -0.7      & -1.0         \\ \hline
+        Spearman                         & C, A           & Correlation $\leq$ -0.7      & -1.0         \\ \hline
+    \end{tabular}
+\end{table}

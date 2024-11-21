@@ -6,6 +6,7 @@ __pycache__
 indices/
 data/
 launch.json
+.vscode/
 
 ## Core latex/pdflatex auxiliary files:
 *.aux
