@@ -1,4 +1,8 @@
 {
+    "AQ": "all qrels",
+    "PQ": "all queries",
+    "ALL_QRELS": true,
+
     "DOCUMENT_DATASET_NAME": "argsme/2020-04-01/touche-2021-task-1",
     "DOCUMENT_DATASET_NAME_PYTERRIER": "irds:argsme/2020-04-01/touche-2021-task-1",
     "DOCUMENT_DATASET_NAME_PYTHON_API": "argsme/2020-04-01/touche-2021-task-1",
@@ -9,10 +13,12 @@
     "PASSAGE_ID_SEPARATOR": "___",
     "PASSAGE_DATASET_PATH": "passage-dataset/passages.jsonl.gz",
     "PASSAGE_DATASET_SCORE_PATH": "passage-dataset/retrieval-scores.jsonl.gz",
-    "PASSAGE_DATASET_SCORE_ALL_QRELS_PATH": "passage-dataset/retrieval-scores-all-qrels.jsonl.gz",
+    "PASSAGE_DATASET_SCORE_AQ_PATH": "passage-dataset/retrieval-scores-aq.jsonl.gz",
 
     "PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH": "document-dataset/passages-to-document-correlation-scores.jsonl.gz",
+    "PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH_AQ": "document-dataset/passages-to-document-correlation-scores-aq.jsonl.gz",
     "PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PQ_PATH": "document-dataset/passages-to-document-correlation-scores-pq.jsonl.gz",
+    "PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PQ_AQ_PATH": "document-dataset/passages-to-document-correlation-scores-pq-aq.jsonl.gz",
 
     "KEY_SEPARATOR": "---",
     "DUOT5_QID_DOC_DOC_SYSTEM_SCORES_PATH": "document-dataset/duot5-qid-doc-doc-system-scores.jsonl.gz",

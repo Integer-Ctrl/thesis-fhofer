@@ -16,6 +16,7 @@ def load_config(filename="../config.json"):
 # Get the configuration settings
 config = load_config()
 
+ALL_QRELS = config['ALL_QRELS']
 DOCUMENT_DATASET_NAME = config['DOCUMENT_DATASET_NAME']
 DOCUMENT_DATASET_NAME_PYTERRIER = config['DOCUMENT_DATASET_NAME_PYTERRIER']
 
@@ -23,7 +24,12 @@ DATA_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_NAME)
 DOCUMENT_DATASET_INDEX_PATH = os.path.join(DATA_PATH, config['DOCUMENT_DATASET_INDEX_PATH'])
 
 PASSAGE_DATASET_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_PATH'])
-PASSAGE_DATASET_SCORE_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_SCORE_PATH'])
+
+if ALL_QRELS:
+    PASSAGE_DATASET_SCORE_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_SCORE_AQ_PATH'])
+else:
+    PASSAGE_DATASET_SCORE_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_SCORE_PATH'])
+
 PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
 
 
@@ -73,10 +79,10 @@ qrels = dataset.get_qrels()
 qrels_cache = {}
 for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
     # Only relevant qrels
-    if row['label'] > 0:
+    if ALL_QRELS or row['label'] > 0:  # Either all qrels or only relevant qrels
         if row['qid'] not in qrels_cache:
             qrels_cache[row['qid']] = qrels.loc[
-                (qrels['qid'] == row['qid']) & (qrels['label'] > 0)  # All relevant entries for the query ID
+                (qrels['qid'] == row['qid']) & (ALL_QRELS or qrels['label'] > 0)
             ].rename(columns={'qid': 'query', 'docno': 'docid', 'label': 'rel'})  # Rename columns
             qrels_cache[row['qid']]['query'] = 0  # Dummy value to enable merge of run and qrels (TrecEval)
 

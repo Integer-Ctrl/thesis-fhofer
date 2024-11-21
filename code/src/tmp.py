@@ -85,4 +85,22 @@ def check_scores_smaller_zero():
     print('Done')
 
 
-check_scores_smaller_zero()
+# checks if there is an qid for which only one label value is present
+def check_qrels_for_single_label():
+    qrels_cache = {}
+    dataset = pt.get_dataset('irds:argsme/2020-04-01/touche-2021-task-1')
+    qrels = dataset.get_qrels()
+    for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
+        if row['label'] > 0:
+            if row['qid'] not in qrels_cache:
+                qrels_cache[row['qid']] = []
+            qrels_cache[row['qid']] += [row['label']]
+
+    for qid, labels in qrels_cache.items():
+        if len(set(labels)) == 1:
+            print(qid, labels)
+
+    print('Done')
+
+
+check_qrels_for_single_label()

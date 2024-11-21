@@ -18,17 +18,24 @@ def load_config(filename="../config.json"):
 # Get the configuration settings
 config = load_config()
 
+ALL_QRELS = config['ALL_QRELS']
 DOCUMENT_DATASET_NAME = config['DOCUMENT_DATASET_NAME']
 DOCUMENT_DATASET_NAME_PYTERRIER = config['DOCUMENT_DATASET_NAME_PYTERRIER']
 
 DATA_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_NAME)
 
-# PASSAGE_DATASET_SCORE_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_SCORE_PATH'])
-PASSAGE_DATASET_SCORE_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_SCORE_ALL_QRELS_PATH'])
+if ALL_QRELS:
+    PASSAGE_DATASET_SCORE_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_SCORE_AQ_PATH'])
+    PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH = os.path.join(
+        DATA_PATH, config['PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PQ_AQ_PATH'])
+else:
+    PASSAGE_DATASET_SCORE_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_SCORE_PATH'])
+    PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH = os.path.join(
+        DATA_PATH, config['PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PQ_PATH'])
+
 PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
 
-PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PQ_PATH = os.path.join(
-    DATA_PATH, config['PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PQ_PATH'])
+# AQ: all qrels, PQ: per query
 
 
 AGGREGATION_METHODS = config['AGGREGATION_METHODS']
@@ -42,10 +49,10 @@ qrels = dataset.get_qrels()
 qrels_cache = {}
 for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
     # Only relevant qrels
-    if row['label'] > 0:
+    if ALL_QRELS or row['label'] > 0:  # Either all qrels or only relevant qrels
         if row['qid'] not in qrels_cache:
             qrels_cache[row['qid']] = qrels.loc[
-                (qrels['qid'] == row['qid']) & (qrels['label'] > 0)  # All relevant entries for the query ID
+                (qrels['qid'] == row['qid']) & (ALL_QRELS or qrels['label'] > 0)
             ]
 
 
@@ -194,6 +201,6 @@ for aggregation_method in AGGREGATION_METHODS:
                                                'correlation': avg_correlation})
 
 correlation_scores = sorted(correlation_scores, key=lambda x: x['correlation'], reverse=True)
-with gzip.open(PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PQ_PATH, 'wt', encoding='UTF-8') as file:
+with gzip.open(PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH, 'wt', encoding='UTF-8') as file:
     for evaluation_entry in correlation_scores:
         file.write(json.dumps(evaluation_entry) + '\n')

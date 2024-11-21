@@ -167,6 +167,7 @@ tokenizer = T5Tokenizer.from_pretrained(tokeniser_name)
 inference = RelevanceInference(model, model_name, tokenizer, queries_cache, passages_text_cache, pairwise_cache)
 
 
+# 1. APPROACH: this approach will likely overestimate
 for qid, scores in passages_score_cache.items():
     for docno, score in scores.items():
         query_id = qid
@@ -181,3 +182,11 @@ for qid, scores in passages_score_cache.items():
         # save to cache
         save_pairwise_cache(pairwise_cache)
         exit()
+
+
+# 2. APPROACH TODO: for each query get top 2000 bm25 passages and infer relevance scores
+# 3. APPROACH TODO: for each query get top 2000 bm25 passages + rel_doc_ids[:20] first 10 as query
+#  and top 10 bm25 retrieved passagen and infer relevance scores
+
+# TODO: evaluate retrieved passages with Recall and Precision (Recall more important)
+# as indicator, all passages with relevance label > 0 are good
