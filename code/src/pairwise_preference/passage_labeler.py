@@ -1,9 +1,10 @@
 # 1. get all passages in dictionary format docno: text
-# 2. get type of best scoring metric in rank correlation
+# 2. get type of best scoring metric in rank correlation TODO: implement this more dynamic (save file with prefixes)
 # 3. get all passage scores in dictionary format qid: {docno: score} # just score of the best scoring method
 # 4. get all qrels in dictinary format qid: {docno: relevance} # all relevance scores
 # 5. get all queries in dictionary format query_id: text
 # 6. get for all queries the best passages in dictionary format query_id: [docno] without duplicates docno
+# 7. get all passages to judge in dictionary format qid: [docno]
 import json
 import pyterrier as pt
 import os
@@ -30,10 +31,10 @@ DOCUMENT_DATASET_NAME_PYTERRIER = config['DOCUMENT_DATASET_NAME_PYTERRIER']
 DOCUMENT_DATASET_NAME_PYTHON_API = config['DOCUMENT_DATASET_NAME_PYTHON_API']
 
 DATA_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_NAME)
-DOCUMENT_DATASET_INDEX_PATH = os.path.join(DATA_PATH, config['DOCUMENT_DATASET_INDEX_PATH'])
 
 PASSAGE_DATASET_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_PATH'])
 PASSAGE_DATASET_SCORE_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_SCORE_PATH'])
+# TODO: switch between AQ and PQ
 PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH = os.path.join(
     DATA_PATH, config['PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH'])
 PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
@@ -48,6 +49,7 @@ passages_score_cache = {}
 qrels_cache = {}
 queries_cache = {}
 queries_best_passages_cache = {}
+documents_to_judge_cache = {}
 pairwise_cache = {}
 
 
@@ -55,7 +57,7 @@ def get_key(query_id: str, rel_doc_id: str, unk_doc_id: str, system: str) -> str
     return f"{query_id}___{rel_doc_id}___{unk_doc_id}___{system}"
 
 
-# 1. get all passages in dictionary format docno: text
+# 1. get all passages in dictionary format docno: {passageno: text}
 def get_passages_text(cache):
     with gzip.open(PASSAGE_DATASET_PATH, 'rt', encoding='UTF-8') as file:
         for line in tqdm(file, desc='Caching passages', unit='passage'):
@@ -150,15 +152,18 @@ def save_pairwise_cache(cache):
             }) + '\n')
 
 
+# Init all caches and read data
 get_passages_text(passages_text_cache)
 best_scoring_method = get_best_scoring_methods()
 get_passages_scores(passages_score_cache, best_scoring_method['metric'])
 get_qrels(qrels_cache)
 get_queries(queries_cache)
 read_pairwise_cache()
-# dict of query_id: [docnos]
+
+# Get for all queries the best passages in dictionary format query_id: [docno] without passages with same docno
 get_queries_best_passages_one_per_document(queries_best_passages_cache, passages_score_cache)
 
+# Init inference
 model_name = 'castorini/duot5-base-msmarco'
 tokeniser_name = 't5-base'
 model = T5ForConditionalGeneration.from_pretrained(model_name)
@@ -168,8 +173,8 @@ inference = RelevanceInference(model, model_name, tokenizer, queries_cache, pass
 
 
 # 1. APPROACH: this approach will likely overestimate
-for qid, scores in passages_score_cache.items():
-    for docno, score in scores.items():
+for qid, docno_scores in documents_to_judge_cache.items():
+    for docno, score in docno_scores.items():
         query_id = qid
         unk_doc_id = docno
         rel_doc_ids = queries_best_passages_cache[qid]

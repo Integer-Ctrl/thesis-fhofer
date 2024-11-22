@@ -1,19 +1,19 @@
 import unittest
 import pandas as pd
 
-# class GreedySeries(pd.Series):
-#     def corr(self, other, method = ..., min_periods = ...):
-#         if '-greedy' in method:
-#            return self.greedy_corr(other, method.replace('-greedy', ''), min_periods)
-#         else:
-#             return super().corr(other, method, min_periods)
 
-#     def greedy_corr(self, other, method, min_periods):
-#         thresholds = []
-#         #
-#         for i in range(0, len(self)):
-#             if self[i] < other[i]:
-#                 self[i] = 0
+class GreedySeries(pd.Series):
+    def corr(self, other, method, min_periods):
+        if '-greedy' in method:
+            return self.greedy_corr(other, method.replace('-greedy', ''), min_periods)
+        else:
+            return super().corr(other, method, min_periods)
+
+    def greedy_corr(self, other, method, min_periods):
+        # thresholds = []
+        for i in range(0, len(self)):
+            if self[i] < other[i]:
+                self[i] = 0
 
 
 class TestKendall(unittest.TestCase):

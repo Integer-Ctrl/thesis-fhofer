@@ -47,7 +47,7 @@ def pt_tokenize(text):
 # Document yield function for indexing without duplicates
 def yield_docs(dataset):
     known_docnos = set()
-    for i in tqdm(dataset.irds_ref().docs_iter()):
+    for i in dataset.irds_ref().docs_iter():
         if i.doc_id not in known_docnos:
             known_docnos.add(i.doc_id)
             yield {'docno': i.doc_id, 'text': i.default_text()}
