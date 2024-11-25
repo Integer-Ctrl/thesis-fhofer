@@ -16,7 +16,7 @@ def load_config(filename="../config.json"):
 # Get the configuration settings
 config = load_config()
 
-ALL_QRELS = config['ALL_QRELS']
+ALL_QRELS = config['ALL_QRELS']  # Either all qrels or only relevant qrels
 DOCUMENT_DATASET_NAME = config['DOCUMENT_DATASET_NAME']
 DOCUMENT_DATASET_NAME_PYTERRIER = config['DOCUMENT_DATASET_NAME_PYTERRIER']
 
@@ -25,6 +25,7 @@ DOCUMENT_DATASET_INDEX_PATH = os.path.join(DATA_PATH, config['DOCUMENT_DATASET_I
 
 PASSAGE_DATASET_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_PATH'])
 
+# Path to save passage scores either for all qrels or only relevant qrels
 if ALL_QRELS:
     PASSAGE_DATASET_SCORE_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_SCORE_AQ_PATH'])
 else:
