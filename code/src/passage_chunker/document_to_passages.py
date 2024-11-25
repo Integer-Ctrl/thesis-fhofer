@@ -37,11 +37,17 @@ class PassageChunker:
         BATCH_SIZE = batch_size
         batch = []
         doc_count = 0
+        known_doc_ids = set()
 
         # Open the output file in append mode
         with gzip.open(PASSAGE_DATASET_PATH, 'wt', encoding='UTF-8') as file:
 
             for doc in tqdm(self.dataset.docs_iter(), desc='Chunking and saving documents', unit='doc'):
+                # Skip documents that have already been processed
+                if doc.doc_id in known_doc_ids:
+                    continue
+                known_doc_ids.add(doc.doc_id)
+
                 # Format the document
                 formatted_doc = {
                     'docno': doc.doc_id,
