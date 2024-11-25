@@ -173,20 +173,23 @@ inference = RelevanceInference(model, model_name, tokenizer, queries_cache, pass
 
 
 # 1. APPROACH: this approach will likely overestimate
+count = 0
 for qid, docno_scores in documents_to_judge_cache.items():
     for docno, score in docno_scores.items():
-        query_id = qid
-        unk_doc_id = docno
-        rel_doc_ids = queries_best_passages_cache[qid]
-        rel_doc_ids = rel_doc_ids[:20]
+        count += 1
+        # query_id = qid
+        # unk_doc_id = docno
+        # rel_doc_ids = queries_best_passages_cache[qid]
+        # rel_doc_ids = rel_doc_ids[:20]
 
-        # infer relevance scores
-        scores = inference._infer_oneshot(query_id, unk_doc_id, rel_doc_ids)
-        score = sum(scores) / len(scores)
-        print(score)
-        # save to cache
-        save_pairwise_cache(pairwise_cache)
-        exit()
+        # # infer relevance scores
+        # scores = inference._infer_oneshot(query_id, unk_doc_id, rel_doc_ids)
+        # score = sum(scores) / len(scores)
+        # print(score)
+        # # save to cache
+        # save_pairwise_cache(pairwise_cache)
+        # exit()
+print(count)
 
 
 # 2. APPROACH TODO: for each query get top 2000 bm25 passages and infer relevance scores
