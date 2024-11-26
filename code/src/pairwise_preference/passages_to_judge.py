@@ -221,7 +221,6 @@ def get_top_passages_for_queries_advanced():
             query_results = bm25.search(pt_tokenize(passages_text_cache[rel_doc_id]), ).loc[:, [
                 'qid', 'docno']].head(10)
             queries_top_passages[qid] += query_results['docno'].tolist()
-            queries_top_passages[qid] = queries_top_passages[qid][:20]
             # Remove duplicates
             queries_top_passages[qid] = list(set(queries_top_passages[qid]))
 
