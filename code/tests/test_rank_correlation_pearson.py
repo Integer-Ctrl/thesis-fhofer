@@ -29,6 +29,12 @@ class TestPearson(unittest.TestCase):
         self.assertAlmostEqual(correlation, 0.6577, places=3)
         print('pearson_near_one_d:', correlation)
 
+    def test_pearson_not_one_e(self):
+        scores_d = GreedySeries([0, 0, 1, 1, 0])
+        correlation = self.scores.corr(scores_d, method='pearson')
+        self.assertAlmostEqual(correlation, 0.5370, places=3)
+        print('pearson_not_one_e:', correlation)
+
     def test_pearson_near_one_a_greedy(self):
         correlation = self.scores.corr(self.scores, method='pearson-greedy')
         self.assertAlmostEqual(correlation, 1.0, places=3)
@@ -51,6 +57,12 @@ class TestPearson(unittest.TestCase):
         correlation = self.scores.corr(scores_d, method='pearson-greedy')
         self.assertAlmostEqual(correlation, 1.0, places=3)
         print('pearson_near_one_d_greedy:', correlation)
+
+    def test_pearson_not_one_e_greedy(self):
+        scores_d = GreedySeries([0, 0, 1, 1, 0])
+        correlation = self.scores.corr(scores_d, method='pearson-greedy')
+        self.assertAlmostEqual(correlation, 0.6666, places=3)
+        print('pearson_not_one_e_greedy:', correlation)
 
 
 if __name__ == '__main__':

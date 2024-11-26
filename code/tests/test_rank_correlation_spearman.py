@@ -29,6 +29,12 @@ class TestSpearman(unittest.TestCase):
         self.assertAlmostEqual(correlation, 0.7071, places=3)
         print('spearman_near_one_d:', correlation)
 
+    def test_spearman_not_one_e(self):
+        scores_d = GreedySeries([0, 0, 1, 1, 0])
+        correlation = self.scores.corr(scores_d, method='spearman')
+        self.assertAlmostEqual(correlation, 0.5773, places=3)
+        print('spearman_not_one_e:', correlation)
+
     def test_spearman_near_one_a_greedy(self):
         correlation = self.scores.corr(self.scores, method='spearman-greedy')
         self.assertAlmostEqual(correlation, 1.0, places=3)
@@ -51,6 +57,12 @@ class TestSpearman(unittest.TestCase):
         correlation = self.scores.corr(scores_d, method='spearman-greedy')
         self.assertAlmostEqual(correlation, 1.0, places=3)
         print('spearman_near_one_d_greedy:', correlation)
+
+    def test_spearman_not_one_e_greedy(self):
+        scores_d = GreedySeries([0, 0, 1, 1, 0])
+        correlation = self.scores.corr(scores_d, method='spearman-greedy')
+        self.assertAlmostEqual(correlation, 0.6666, places=3)
+        print('spearman_not_one_e_greedy:', correlation)
 
 
 if __name__ == '__main__':
