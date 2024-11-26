@@ -86,10 +86,10 @@ The other inputs are designed to test the rank correlation methods against A:
 % Table
 \begin{table}[h!]
     \centering
-    \caption{Evaluation of Rank Correlation Methods with Unit Test Cases}
+    \caption{Evaluation of Rank Correlation Methods with Unit Test Cases. The table shows the correlation values between input A and other inputs (B, C, D, E, F) using Kendall, Pearson, and Spearman rank correlation methods. Default are the correlation values computed by the respective methods, while Greedy are the correlation values computed by the greedy implementation.}
     \begin{tabular}{@{}llcc@{}}
         \toprule
-        \textbf{Rank Correlation Method} & \textbf{Input (A and ...)} & \textbf{Standard Implementation} & \textbf{Greedy Implementation} \\ \midrule
+        \textbf{Rank Correlation Method} & \textbf{Input} & \textbf{Default} & \textbf{Greedy} \\ \midrule
         Kendall                        & A and B                   & 0.8944                          & 1.0                            \\
         Kendall                        & A and C                   & 0.8944                          & 1.0                            \\
         Kendall                        & A and D                   & 0.6325                          & 1.0                            \\
