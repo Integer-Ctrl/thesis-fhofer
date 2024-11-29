@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 
 class GreedySeries(pd.Series):
@@ -9,57 +10,43 @@ class GreedySeries(pd.Series):
             return super().corr(other, method, min_periods)
 
     def greedy_corr(self, other, method, min_periods: int | None = None,):
-        # Step 1: Pair and sort ar1 and ar2 together
-        paired = list(zip(self, other))
 
-        # Sort the pairs based on the values in ar1
-        paired.sort(key=lambda x: x[0])
+        scores = self.to_list()
+        labels = other.to_list()
 
-        # Unzip the sorted pairs back into ar1 and ar2
-        ar1_sorted, ar2_sorted = zip(*paired)
+        unique_labels = sorted(set(labels))  # Unique labels
+        min = 0.0  # Minimum value of the current group
+        max = 1.0  # Maximum value of the current group
+        step = 0.01  # Step size for the greedy algorithm
+        boundaries = []  # Boundaries of the groups
 
-        # Return the sorted arrays as lists
-        ar1 = list(ar1_sorted)
-        ar2 = list(ar2_sorted)
+        # Step 1: Compute boundaries for each label
+        for iteration in range(0, len(unique_labels) - 1):
+            max_correlation = -float('inf')
+            best_boundary = -float('inf')
+            for boundary in np.arange(min, max, step):
+                # Normalize the scores based on the boundary
+                new_scores = [1 if score < boundary else 0 for score in scores]
+                # If an input array is constant; the correlation coefficient is not define
+                if len(set(new_scores)) == 1:
+                    continue
+                normalized_labels = [1 if label in [unique_labels[iteration]] else 0 for label in labels]
+                correlation = pd.Series(new_scores).corr(pd.Series(normalized_labels), method=method)
+                if correlation > max_correlation:
+                    max_correlation = correlation
+                    best_boundary = boundary
+            min = best_boundary
+            boundaries.append(best_boundary)
 
-        # Step 2: Identify unique values in ar2
-        unique_ar2 = sorted(set(ar2))  # Get unique values in sorted order
-
-        # APPROACH 1: Custom
-        # Step 3: Determine the boarders
-        # boarders = []
-        # current_group = unique_ar2[0]  # Start with the smallest group
-        # max_val = None
-
-        # for value, group in zip(ar1, ar2):
-        #     if group >= current_group:  # If we encounter a new group
-        #         boarders.append(max_val)  # Add the max value of the current group as a boarder
-        #         current_group = group
-        #         max_val = value  # Start tracking max for the new group
-        #     else:
-        #         max_val = value  # Update max value within the group
-
-        # boarders.append(max_val)  # Add the last group's max value as the final boarder
-
-        # # Step 4: Map values of ar1 based on the boarders
-        # def map_value_1(value):
-        #     for i, boarder in enumerate(boarders):
-        #         if value <= boarder:
-        #             return unique_ar2[i]
-        #     return unique_ar2[-1]  # If greater than the last boarder, assign the largest group
-
-        # ar1 = [map_value_1(value) for value in ar1]
-
-        # APPROACH 2: Greedy
-        current_label = unique_ar2[0]
-        for index, (value, label) in enumerate(zip(ar1, ar2)):
-            if label > current_label:
-                current_label = label
-                ar1[index] = current_label
+        # Step 2: Map scores to labels based on boundaries
+        mapped_scores = []
+        for score in scores:
+            for i in range(0, len(boundaries)):  # Loop through boundaries
+                if score < boundaries[i]:
+                    mapped_scores.append(unique_labels[i])
+                    break  # Exit the loop once a match is found
             else:
-                ar1[index] = current_label
+                # This is executed only if no boundary condition matched
+                mapped_scores.append(unique_labels[-1])
 
-        ar1_series = pd.Series(ar1)
-        ar2_series = pd.Series(ar2)
-
-        return ar1_series.corr(ar2_series, method=method)
+        return pd.Series(mapped_scores).corr(pd.Series(labels), method=method)

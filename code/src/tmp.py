@@ -147,6 +147,3 @@ def check_dataset_ducplicate():
 
     print(len(docnos_list) != len(set(docnos_list)))
     print(docnos_cnt.most_common(10))
-
-
-check_passages_ducplicate()
