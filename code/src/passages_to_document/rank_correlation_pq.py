@@ -119,7 +119,7 @@ def get_evaluated_score(docno_qid_transformed_scores, qrels_cache, qid,
 
     # Lists to store the matched scores for correlation calculation
     transformed_scores = []
-    relevance_scores = []
+    relevance_labels = []
 
     # Filter scores for the given query ID (qid)
     filtered_scores = [entry for entry in docno_qid_transformed_scores if entry['qid'] == qid]
@@ -138,7 +138,7 @@ def get_evaluated_score(docno_qid_transformed_scores, qrels_cache, qid,
             if not qrels_match.empty:
                 relevance_score = qrels_match['label'].values[0]
                 transformed_scores.append(entry[metric])
-                relevance_scores.append(float(relevance_score))
+                relevance_labels.append(float(relevance_score))
     else:
         print('QID not in qrels_cache:', qid)
 
@@ -146,10 +146,10 @@ def get_evaluated_score(docno_qid_transformed_scores, qrels_cache, qid,
     if len(transformed_scores) > 1:
         # Convert lists to pandas Series
         transformed_series = GreedySeries(transformed_scores)
-        relevance_series = GreedySeries(relevance_scores)
+        relevance_series = GreedySeries(relevance_labels)
 
         # Calculate correlation based on the specified method
-        if len(set(relevance_scores)) == 1:
+        if len(set(relevance_labels)) == 1:
             print('Correlation is NaN. All relevance_scores have the same value')
             correlation = 0
         elif len(set(transformed_scores)) == 1:

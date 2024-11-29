@@ -31,7 +31,7 @@
 
     "AGGREGATION_METHODS": ["mean", "max", "min"],
     "TRANSFORMATION_METHODS": ["id", "log", "binned"],
-    "EVALUATION_METHODS": ["pearson", "spearman", "kendall"],
+    "EVALUATION_METHODS": ["pearson", "spearman", "kendall", "pearson-greedy", "spearman-greedy", "kendall-greedy"],
     "METRICS": [
         "p10_bm25", "p10_bm25_wod", "p10_tfidf", "p10_tfidf_wod",
         "ndcg10_bm25", "ndcg10_bm25_wod", "ndcg10_tfidf", "ndcg10_tfidf_wod",

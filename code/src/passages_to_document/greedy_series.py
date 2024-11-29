@@ -12,11 +12,13 @@ class GreedySeries(pd.Series):
     def greedy_corr(self, other, method, min_periods: int | None = None,):
 
         scores = self.to_list()
+        # Normalize the scores to range [0, 1]
+        scores = [(score - min(scores)) / (max(scores) - min(scores)) for score in scores]
         labels = other.to_list()
 
         unique_labels = sorted(set(labels))  # Unique labels
-        min = 0.0  # Minimum value of the current group
-        max = 1.0  # Maximum value of the current group
+        min_boundary = 0.0  # Minimum value of the current group
+        max_boundary = 1.0  # Maximum value of the current group
         step = 0.01  # Step size for the greedy algorithm
         boundaries = []  # Boundaries of the groups
 
@@ -24,7 +26,7 @@ class GreedySeries(pd.Series):
         for iteration in range(0, len(unique_labels) - 1):
             max_correlation = -float('inf')
             best_boundary = -float('inf')
-            for boundary in np.arange(min, max, step):
+            for boundary in np.arange(min_boundary, max_boundary, step):
                 # Normalize the scores based on the boundary
                 new_scores = [1 if score < boundary else 0 for score in scores]
                 # If an input array is constant; the correlation coefficient is not define
@@ -35,7 +37,7 @@ class GreedySeries(pd.Series):
                 if correlation > max_correlation:
                     max_correlation = correlation
                     best_boundary = boundary
-            min = best_boundary
+            min_boundary = best_boundary
             boundaries.append(best_boundary)
 
         # Step 2: Map scores to labels based on boundaries
