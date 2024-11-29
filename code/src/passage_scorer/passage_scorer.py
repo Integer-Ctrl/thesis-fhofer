@@ -16,7 +16,6 @@ def load_config(filename="../config.json"):
 # Get the configuration settings
 config = load_config()
 
-ALL_QRELS = config['ALL_QRELS']  # Either all qrels or only relevant qrels
 DOCUMENT_DATASET_NAME = config['DOCUMENT_DATASET_NAME']
 DOCUMENT_DATASET_NAME_PYTERRIER = config['DOCUMENT_DATASET_NAME_PYTERRIER']
 
@@ -25,11 +24,8 @@ DOCUMENT_DATASET_INDEX_PATH = os.path.join(DATA_PATH, config['DOCUMENT_DATASET_I
 
 PASSAGE_DATASET_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_PATH'])
 
-# Path to save passage scores either for all qrels or only relevant qrels
-if ALL_QRELS:
-    PASSAGE_DATASET_SCORE_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_SCORE_AQ_PATH'])
-else:
-    PASSAGE_DATASET_SCORE_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_SCORE_PATH'])
+PASSAGE_DATASET_SCORE_AQ_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_SCORE_AQ_PATH'])
+PASSAGE_DATASET_SCORE_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_SCORE_PATH'])
 
 PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
 
@@ -79,13 +75,11 @@ with gzip.open(PASSAGE_DATASET_PATH, 'rt', encoding='UTF-8') as file:
 qrels = dataset.get_qrels()
 qrels_cache = {}
 for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
-    # Only relevant qrels
-    if ALL_QRELS or row['label'] > 0:  # Either all qrels or only relevant qrels
-        if row['qid'] not in qrels_cache:
-            qrels_cache[row['qid']] = qrels.loc[
-                (qrels['qid'] == row['qid']) & (ALL_QRELS or qrels['label'] > 0)
-            ].rename(columns={'qid': 'query', 'docno': 'docid', 'label': 'rel'})  # Rename columns
-            qrels_cache[row['qid']]['query'] = 0  # Dummy value to enable merge of run and qrels (TrecEval)
+    if row['qid'] not in qrels_cache:
+        qrels_cache[row['qid']] = qrels.loc[
+            (qrels['qid'] == row['qid'])
+        ].rename(columns={'qid': 'query', 'docno': 'docid', 'label': 'rel'})  # Rename columns
+        qrels_cache[row['qid']]['query'] = 0  # Dummy value to enable merge of run and qrels (TrecEval)
 
 
 # retrieval models
@@ -148,7 +142,9 @@ def evaluate_run(run, qrels_for_query):
 
 
 # Write passage scores to file
-with gzip.open(PASSAGE_DATASET_SCORE_PATH, 'wt', encoding='UTF-8') as file:
+with gzip.open(PASSAGE_DATASET_SCORE_PATH, 'wt', encoding='UTF-8') as relevant_qrels_file, \
+        gzip.open(PASSAGE_DATASET_SCORE_AQ_PATH, 'wt', encoding='UTF-8') as all_qrels_file:
+
     for qid, docnos in tqdm(qrels_cache.items(), desc='Scoring and saving passages', unit='qid'):
         for docno in docnos['docid']:
             for passage in passages_cache[docno]:
@@ -168,15 +164,22 @@ with gzip.open(PASSAGE_DATASET_SCORE_PATH, 'wt', encoding='UTF-8') as file:
                 p10_tfidf, ndcg10_tfidf = evaluate_run(run_tfidf, qrels_for_query)
                 p10_tfidf_wod, ndcg10_tfidf_wod = evaluate_run(run_tfidf_wod, qrels_for_query_wod)
 
-                file.write((json.dumps({'qid': qid,
-                                        'docno': passage['docno'],
-                                        'p10_bm25': p10_bm25,
-                                        'p10_bm25_wod': p10_bm25_wod,
-                                        'p10_tfidf': p10_tfidf,
-                                        'p10_tfidf_wod': p10_tfidf_wod,
-                                        'ndcg10_bm25': ndcg10_bm25,
-                                        'ndcg10_bm25_wod': ndcg10_bm25_wod,
-                                        'ndcg10_tfidf': ndcg10_tfidf,
-                                        'ndcg10_tfidf_wod': ndcg10_tfidf_wod,
-                                        'reciprocal_rank_docno_bm25': reciprocal_rank_docno_bm25,
-                                        'reciprocal_rank_docno_tfidf': reciprocal_rank_docno_tfidf}) + '\n'))
+                scores = {'qid': qid,
+                          'docno': passage['docno'],
+                          'p10_bm25': p10_bm25,
+                          'p10_bm25_wod': p10_bm25_wod,
+                          'p10_tfidf': p10_tfidf,
+                          'p10_tfidf_wod': p10_tfidf_wod,
+                          'ndcg10_bm25': ndcg10_bm25,
+                          'ndcg10_bm25_wod': ndcg10_bm25_wod,
+                          'ndcg10_tfidf': ndcg10_tfidf,
+                          'ndcg10_tfidf_wod': ndcg10_tfidf_wod,
+                          'reciprocal_rank_docno_bm25': reciprocal_rank_docno_bm25,
+                          'reciprocal_rank_docno_tfidf': reciprocal_rank_docno_tfidf}
+
+                # Write to all QRELs file
+                all_qrels_file.write(json.dumps(scores) + '\n')
+
+                # Write to relevant QRELs file only if relevance label > 0
+                if qrels.loc[(qrels['qid'] == qid) & (qrels['docno'] == docno)]['label'].iloc[0] > 0:
+                    relevant_qrels_file.write(json.dumps(scores) + '\n')

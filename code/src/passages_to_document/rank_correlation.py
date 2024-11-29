@@ -6,6 +6,7 @@ import numpy as np
 import pyterrier as pt
 import os
 import copy
+from greedy_series import GreedySeries
 
 
 # Load the configuration settings
@@ -139,8 +140,8 @@ def get_evaluated_score(docno_qid_transformed_scores, qrels_cache,
     # Ensure we have pairs to evaluate correlation
     if len(transformed_scores) > 1:
         # Convert lists to pandas Series
-        transformed_series = pd.Series(transformed_scores)
-        relevance_series = pd.Series(relevance_scores)
+        transformed_series = GreedySeries(transformed_scores)
+        relevance_series = GreedySeries(relevance_scores)
 
         # Calculate correlation based on the specified method
         if evaluation_method == 'pearson':
@@ -149,6 +150,12 @@ def get_evaluated_score(docno_qid_transformed_scores, qrels_cache,
             correlation = transformed_series.corr(relevance_series, method='kendall')
         elif evaluation_method == 'spearman':
             correlation = transformed_series.corr(relevance_series, method='spearman')
+        elif evaluation_method == 'pearson-greedy':
+            correlation = transformed_series.corr(relevance_series, method='pearson-greedy')
+        elif evaluation_method == 'kendall-greedy':
+            correlation = transformed_series.corr(relevance_series, method='kendall-greedy')
+        elif evaluation_method == 'spearman-greedy':
+            correlation = transformed_series.corr(relevance_series, method='spearman-greedy')
 
         return correlation
 
