@@ -19,8 +19,8 @@ def load_config(filename="/mnt/ceph/storage/data-tmp/current/ho62zoq/thesis-fhof
 # Get the configuration settings
 config = load_config()
 
-DOCUMENT_DATASET_NAME = config['DOCUMENT_DATASET_NAME']
-DATA_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_NAME)
+DOCUMENT_DATASET_OLD_NAME = config['DOCUMENT_DATASET_OLD_NAME']
+DATA_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_OLD_NAME)
 DUOT5_QID_DOC_DOC_SYSTEM_SCORES_PATH = os.path.join(DATA_PATH, config['DUOT5_QID_DOC_DOC_SYSTEM_SCORES_PATH'])
 
 KEY_SEP = config['KEY_SEPARATOR']

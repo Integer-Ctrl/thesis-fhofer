@@ -117,8 +117,8 @@ def check_qrels_for_single_label():
 
 # check if passages contain dublicates
 def check_passages_ducplicate():
-    DOCUMENT_DATASET_NAME = config['DOCUMENT_DATASET_NAME']
-    DATA_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_NAME)
+    DOCUMENT_DATASET_OLD_NAME = config['DOCUMENT_DATASET_OLD_NAME']
+    DATA_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_OLD_NAME)
     PASSAGE_DATASET_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_PATH'])
 
     passagesnos_cnt = Counter()
@@ -135,9 +135,9 @@ def check_passages_ducplicate():
 
 # check if dataset contain dublicates
 def check_dataset_ducplicate():
-    DOCUMENT_DATASET_NAME_PYTHON_API = config['DOCUMENT_DATASET_NAME_PYTHON_API']
+    DOCUMENT_DATASET_OLD_NAME_PYTHON_API = config['DOCUMENT_DATASET_OLD_NAME_PYTHON_API']
 
-    dataset = ir_datasets.load(DOCUMENT_DATASET_NAME_PYTHON_API)
+    dataset = ir_datasets.load(DOCUMENT_DATASET_OLD_NAME_PYTHON_API)
     docnos_cnt = Counter()
     docnos_list = []
 

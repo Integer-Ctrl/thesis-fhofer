@@ -3,22 +3,32 @@
     "PQ": "all queries",
     "PER_QUERY": true,
     "ALL_QRELS": false,
+    "PASSAGE_ID_SEPARATOR": "___",
 
-    "DOCUMENT_DATASET_NAME": "argsme/2020-04-01/touche-2021-task-1",
-    "DOCUMENT_DATASET_NAME_PYTERRIER": "irds:argsme/2020-04-01/touche-2021-task-1",
-    "DOCUMENT_DATASET_NAME_PYTHON_API": "argsme/2020-04-01/touche-2021-task-1",
+
+    "NOTE_1": "dataset which is used to transfer from it to the new dataset",
+    "DOCUMENT_DATASET_OLD_NAME": "argsme/2020-04-01/touche-2021-task-1",
+    "DOCUMENT_DATASET_OLD_NAME_PYTERRIER": "irds:argsme/2020-04-01/touche-2021-task-1",
+    "DOCUMENT_DATASET_OLD_NAME_PYTHON_API": "argsme/2020-04-01/touche-2021-task-1",
+
+
+    "NOTE_2": "dataset which is used to transfer into it from the old dataset",
+    "DOCUMENT_DATASET_NEW_NAME": "argsme/2020-04-01/touche-2021-task-1",
+    "DOCUMENT_DATASET_NEW_NAME_PYTERRIER": "irds:argsme/2020-04-01/touche-2021-task-1",
+    "DOCUMENT_DATASET_NEW_NAME_PYTHON_API": "argsme/2020-04-01/touche-2021-task-1",
 
     "DATA_PATH": "/mnt/ceph/storage/data-in-progress/data-teaching/theses/thesis-fhofer/data",
-    "DOCUMENT_DATASET_INDEX_PATH": "document-dataset/indices",
+    "DOCUMENT_DATASET_OLD_INDEX_PATH": "document-dataset/indices-old-dataset",
+    "DOCUMENT_DATASET_NEW_INDEX_PATH": "document-dataset/indices-new-dataset",
 
-    "PASSAGE_ID_SEPARATOR": "___",
+    
     "PASSAGE_DATASET_PATH": "passage-dataset/passages.jsonl.gz",
     "PASSAGE_DATASET_INDEX_PATH": "passage-dataset/indices",
     "PASSAGE_DATASET_SCORE_PATH": "passage-dataset/retrieval-scores.jsonl.gz",
     "PASSAGE_DATASET_SCORE_AQ_PATH": "passage-dataset/retrieval-scores-aq.jsonl.gz",
 
     "PASSAGES_TO_JUDGE_PATH": "passage-dataset/passages-to-judge.jsonl.gz",
-    "PASSAGES_TO_JUDGE_APPROACHES": ["approach1", "approach2, approach3"],
+    "PASSAGES_TO_JUDGE_APPROACHES": ["oracle", "naiv", "nearest_neighbor", "union"],
 
     "PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH": "document-dataset/passages-to-document-correlation-scores.jsonl.gz",
     "PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_AQ_PATH": "document-dataset/passages-to-document-correlation-scores-aq.jsonl.gz",

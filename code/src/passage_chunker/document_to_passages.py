@@ -16,10 +16,10 @@ def load_config(filename="../config.json"):
 # Get the configuration settings
 config = load_config()
 
-DOCUMENT_DATASET_NAME = config['DOCUMENT_DATASET_NAME']
-DOCUMENT_DATASET_NAME_PYTHON_API = config['DOCUMENT_DATASET_NAME_PYTHON_API']
+DOCUMENT_DATASET_OLD_NAME = config['DOCUMENT_DATASET_OLD_NAME']
+DOCUMENT_DATASET_OLD_NAME_PYTHON_API = config['DOCUMENT_DATASET_OLD_NAME_PYTHON_API']
 
-DATA_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_NAME)
+DATA_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_OLD_NAME)
 
 PASSAGE_DATASET_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_PATH'])
 PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
@@ -91,5 +91,5 @@ class PassageChunker:
         print(f"Processed and saved {doc_count} documents to {PASSAGE_DATASET_PATH}")
 
 
-chunker = PassageChunker(DOCUMENT_DATASET_NAME_PYTHON_API)
+chunker = PassageChunker(DOCUMENT_DATASET_OLD_NAME_PYTHON_API)
 chunker.dynamic_document_segmentation(batch_size=4000)

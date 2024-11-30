@@ -20,10 +20,10 @@ def load_config(filename="../config.json"):
 config = load_config()
 
 ALL_QRELS = config['ALL_QRELS']
-DOCUMENT_DATASET_NAME = config['DOCUMENT_DATASET_NAME']
-DOCUMENT_DATASET_NAME_PYTERRIER = config['DOCUMENT_DATASET_NAME_PYTERRIER']
+DOCUMENT_DATASET_OLD_NAME = config['DOCUMENT_DATASET_OLD_NAME']
+DOCUMENT_DATASET_OLD_NAME_PYTERRIER = config['DOCUMENT_DATASET_OLD_NAME_PYTERRIER']
 
-DATA_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_NAME)
+DATA_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_OLD_NAME)
 
 if ALL_QRELS:
     PASSAGE_DATASET_SCORE_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_SCORE_AQ_PATH'])
@@ -42,7 +42,7 @@ EVALUATION_METHODS = config['EVALUATION_METHODS']
 METRICS = config['METRICS']
 
 # Read qrels and cache relevant qrels
-dataset = pt.get_dataset(DOCUMENT_DATASET_NAME_PYTERRIER)
+dataset = pt.get_dataset(DOCUMENT_DATASET_OLD_NAME_PYTERRIER)
 qrels = dataset.get_qrels()
 qrels_cache = {}
 for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):

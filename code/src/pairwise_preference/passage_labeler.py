@@ -26,11 +26,11 @@ def load_config(filename="/mnt/ceph/storage/data-tmp/current/ho62zoq/thesis-fhof
 # Get the configuration settings
 config = load_config()
 
-DOCUMENT_DATASET_NAME = config['DOCUMENT_DATASET_NAME']
-DOCUMENT_DATASET_NAME_PYTERRIER = config['DOCUMENT_DATASET_NAME_PYTERRIER']
-DOCUMENT_DATASET_NAME_PYTHON_API = config['DOCUMENT_DATASET_NAME_PYTHON_API']
+DOCUMENT_DATASET_OLD_NAME = config['DOCUMENT_DATASET_OLD_NAME']
+DOCUMENT_DATASET_OLD_NAME_PYTERRIER = config['DOCUMENT_DATASET_OLD_NAME_PYTERRIER']
+DOCUMENT_DATASET_OLD_NAME_PYTHON_API = config['DOCUMENT_DATASET_OLD_NAME_PYTHON_API']
 
-DATA_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_NAME)
+DATA_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_OLD_NAME)
 
 PASSAGE_DATASET_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_PATH'])
 PASSAGE_DATASET_SCORE_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_SCORE_PATH'])
@@ -91,7 +91,7 @@ def get_passages_scores(cache, metric):
 
 # 4. get all qrels in dictinary format qid: {docno: relevance} # all relevance scores
 def get_qrels(cache):
-    dataset = pt.get_dataset(DOCUMENT_DATASET_NAME_PYTERRIER)
+    dataset = pt.get_dataset(DOCUMENT_DATASET_OLD_NAME_PYTERRIER)
     qrels = dataset.get_qrels()
     for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
         if row['qid'] not in cache:
@@ -101,7 +101,7 @@ def get_qrels(cache):
 
 # 5. get all queries in dictionary format query_id: text
 def get_queries(queries_cache):
-    dataset = ir_datasets.load(DOCUMENT_DATASET_NAME_PYTHON_API)
+    dataset = ir_datasets.load(DOCUMENT_DATASET_OLD_NAME_PYTHON_API)
     for query in dataset.queries_iter():
         queries_cache[query.query_id] = query.default_text()
 

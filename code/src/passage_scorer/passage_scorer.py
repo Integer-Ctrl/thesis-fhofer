@@ -16,11 +16,11 @@ def load_config(filename="../config.json"):
 # Get the configuration settings
 config = load_config()
 
-DOCUMENT_DATASET_NAME = config['DOCUMENT_DATASET_NAME']
-DOCUMENT_DATASET_NAME_PYTERRIER = config['DOCUMENT_DATASET_NAME_PYTERRIER']
+DOCUMENT_DATASET_OLD_NAME = config['DOCUMENT_DATASET_OLD_NAME']
+DOCUMENT_DATASET_OLD_NAME_PYTERRIER = config['DOCUMENT_DATASET_OLD_NAME_PYTERRIER']
 
-DATA_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_NAME)
-DOCUMENT_DATASET_INDEX_PATH = os.path.join(DATA_PATH, config['DOCUMENT_DATASET_INDEX_PATH'])
+DATA_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_OLD_NAME)
+DOCUMENT_DATASET_OLD_INDEX_PATH = os.path.join(DATA_PATH, config['DOCUMENT_DATASET_OLD_INDEX_PATH'])
 
 PASSAGE_DATASET_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_PATH'])
 
@@ -51,13 +51,13 @@ def yield_docs(dataset):
 
 
 # Index dataset
-dataset = pt.get_dataset(DOCUMENT_DATASET_NAME_PYTERRIER)
-if not os.path.exists(DOCUMENT_DATASET_INDEX_PATH):
-    indexer = pt.IterDictIndexer(DOCUMENT_DATASET_INDEX_PATH)
+dataset = pt.get_dataset(DOCUMENT_DATASET_OLD_NAME_PYTERRIER)
+if not os.path.exists(DOCUMENT_DATASET_OLD_INDEX_PATH):
+    indexer = pt.IterDictIndexer(DOCUMENT_DATASET_OLD_INDEX_PATH)
     index_ref = indexer.index(yield_docs(dataset),
                               meta={'docno': 50, 'text': 20000})
 else:
-    index_ref = pt.IndexRef.of(DOCUMENT_DATASET_INDEX_PATH + '/data.properties')
+    index_ref = pt.IndexRef.of(DOCUMENT_DATASET_OLD_INDEX_PATH + '/data.properties')
 
 dataset_index = pt.IndexFactory.of(index_ref)
 
