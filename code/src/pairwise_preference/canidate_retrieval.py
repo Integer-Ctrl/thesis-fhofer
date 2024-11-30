@@ -32,13 +32,13 @@ DOCUMENT_DATASET_OLD_NAME_PYTHON_API = config['DOCUMENT_DATASET_OLD_NAME_PYTHON_
 
 DATA_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_NEW_NAME)
 DOCUMENT_DATASET_NEW_INDEX_PATH = os.path.join(DATA_PATH, config['DOCUMENT_DATASET_NEW_INDEX_PATH'])
-PASSAGE_DATASET_INDEX_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_INDEX_PATH'])
+PASSAGE_DATASET_OLD_INDEX_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_OLD_INDEX_PATH'])
 
-PASSAGE_DATASET_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_PATH'])
-PASSAGE_DATASET_RELEVANT_SCORE_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_SCORE_PATH'])
+PASSAGE_DATASET_OLD_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_OLD_PATH'])
+PASSAGE_DATASET_RELEVANT_SCORE_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_OLD_SCORE_REL_PATH'])
 
 if ALL_QRELS:
-    PASSAGE_DATASET_SCORE_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_SCORE_AQ_PATH'])
+    PASSAGE_DATASET_SCORE_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_OLD_SCORE_AQ_PATH'])
     if PER_QUERY:
         PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH = os.path.join(
             DATA_PATH, config['PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PQ_AQ_PATH'])
@@ -46,7 +46,7 @@ if ALL_QRELS:
         PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH = os.path.join(
             DATA_PATH, config['PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_AQ_PATH'])
 else:
-    PASSAGE_DATASET_SCORE_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_SCORE_PATH'])
+    PASSAGE_DATASET_SCORE_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_OLD_SCORE_REL_PATH'])
     if PER_QUERY:
         PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH = os.path.join(
             DATA_PATH, config['PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PQ_PATH'])
@@ -75,7 +75,7 @@ def pt_tokenize(text):
 # Passage yield function for indexing
 def yield_passages():
     known_passagenos = set()
-    with gzip.open(PASSAGE_DATASET_PATH, 'rt', encoding='UTF-8') as file:
+    with gzip.open(PASSAGE_DATASET_OLD_PATH, 'rt', encoding='UTF-8') as file:
         for line in file:
             line = json.loads(line)
             if line['docno'] not in known_passagenos:
@@ -83,7 +83,11 @@ def yield_passages():
                 yield {'docno': line['docno'], 'text': line['text']}
 
 
-# APPROACH 1 - ORACLE
+#######################
+# APPROACH 1 - ORACLE #
+#######################
+
+
 # All already judged documents (those that are in the qrels)
 # INFO: only possible for old dataset
 # Iterating over passage scores because already chunked in passages
@@ -100,7 +104,11 @@ def oracle_retrieval():
     return qid_docnos
 
 
-# APPROACH 2 - NAIVE
+######################
+# APPROACH 2 - NAIVE #
+######################
+
+
 # HELPER for APPROACH 2
 # Document yield function for indexing without duplicates
 def yield_docs(dataset):
@@ -141,7 +149,11 @@ def naive_retrieval():
     return qid_docnos
 
 
-# APPROACH 3 - NEAREST NEIGHBOUR
+##################################
+# APPROACH 3 - NEAREST NEIGHBOUR #
+##################################
+
+
 # HELPER for APPROACH 3: get type of best scoring method in rank correlation
 def get_best_scoring_methods():
     with gzip.open(PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH, 'rt', encoding='UTF-8') as file:
@@ -189,7 +201,7 @@ def get_queries_best_passages_one_per_document(cache, scores):
 # Get for each query all relevant passages in dictionary format qid: [passageno]
 def get_queries_relevant_passages(qid_passagenos_cache):
     docno_passagenos = {}
-    with gzip.open(PASSAGE_DATASET_PATH, 'rt', encoding='UTF-8') as file:
+    with gzip.open(PASSAGE_DATASET_OLD_PATH, 'rt', encoding='UTF-8') as file:
         for line in tqdm(file, desc='Caching passages', unit='passage'):
             line = json.loads(line)
             docno, passageno = line['docno'].split(PASSAGE_ID_SEPARATOR)
@@ -210,7 +222,7 @@ def get_queries_relevant_passages(qid_passagenos_cache):
 
 # HELPER for APPROACH 3: get all passages text in dictionary format docno: [{passageno: text}]
 def get_passages_text(cache):
-    with gzip.open(PASSAGE_DATASET_PATH, 'rt', encoding='UTF-8') as file:
+    with gzip.open(PASSAGE_DATASET_OLD_PATH, 'rt', encoding='UTF-8') as file:
         for line in file:
             line = json.loads(line)
             cache[line['docno']] = line['text']
@@ -262,7 +274,11 @@ def nearest_neighbor_retrieval():
     return qid_docnos
 
 
-# APPROACH 4 -  UNION
+#######################
+# APPROACH 4 -  UNION #
+#######################
+
+
 # For each query, retrieve top 2000 passages with bm25 +
 # For top 20 most relevant passages for each query, retrieve top 10 passages with bm25
 def union_retrieval():
@@ -401,7 +417,7 @@ print(f'Nearest Neighbor: {sum([len(docnos) for docnos in docnos_nearest_neighbo
 print(f'Union: {sum([len(docnos) for docnos in docnos_union.values()])} documents (docnos)')
 
 # Compute Recall and Precision for each approach
-# Only for old dataset
+# Only for old dataset possible
 if DOCUMENT_DATASET_NEW_NAME in DOCUMENT_DATASET_OLD_NAME:
     recall_oracle, precision_oracle = compute_recall_precision(docnos_oracle, filename='recall_precision_oracle.pdf')
     recall_naive, precision_naive = compute_recall_precision(docnos_naive, filename='recall_precision_naive.pdf')

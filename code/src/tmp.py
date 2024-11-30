@@ -119,11 +119,11 @@ def check_qrels_for_single_label():
 def check_passages_ducplicate():
     DOCUMENT_DATASET_OLD_NAME = config['DOCUMENT_DATASET_OLD_NAME']
     DATA_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_OLD_NAME)
-    PASSAGE_DATASET_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_PATH'])
+    PASSAGE_DATASET_OLD_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_OLD_PATH'])
 
     passagesnos_cnt = Counter()
     passagesnos_list = []
-    with gzip.open(PASSAGE_DATASET_PATH, 'rt', encoding='UTF-8') as file:
+    with gzip.open(PASSAGE_DATASET_OLD_PATH, 'rt', encoding='UTF-8') as file:
         for line in tqdm(file, desc='Caching passages', unit='passage'):
             line = json.loads(line)
             passagesnos_cnt[line['docno']] += 1

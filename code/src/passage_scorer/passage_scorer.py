@@ -22,10 +22,10 @@ DOCUMENT_DATASET_OLD_NAME_PYTERRIER = config['DOCUMENT_DATASET_OLD_NAME_PYTERRIE
 DATA_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_OLD_NAME)
 DOCUMENT_DATASET_OLD_INDEX_PATH = os.path.join(DATA_PATH, config['DOCUMENT_DATASET_OLD_INDEX_PATH'])
 
-PASSAGE_DATASET_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_PATH'])
+PASSAGE_DATASET_OLD_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_OLD_PATH'])
 
-PASSAGE_DATASET_SCORE_AQ_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_SCORE_AQ_PATH'])
-PASSAGE_DATASET_SCORE_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_SCORE_PATH'])
+PASSAGE_DATASET_OLD_SCORE_AQ_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_OLD_SCORE_AQ_PATH'])
+PASSAGE_DATASET_OLD_SCORE_REL_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_OLD_SCORE_REL_PATH'])
 
 PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
 
@@ -63,7 +63,7 @@ dataset_index = pt.IndexFactory.of(index_ref)
 
 # Read passages and cache them
 passages_cache = {}
-with gzip.open(PASSAGE_DATASET_PATH, 'rt', encoding='UTF-8') as file:
+with gzip.open(PASSAGE_DATASET_OLD_PATH, 'rt', encoding='UTF-8') as file:
     for line in tqdm(file, desc='Caching passages', unit='passage'):
         line = json.loads(line)
         docno, passageno = line['docno'].split(PASSAGE_ID_SEPARATOR)
@@ -142,8 +142,8 @@ def evaluate_run(run, qrels_for_query):
 
 
 # Write passage scores to file
-with gzip.open(PASSAGE_DATASET_SCORE_PATH, 'wt', encoding='UTF-8') as relevant_qrels_file, \
-        gzip.open(PASSAGE_DATASET_SCORE_AQ_PATH, 'wt', encoding='UTF-8') as all_qrels_file:
+with gzip.open(PASSAGE_DATASET_OLD_SCORE_REL_PATH, 'wt', encoding='UTF-8') as relevant_qrels_file, \
+        gzip.open(PASSAGE_DATASET_OLD_SCORE_AQ_PATH, 'wt', encoding='UTF-8') as all_qrels_file:
 
     for qid, docnos in tqdm(qrels_cache.items(), desc='Scoring and saving passages', unit='qid'):
         for docno in docnos['docid']:

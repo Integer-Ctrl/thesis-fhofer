@@ -32,8 +32,8 @@ DOCUMENT_DATASET_OLD_NAME_PYTHON_API = config['DOCUMENT_DATASET_OLD_NAME_PYTHON_
 
 DATA_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_OLD_NAME)
 
-PASSAGE_DATASET_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_PATH'])
-PASSAGE_DATASET_SCORE_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_SCORE_PATH'])
+PASSAGE_DATASET_OLD_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_OLD_PATH'])
+PASSAGE_DATASET_OLD_SCORE_REL_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_OLD_SCORE_REL_PATH'])
 # TODO: switch between AQ and PQ
 PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH = os.path.join(
     DATA_PATH, config['PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH'])
@@ -59,7 +59,7 @@ def get_key(query_id: str, rel_doc_id: str, unk_doc_id: str, system: str) -> str
 
 # 1. get all passages in dictionary format docno: {passageno: text}
 def get_passages_text(cache):
-    with gzip.open(PASSAGE_DATASET_PATH, 'rt', encoding='UTF-8') as file:
+    with gzip.open(PASSAGE_DATASET_OLD_PATH, 'rt', encoding='UTF-8') as file:
         for line in tqdm(file, desc='Caching passages', unit='passage'):
             line = json.loads(line)
             docno, _ = line['docno'].split(PASSAGE_ID_SEPARATOR)
@@ -77,7 +77,7 @@ def get_best_scoring_methods():
 
 # 3. get all passage scores in dictionary format qid: {docno: score} # just score of the best scoring method
 def get_passages_scores(cache, metric):
-    with gzip.open(PASSAGE_DATASET_SCORE_PATH, 'rt', encoding='UTF-8') as file:
+    with gzip.open(PASSAGE_DATASET_OLD_SCORE_REL_PATH, 'rt', encoding='UTF-8') as file:
         for line in tqdm(file, desc='Caching passage scores', unit='passage'):
             data = json.loads(line)
             qid = data['qid']        # Extract query ID
