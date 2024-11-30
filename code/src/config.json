@@ -3,58 +3,51 @@
 
     "DATA_PATH": "/mnt/ceph/storage/data-in-progress/data-teaching/theses/thesis-fhofer/data",
 
-    "PER_QUERY": true,
-    "ALL_QRELS": false,
+        "PER_QUERY": true,
+        "ALL_QRELS": false,
 
-    "PASSAGE_ID_SEPARATOR": "___",
-    "KEY_SEPARATOR": "---",
+        "PASSAGE_ID_SEPARATOR": "___",
+        "KEY_SEPARATOR": "---",
 
-    "DUOT5_QID_DOC_DOC_SYSTEM_SCORES_PATH": "document-dataset/duot5-qid-doc-doc-system-scores.jsonl.gz",
-
-    "AGGREGATION_METHODS": ["mean", "max", "min"],
-    "TRANSFORMATION_METHODS": ["id", "log", "binned"],
-    "EVALUATION_METHODS": ["pearson", "spearman", "kendall", "pearson-greedy", "spearman-greedy", "kendall-greedy"],
-    "METRICS": [
-        "p10_bm25", "p10_bm25_wod", "p10_tfidf", "p10_tfidf_wod",
-        "ndcg10_bm25", "ndcg10_bm25_wod", "ndcg10_tfidf", "ndcg10_tfidf_wod",
-        "reciprocal_rank_docno_bm25", "reciprocal_rank_docno_tfidf"
-    ],
-
+        "AGGREGATION_METHODS": ["mean", "max", "min"],
+        "TRANSFORMATION_METHODS": ["id", "log", "binned"],
+        "EVALUATION_METHODS": ["pearson", "spearman", "kendall", "pearson-greedy", "spearman-greedy", "kendall-greedy"],
+        "METRICS": [
+            "p10_bm25", "p10_bm25_wod", "p10_tfidf", "p10_tfidf_wod",
+            "ndcg10_bm25", "ndcg10_bm25_wod", "ndcg10_tfidf", "ndcg10_tfidf_wod",
+            "reciprocal_rank_docno_bm25", "reciprocal_rank_docno_tfidf"
+        ],
 
 
     "NOTE_1": "dataset which is used to transfer from it to the new dataset",
 
-    "DOCUMENT_DATASET_OLD_NAME": "argsme/2020-04-01/touche-2021-task-1",
-    "DOCUMENT_DATASET_OLD_NAME_PYTERRIER": "irds:argsme/2020-04-01/touche-2021-task-1",
-    "DOCUMENT_DATASET_OLD_NAME_PYTHON_API": "argsme/2020-04-01/touche-2021-task-1",
-    "DOCUMENT_DATASET_OLD_INDEX_PATH": "old-dataset/document-indices",
+        "DOCUMENT_DATASET_OLD_NAME": "argsme/2020-04-01/touche-2021-task-1",
+        "DOCUMENT_DATASET_OLD_NAME_PYTERRIER": "irds:argsme/2020-04-01/touche-2021-task-1",
+        "DOCUMENT_DATASET_OLD_NAME_PYTHON_API": "argsme/2020-04-01/touche-2021-task-1",
+        "DOCUMENT_DATASET_OLD_INDEX_PATH": "document-indices",
 
-    "PASSAGE_DATASET_OLD_PATH": "old-dataset/passages.jsonl.gz",
-    "PASSAGE_DATASET_OLD_INDEX_PATH": "old-dataset/passage-indices",
-    "PASSAGE_DATASET_OLD_SCORE_REL_PATH": "old-dataset/retrieval-scores.jsonl.gz",
-    "PASSAGE_DATASET_OLD_SCORE_AQ_PATH": "old-dataset/retrieval-scores-aq.jsonl.gz",
+        "PASSAGE_DATASET_OLD_PATH": "passages.jsonl.gz",
+        "PASSAGE_DATASET_OLD_INDEX_PATH": "passage-indices",
+        "PASSAGE_DATASET_OLD_SCORE_REL_PATH": "retrieval-scores.jsonl.gz",
+        "PASSAGE_DATASET_OLD_SCORE_AQ_PATH": "retrieval-scores-aq.jsonl.gz",
 
-    "PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH": "old-dataset/passages-to-document-correlation-scores.jsonl.gz",
-    "PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_AQ_PATH": "old-dataset/passages-to-document-correlation-scores-aq.jsonl.gz",
-    "PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PQ_PATH": "old-dataset/passages-to-document-correlation-scores-pq.jsonl.gz",
-    "PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PQ_AQ_PATH": "old-dataset/passages-to-document-correlation-scores-pq-aq.jsonl.gz",
-
+        "PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH": "passages-to-document-correlation-scores.jsonl.gz",
+        "PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_AQ_PATH": "passages-to-document-correlation-scores-aq.jsonl.gz",
+        "PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PQ_PATH": "passages-to-document-correlation-scores-pq.jsonl.gz",
+        "PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PQ_AQ_PATH": "passages-to-document-correlation-scores-pq-aq.jsonl.gz",
 
 
     "NOTE_2": "dataset which is used to transfer into it from the old dataset",
 
-    "DOCUMENT_DATASET_NEW_NAME": "argsme/2020-04-01/touche-2021-task-1",
-    "DOCUMENT_DATASET_NEW_NAME_PYTERRIER": "irds:argsme/2020-04-01/touche-2021-task-1",
-    "DOCUMENT_DATASET_NEW_NAME_PYTHON_API": "argsme/2020-04-01/touche-2021-task-1",
-    "DOCUMENT_DATASET_NEW_INDEX_PATH": "new-dataset/document-indices",
+        "DOCUMENT_DATASET_NEW_NAME": "argsme/2020-04-01/touche-2021-task-1",
+        "DOCUMENT_DATASET_NEW_NAME_PYTERRIER": "irds:argsme/2020-04-01/touche-2021-task-1",
+        "DOCUMENT_DATASET_NEW_NAME_PYTHON_API": "argsme/2020-04-01/touche-2021-task-1",
+        "DOCUMENT_DATASET_NEW_INDEX_PATH": "document-indices",
 
-    "PASSAGE_DATASET_NEW_PATH": "new-dataset/passages.jsonl.gz",
-    "PASSAGE_DATASET_NEW_INDEX_PATH": "new-dataset/passage-indices",
+        "PASSAGE_DATASET_NEW_PATH": "passages.jsonl.gz",
+        "PASSAGE_DATASET_NEW_INDEX_PATH": "passage-indices",
 
-
-
-    "NOTE_3": "data for pairwise comparison",
-
-    "CANIDATES_PATH": "pairwise-preferences/canidates.jsonl.gz",
-    "CANIDATES_APPROACHES": ["oracle", "naiv", "nearest_neighbor", "union"]
+        "CANIDATES_PATH": "canidates.jsonl.gz",
+        "CANIDATES_APPROACHES": ["oracle", "naiv", "nearest_neighbor", "union"],
+        "DUOT5_QID_DOC_DOC_SYSTEM_SCORES_PATH": "duot5-qid-doc-doc-system-scores.jsonl.gz"
 }

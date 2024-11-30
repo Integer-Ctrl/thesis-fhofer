@@ -3,7 +3,7 @@ import os
 
 
 # Load the configuration settings
-def load_config(filename="../config.json"):
+def load_config(filename="./config.json"):
     with open(filename, "r") as f:
         config = json.load(f)
     return config
@@ -12,33 +12,47 @@ def load_config(filename="../config.json"):
 # Get the configuration settings
 config = load_config()
 
-DOCUMENT_DATASET_OLD_NAME = config['DOCUMENT_DATASET_OLD_NAME']
-DOCUMENT_DATASET_OLD_NAME_PYTERRIER = config['DOCUMENT_DATASET_OLD_NAME_PYTERRIER']
-DOCUMENT_DATASET_OLD_NAME_PYTHON_API = config['DOCUMENT_DATASET_OLD_NAME_PYTHON_API']
-
-DATA_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_OLD_NAME)
-DOCUMENT_DATASET_OLD_INDEX_PATH = os.path.join(DATA_PATH, config['DOCUMENT_DATASET_OLD_INDEX_PATH'])
-
-PASSAGE_DATASET_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_PATH'])
-PASSAGE_DATASET_SCORE_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_SCORE_PATH'])
-PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
-
-PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH = os.path.join(
-    DATA_PATH, config['PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH'])
+# Build absolute paths from the configuration
 
 
-def setup_folder_structure():
+def build_paths(config):
 
-    paths_to_create = [
-        DATA_PATH,
-        DOCUMENT_DATASET_OLD_INDEX_PATH,
-        PASSAGE_DATASET_PATH,
-        PASSAGE_DATASET_SCORE_PATH,
-        PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH
-    ]
+    DATA_PATH = config["DATA_PATH"]
+    OLD_PATH = os.path.join(DATA_PATH, config["DOCUMENT_DATASET_OLD_NAME"])
+    NEW_PATH = os.path.join(DATA_PATH, config["DOCUMENT_DATASET_NEW_NAME"])
 
-    for path in paths_to_create:
-        # Get only the directory part of the path, ignoring the file if present
+    paths = {
+        # Dataset used to transfer from
+        "DOCUMENT_DATASET_OLD_INDEX_PATH": os.path.join(OLD_PATH, config["DOCUMENT_DATASET_OLD_INDEX_PATH"]),
+        "PASSAGE_DATASET_OLD_PATH": os.path.join(OLD_PATH, config["PASSAGE_DATASET_OLD_PATH"]),
+        "PASSAGE_DATASET_OLD_INDEX_PATH": os.path.join(OLD_PATH, config["PASSAGE_DATASET_OLD_INDEX_PATH"]),
+
+        "PASSAGE_DATASET_OLD_SCORE_REL_PATH": os.path.join(OLD_PATH, config["PASSAGE_DATASET_OLD_SCORE_REL_PATH"]),
+        "PASSAGE_DATASET_OLD_SCORE_AQ_PATH": os.path.join(OLD_PATH, config["PASSAGE_DATASET_OLD_SCORE_AQ_PATH"]),
+
+        "PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH": os.path.join(
+            OLD_PATH, config["PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH"]),
+        "PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_AQ_PATH": os.path.join(
+            OLD_PATH, config["PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_AQ_PATH"]),
+        "PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PQ_PATH": os.path.join(
+            OLD_PATH, config["PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PQ_PATH"]),
+        "PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PQ_AQ_PATH": os.path.join(
+            OLD_PATH, config["PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PQ_AQ_PATH"]),
+
+        # Dataset used to transfer to
+        "DOCUMENT_DATASET_NEW_INDEX_PATH": os.path.join(NEW_PATH, config["DOCUMENT_DATASET_NEW_INDEX_PATH"]),
+        "PASSAGE_DATASET_NEW_PATH": os.path.join(NEW_PATH, config["PASSAGE_DATASET_NEW_PATH"]),
+        "PASSAGE_DATASET_NEW_INDEX_PATH": os.path.join(NEW_PATH, config["PASSAGE_DATASET_NEW_INDEX_PATH"]),
+
+        "CANIDATES_PATH": os.path.join(NEW_PATH, config["CANIDATES_PATH"]),
+        "DUOT5_QID_DOC_DOC_SYSTEM_SCORES_PATH": os.path.join(NEW_PATH, config["DUOT5_QID_DOC_DOC_SYSTEM_SCORES_PATH"]),
+    }
+    return paths
+
+
+# Set up the folder structure
+def setup_folder_structure(paths):
+    for key, path in paths.items():
         directory = os.path.dirname(path)
         if not os.path.exists(directory):
             print(f"Directory does not exist, creating: {directory}")
@@ -47,4 +61,6 @@ def setup_folder_structure():
             print(f"Directory exists: {directory}")
 
 
-setup_folder_structure()
+# Build paths and set up the structure
+paths = build_paths(config)
+setup_folder_structure(paths)

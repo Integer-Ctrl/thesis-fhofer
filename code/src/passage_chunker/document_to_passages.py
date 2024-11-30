@@ -15,14 +15,19 @@ def load_config(filename="../config.json"):
 
 # Get the configuration settings
 config = load_config()
+PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
 
 DOCUMENT_DATASET_OLD_NAME = config['DOCUMENT_DATASET_OLD_NAME']
 DOCUMENT_DATASET_OLD_NAME_PYTHON_API = config['DOCUMENT_DATASET_OLD_NAME_PYTHON_API']
 
-DATA_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_OLD_NAME)
+DOCUMENT_DATASET_NEW_NAME = config['DOCUMENT_DATASET_NEW_NAME']
+DOCUMENT_DATASET_NEW_NAME_PYTHON_API = config['DOCUMENT_DATASET_NEW_NAME_PYTHON_API']
 
-PASSAGE_DATASET_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_OLD_PATH'])
-PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
+OLD_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_OLD_NAME)
+NEW_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_NEW_NAME)
+
+PASSAGE_DATASET_OLD_PATH = os.path.join(OLD_PATH, config['PASSAGE_DATASET_OLD_PATH'])
+PASSAGE_DATASET_NEW_PATH = os.path.join(NEW_PATH, config['PASSAGE_DATASET_NEW_PATH'])
 
 
 class PassageChunker:
@@ -30,7 +35,7 @@ class PassageChunker:
     def __init__(self, ir_dataset):
         self.dataset = ir_datasets.load(ir_dataset)
 
-    def dynamic_document_segmentation(self, batch_size=1000):
+    def dynamic_document_segmentation(self, path, batch_size=1000):
         # Initialize the passage chunker
         chunker = SpacyPassageChunker()
 
@@ -40,7 +45,7 @@ class PassageChunker:
         known_doc_ids = set()
 
         # Open the output file in append mode
-        with gzip.open(PASSAGE_DATASET_PATH, 'wt', encoding='UTF-8') as file:
+        with gzip.open(path, 'wt', encoding='UTF-8') as file:
 
             for doc in tqdm(self.dataset.docs_iter(), desc='Chunking and saving documents', unit='doc'):
                 # Skip documents that have already been processed
@@ -88,8 +93,14 @@ class PassageChunker:
 
                 doc_count += len(batch)
 
-        print(f"Processed and saved {doc_count} documents to {PASSAGE_DATASET_PATH}")
+        print(f"Processed and saved {doc_count} documents to {PASSAGE_DATASET_OLD_PATH}")
 
 
+# Chunk old dataset and save to file
 chunker = PassageChunker(DOCUMENT_DATASET_OLD_NAME_PYTHON_API)
-chunker.dynamic_document_segmentation(batch_size=4000)
+chunker.dynamic_document_segmentation(PASSAGE_DATASET_OLD_PATH, batch_size=4000)
+
+# If the dataset to transfer into is different, chunk the new dataset
+if DOCUMENT_DATASET_NEW_NAME != DOCUMENT_DATASET_OLD_NAME:
+    chunker = PassageChunker(DOCUMENT_DATASET_NEW_NAME_PYTHON_API)
+    chunker.dynamic_document_segmentation(PASSAGE_DATASET_NEW_PATH, batch_size=4000)
