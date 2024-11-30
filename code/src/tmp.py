@@ -67,8 +67,9 @@ def ir_read_qrels():
 def pt_read_qrels():
     dataset = pt.get_dataset("irds:argsme/2020-04-01/touche-2020-task-1")
     count = 0
-    for index, row in dataset.get_qrels().iterrows():
-        count += 1
+    for index, row in dataset.get_qrels(variant='relevance').iterrows():
+        if row['label'] > 0:
+            count += 1
     print(count)
 
 
@@ -101,7 +102,7 @@ def check_scores_smaller_zero():
 def check_qrels_for_single_label():
     qrels_cache = {}
     dataset = pt.get_dataset('irds:argsme/2020-04-01/touche-2021-task-1')
-    qrels = dataset.get_qrels()
+    qrels = dataset.get_qrels(variant='relevance')
     for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
         if row['label'] > 0:
             if row['qid'] not in qrels_cache:
@@ -147,3 +148,6 @@ def check_dataset_ducplicate():
 
     print(len(docnos_list) != len(set(docnos_list)))
     print(docnos_cnt.most_common(10))
+
+
+pt_read_qrels()

@@ -2,11 +2,10 @@ from tqdm import tqdm
 
 import gzip
 import json
-import ir_datasets
 import os
 import matplotlib.pyplot as plt
-
 import pyterrier as pt
+from chatnoir_pyterrier import ChatNoirRetrieve, Feature
 
 
 # Load the configuration settings
@@ -22,6 +21,10 @@ config = load_config()
 
 ALL_QRELS = config['ALL_QRELS']
 PER_QUERY = config['PER_QUERY']
+
+# Either retrrieve with local index or with ChatNoir API
+CHATNOIR_RETRIEVAL = config['CHATNOIR_RETRIEVAL']
+CHATNOIR_INDICES = config['CHATNOIR_INDICES']
 
 DOCUMENT_DATASET_NEW_NAME = config['DOCUMENT_DATASET_NEW_NAME']
 DOCUMENT_DATASET_OLD_NAME = config['DOCUMENT_DATASET_OLD_NAME']
@@ -56,8 +59,12 @@ else:
         PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH = os.path.join(
             OLD_PATH, config['PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH'])
 
-CANIDATES_PATH = os.path.join(NEW_PATH, config['CANIDATES_PATH'])
-APPROACHES = config['PASSAGES_TO_JUDGE_APPROACHES']
+if CHATNOIR_RETRIEVAL:
+    CANDIDATE_PATH = os.path.join(NEW_PATH, config['CANDIDATE_CHATNOIR_PATH'])
+else:
+    CANIDATES_PATH = os.path.join(NEW_PATH, config['CANIDATES_LOCAL_PATH'])
+
+APPROACHES = config['CANIDATE_APPROACHES']
 
 PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
 KEY_SEPARATOR = config['KEY_SEPARATOR']
@@ -97,7 +104,7 @@ def oracle_retrieval():
     qid_docnos = {}
 
     dataset = pt.get_dataset(DOCUMENT_DATASET_OLD_NAME_PYTERRIER)
-    qrels = dataset.get_qrels()
+    qrels = dataset.get_qrels(variant='relevance')
     for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
         if row['qid'] not in qid_docnos:
             qid_docnos[row['qid']] = []
@@ -125,27 +132,34 @@ def yield_docs(dataset):
 def naive_retrieval():
     qid_docnos = {}
 
-    # Index dataset
     dataset = pt.get_dataset(DOCUMENT_DATASET_NEW_NAME_PYTERRIER)
-    if not os.path.exists(DOCUMENT_DATASET_NEW_INDEX_PATH):
-        indexer = pt.IterDictIndexer(DOCUMENT_DATASET_NEW_INDEX_PATH)
-        index_ref = indexer.index(yield_docs(dataset),
-                                  meta={'docno': 50, 'text': 20000})
-    else:
-        index_ref = pt.IndexRef.of(DOCUMENT_DATASET_NEW_INDEX_PATH + '/data.properties')
-
-    dataset_index = pt.IndexFactory.of(index_ref)
 
     # Retrieve top 2000 passages for each query
-    # TODO: refactor retrieval with ChatNoir API
-    bm25 = pt.terrier.Retriever(dataset_index, wmodel='BM25', num_results=2000)
+    if CHATNOIR_RETRIEVAL:
+        chatnoir = ChatNoirRetrieve(index=CHATNOIR_INDICES, num_results=2000)
+    else:
+        # Index dataset
+        if not os.path.exists(DOCUMENT_DATASET_NEW_INDEX_PATH):
+            indexer = pt.IterDictIndexer(DOCUMENT_DATASET_NEW_INDEX_PATH)
+            index_ref = indexer.index(yield_docs(dataset),
+                                      meta={'docno': 50, 'text': 20000})
+        else:
+            index_ref = pt.IndexRef.of(DOCUMENT_DATASET_NEW_INDEX_PATH + '/data.properties')
+
+        dataset_index = pt.IndexFactory.of(index_ref)
+
+        bm25 = pt.terrier.Retriever(dataset_index, wmodel='BM25', num_results=2000)
 
     for query in tqdm(dataset.irds_ref().queries_iter(),
                       desc='Retrieving top passages',
                       unit='query'):
         qid = query.query_id
         query_text = query.default_text()
-        query_results = bm25.search(pt_tokenize(query_text), ).loc[:, ['qid', 'docno']].head(2000)
+        if CHATNOIR_RETRIEVAL:
+            query_results = chatnoir.search(query_text).loc[:, ['qid', 'docno']].head(2000)
+        else:
+            query_results = bm25.search(pt_tokenize(query_text), ).loc[:, ['qid', 'docno']].head(2000)
+
         qid_docnos[qid] = query_results['docno'].tolist()
 
     return qid_docnos
@@ -212,7 +226,7 @@ def get_queries_relevant_passages(qid_passagenos_cache):
             docno_passagenos[docno] += [line['docno']]
 
     dataset = pt.get_dataset(DOCUMENT_DATASET_OLD_NAME_PYTERRIER)
-    qrels = dataset.get_qrels()
+    qrels = dataset.get_qrels(variant='relevance')
     for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
         if row['label'] > 0:
             if row['qid'] not in qid_passagenos_cache:
@@ -241,20 +255,24 @@ def nearest_neighbor_retrieval():
     get_passages_text(passages_text_cache)
     get_queries_relevant_passages(queries_relevant_passages)
 
-    # Index dataset
     dataset = pt.get_dataset(DOCUMENT_DATASET_NEW_NAME_PYTERRIER)
-    if not os.path.exists(DOCUMENT_DATASET_NEW_INDEX_PATH):
-        indexer = pt.IterDictIndexer(DOCUMENT_DATASET_NEW_INDEX_PATH)
-        index_ref = indexer.index(yield_docs(dataset),
-                                  meta={'docno': 50, 'text': 20000})
-    else:
-        index_ref = pt.IndexRef.of(DOCUMENT_DATASET_NEW_INDEX_PATH + '/data.properties')
-
-    dataset_index = pt.IndexFactory.of(index_ref)
 
     # Retrieve for each relevant passage for its corresponding qid the top 20 docnos
     # TODO: refactor retrieval with ChatNoir API
-    bm25 = pt.terrier.Retriever(dataset_index, wmodel='BM25', num_results=20)
+    if CHATNOIR_RETRIEVAL:
+        chatnoir = ChatNoirRetrieve(index=CHATNOIR_INDICES, num_results=2000)
+    else:
+        # Index dataset
+        if not os.path.exists(DOCUMENT_DATASET_NEW_INDEX_PATH):
+            indexer = pt.IterDictIndexer(DOCUMENT_DATASET_NEW_INDEX_PATH)
+            index_ref = indexer.index(yield_docs(dataset),
+                                      meta={'docno': 50, 'text': 20000})
+        else:
+            index_ref = pt.IndexRef.of(DOCUMENT_DATASET_NEW_INDEX_PATH + '/data.properties')
+
+        dataset_index = pt.IndexFactory.of(index_ref)
+
+        bm25 = pt.terrier.Retriever(dataset_index, wmodel='BM25', num_results=20)
 
     for query in tqdm(dataset.irds_ref().queries_iter(),
                       desc='Retrieving top passages',
@@ -264,8 +282,11 @@ def nearest_neighbor_retrieval():
         rel_doc_ids = queries_relevant_passages[qid]
 
         for rel_doc_id in rel_doc_ids:
-            query_results = bm25.search(pt_tokenize(passages_text_cache[rel_doc_id]), ).loc[:, [
-                'qid', 'docno']].head(20)
+            if CHATNOIR_RETRIEVAL:
+                query_results = chatnoir.search(passages_text_cache[rel_doc_id]).loc[:, ['qid', 'docno']].head(20)
+            else:
+                query_results = bm25.search(pt_tokenize(passages_text_cache[rel_doc_id]), ).loc[:, [
+                    'qid', 'docno']].head(20)
             if qid not in qid_docnos:
                 qid_docnos[qid] = []
             qid_docnos[qid] += query_results['docno'].tolist()
@@ -293,34 +314,46 @@ def union_retrieval():
     get_passages_text(passages_text_cache)
     get_queries_relevant_passages(queries_relevant_passages)
 
-    # Index dataset
     dataset = pt.get_dataset(DOCUMENT_DATASET_NEW_NAME_PYTERRIER)
-    if not os.path.exists(DOCUMENT_DATASET_NEW_INDEX_PATH):
-        indexer = pt.IterDictIndexer(DOCUMENT_DATASET_NEW_INDEX_PATH)
-        index_ref = indexer.index(yield_docs(dataset),
-                                  meta={'docno': 50, 'text': 20000})
-    else:
-        index_ref = pt.IndexRef.of(DOCUMENT_DATASET_NEW_INDEX_PATH + '/data.properties')
-
-    dataset_index = pt.IndexFactory.of(index_ref)
 
     # Retrieve top 2000 passages for each query
     # TODO: refactor retrieval with ChatNoir API
-    bm25 = pt.terrier.Retriever(dataset_index, wmodel='BM25', num_results=2000)
+    if CHATNOIR_RETRIEVAL:
+        chatnoir = ChatNoirRetrieve(index=CHATNOIR_INDICES, num_results=2000)
+    else:
+        # Index dataset
+        if not os.path.exists(DOCUMENT_DATASET_NEW_INDEX_PATH):
+            indexer = pt.IterDictIndexer(DOCUMENT_DATASET_NEW_INDEX_PATH)
+            index_ref = indexer.index(yield_docs(dataset),
+                                      meta={'docno': 50, 'text': 20000})
+        else:
+            index_ref = pt.IndexRef.of(DOCUMENT_DATASET_NEW_INDEX_PATH + '/data.properties')
+
+        dataset_index = pt.IndexFactory.of(index_ref)
+
+        bm25 = pt.terrier.Retriever(dataset_index, wmodel='BM25', num_results=2000)
 
     for query in tqdm(dataset.irds_ref().queries_iter(),
                       desc='Retrieving top passages',
                       unit='query'):
         qid = query.query_id
         query_text = query.default_text()
-        query_results = bm25.search(pt_tokenize(query_text), ).loc[:, ['qid', 'docno']].head(2000)
+        if CHATNOIR_RETRIEVAL:
+            query_results = chatnoir.search(query_text).loc[:, ['qid', 'docno']].head(2000)
+        else:
+            query_results = bm25.search(pt_tokenize(query_text), ).loc[:, ['qid', 'docno']].head(2000)
+
         qid_docnos[qid] = query_results['docno'].tolist()
 
         rel_doc_ids = queries_relevant_passages[qid]
 
         for rel_doc_id in rel_doc_ids:
-            query_results = bm25.search(pt_tokenize(passages_text_cache[rel_doc_id]), ).loc[:, [
-                'qid', 'docno']].head(20)
+            if CHATNOIR_RETRIEVAL:
+                query_results = chatnoir.search(passages_text_cache[rel_doc_id]).loc[:, ['qid', 'docno']].head(20)
+            else:
+                query_results = bm25.search(pt_tokenize(passages_text_cache[rel_doc_id]), ).loc[:, [
+                    'qid', 'docno']].head(20)
+
             qid_docnos[qid] += query_results['docno'].tolist()
 
         # remove duplicates
@@ -374,7 +407,7 @@ def compute_recall_precision(qid_docnos_cache, filename=None):
     num_retrieved_relevant_documents_per_query = {}
 
     dataset = pt.get_dataset(DOCUMENT_DATASET_OLD_NAME_PYTERRIER)
-    qrels = dataset.get_qrels()
+    qrels = dataset.get_qrels(variant='relevance')
     for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
         if row['label'] > 0:
             if row['qid'] not in num_all_relevant_documents_per_query:
@@ -407,28 +440,28 @@ def compute_recall_precision(qid_docnos_cache, filename=None):
 
 
 # TODO Recall and Precision for each approach
-docnos_oracle = oracle_retrieval()
-docnos_naive = naive_retrieval()
+# docnos_oracle = oracle_retrieval()
+# docnos_naive = naive_retrieval()
 docnos_nearest_neighbor = nearest_neighbor_retrieval()
 docnos_union = union_retrieval()
 
 # Print the number of documents (docnos) for each approach
-print(f'Oracle: {sum([len(docnos) for docnos in docnos_oracle.values()])} documents (docnos)')
-print(f'Naive: {sum([len(docnos) for docnos in docnos_naive.values()])} documents (docnos)')
+# print(f'Oracle: {sum([len(docnos) for docnos in docnos_oracle.values()])} documents (docnos)')
+# print(f'Naive: {sum([len(docnos) for docnos in docnos_naive.values()])} documents (docnos)')
 print(f'Nearest Neighbor: {sum([len(docnos) for docnos in docnos_nearest_neighbor.values()])} documents (docnos)')
 print(f'Union: {sum([len(docnos) for docnos in docnos_union.values()])} documents (docnos)')
 
 # Compute Recall and Precision for each approach
 # Only for old dataset possible
 if DOCUMENT_DATASET_NEW_NAME in DOCUMENT_DATASET_OLD_NAME:
-    recall_oracle, precision_oracle = compute_recall_precision(docnos_oracle, filename='recall_precision_oracle.pdf')
-    recall_naive, precision_naive = compute_recall_precision(docnos_naive, filename='recall_precision_naive.pdf')
+    # recall_oracle, precision_oracle = compute_recall_precision(docnos_oracle, filename='recall_precision_oracle.pdf')
+    # recall_naive, precision_naive = compute_recall_precision(docnos_naive, filename='recall_precision_naive.pdf')
     recall_nearest_neighbor, precision_nearest_neighbor = compute_recall_precision(
         docnos_nearest_neighbor, filename='recall_precision_nearest_neighbor.pdf')
     recall_union, precision_union = compute_recall_precision(docnos_union, filename='recall_precision_union.pdf')
 
-    print(f'Oracle: Recall={recall_oracle}, Precision={precision_oracle}')
-    print(f'Naive: Recall={recall_naive}, Precision={precision_naive}')
+    # print(f'Oracle: Recall={recall_oracle}, Precision={precision_oracle}')
+    # print(f'Naive: Recall={recall_naive}, Precision={precision_naive}')
     print(f'Nearest Neighbor: Recall={recall_nearest_neighbor}, Precision={precision_nearest_neighbor}')
     print(f'Union: Recall={recall_union}, Precision={precision_union}')
 
@@ -436,21 +469,21 @@ if DOCUMENT_DATASET_NEW_NAME in DOCUMENT_DATASET_OLD_NAME:
 # Write results to file
 with gzip.open(CANIDATES_PATH, 'wt', encoding='UTF-8') as file:
     for approach in APPROACHES:
-        if approach == 'oracle':
-            file.write(json.dumps({
-                "approach_name": approach,
-                "recall": recall_oracle,
-                "precision": precision_oracle,
-                "judge": docnos_oracle
-            }) + '\n')
-        elif approach == 'naive':
-            file.write(json.dumps({
-                "approach_name": approach,
-                "recall": recall_naive,
-                "precision": precision_naive,
-                "judge": docnos_naive
-            }) + '\n')
-        elif approach == 'nearest_neighbor':
+        # if approach == 'oracle':
+        #     file.write(json.dumps({
+        #         "approach_name": approach,
+        #         "recall": recall_oracle,
+        #         "precision": precision_oracle,
+        #         "judge": docnos_oracle
+        #     }) + '\n')
+        # elif approach == 'naive':
+        #     file.write(json.dumps({
+        #         "approach_name": approach,
+        #         "recall": recall_naive,
+        #         "precision": precision_naive,
+        #         "judge": docnos_naive
+        #     }) + '\n')
+        if approach == 'nearest_neighbor':
             file.write(json.dumps({
                 "approach_name": approach,
                 "recall": recall_nearest_neighbor,

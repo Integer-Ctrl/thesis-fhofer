@@ -73,7 +73,7 @@ with gzip.open(PASSAGE_DATASET_OLD_PATH, 'rt', encoding='UTF-8') as file:
         passages_cache[docno] += [line]
 
 # Read qrels and cache relevant qrels
-qrels = dataset.get_qrels()
+qrels = dataset.get_qrels(variant='relevance')
 qrels_cache = {}
 for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
     if row['qid'] not in qrels_cache:

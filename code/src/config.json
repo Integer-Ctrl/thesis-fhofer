@@ -4,7 +4,10 @@
     "DATA_PATH": "/mnt/ceph/storage/data-in-progress/data-teaching/theses/thesis-fhofer/data",
 
         "PER_QUERY": true,
-        "ALL_QRELS": false,
+        "ALL_QRELS": true,
+
+        "CHATNOIR_RETRIEVAL": true,
+        "CHATNOIR_INDICES": "clueweb09",
 
         "PASSAGE_ID_SEPARATOR": "___",
         "KEY_SEPARATOR": "---",
@@ -47,7 +50,8 @@
         "PASSAGE_DATASET_NEW_PATH": "passages.jsonl.gz",
         "PASSAGE_DATASET_NEW_INDEX_PATH": "passage-indices",
 
-        "CANIDATES_PATH": "canidates.jsonl.gz",
-        "CANIDATES_APPROACHES": ["oracle", "naiv", "nearest_neighbor", "union"],
+        "CANIDATES_LOCAL_PATH": "canidates.jsonl.gz",
+        "CANDIDATE_CHATNOIR_PATH": "candidates-chatnoir.jsonl.gz",
+        "CANIDATE_APPROACHES": ["oracle", "naiv", "nearest_neighbor", "union"],
         "DUOT5_QID_DOC_DOC_SYSTEM_SCORES_PATH": "duot5-qid-doc-doc-system-scores.jsonl.gz"
 }

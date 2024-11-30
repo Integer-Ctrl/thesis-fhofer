@@ -92,7 +92,7 @@ def get_passages_scores(cache, metric):
 # 4. get all qrels in dictinary format qid: {docno: relevance} # all relevance scores
 def get_qrels(cache):
     dataset = pt.get_dataset(DOCUMENT_DATASET_OLD_NAME_PYTERRIER)
-    qrels = dataset.get_qrels()
+    qrels = dataset.get_qrels(variant='relevance')
     for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
         if row['qid'] not in cache:
             cache[row['qid']] = {}

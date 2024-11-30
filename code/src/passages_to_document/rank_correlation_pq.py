@@ -43,7 +43,7 @@ METRICS = config['METRICS']
 
 # Read qrels and cache relevant qrels
 dataset = pt.get_dataset(DOCUMENT_DATASET_OLD_NAME_PYTERRIER)
-qrels = dataset.get_qrels()
+qrels = dataset.get_qrels(variant='relevance')
 qrels_cache = {}
 for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
     # Only relevant qrels
