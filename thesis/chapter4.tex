@@ -71,37 +71,21 @@ Pearson's Correlation measures the linear relationship between two continuous va
 
 \subsection{Unit testing of correlation measures}\label{unit-testing-of-correlation-measures}
 
-% Define the inputs
-The following evaluations involve six inputs labeled as A, B, C, D, E, and F. 
-The input A represents the ground truth with values \([0.2, 0.7, 0.8, 0.5, 0.3]\). 
-The other inputs are designed to test the rank correlation methods against A:
-\begin{itemize}
-    \item \(B = [0.2, 0.7, 0.8, 0.5, 0.3]\): Expected high correlation with A.
-    \item \(C = [0, 2, 2, 1, 0]\): Expected high correlation with A.
-    \item \(D = [0, 1, 2, 1, 0]\): Expected high correlation with A.
-    \item \(E = [0, 0, 1, 0, 0]\): Expected moderate correlation with A.
-    \item \(F = [0, 0, 1, 1, 0]\): Expected lower correlation with A.
-\end{itemize}
-
 % Table
 \begin{table}[h!]
     \centering
-    \caption{Evaluation of Rank Correlation Methods with Unit Test Cases. The table shows the correlation values between input A and other inputs (B, C, D, E, F) using Kendall, Pearson, and Spearman rank correlation methods. Default are the correlation values computed by the respective methods, while Greedy are the correlation values computed by the greedy implementation.}
-    \begin{tabular}{@{}llcc@{}}
+    \caption{
+        Unit testing of pairwise correlation methods. The table shows the correlation values between the reference scores $[0.2, 0.7, 0.5]$ and three label sets. The first two label sets are expected to have a correlation of 1, while the third label set is expected to have a lower correlation. The tested correlation methods, Spearman's rank correlation coefficient ($\rho$), Kendall's Tau rank correlation coefficient ($\tau$), and Pearson's correlation coefficient ($r$), are implemented in the \textit{pandas.DataFrame} library. The results of the default implementation uses a subscript $p$ (pandas), while the results of the greedy implementation uses a subscript $g$ (greedy).
+    }
+    \begin{tabular}{ccccccc}
         \toprule
-        \textbf{Rank Correlation Method} & \textbf{Input} & \textbf{Default} & \textbf{Greedy} \\ \midrule
-        Kendall                        & A and B                   & 0.8944                          & 1.0                            \\
-        Kendall                        & A and C                   & 0.8944                          & 1.0                            \\
-        Kendall                        & A and D                   & 0.6325                          & 1.0                            \\
-        Kendall                        & A and E                   & 0.5164                          & 0.6667                         \\ \midrule
-        Pearson                        & A and B                   & 0.9806                          & 1.0                            \\
-        Pearson                        & A and C                   & 0.9376                          & 1.0                            \\
-        Pearson                        & A and D                   & 0.6578                          & 1.0                            \\
-        Pearson                        & A and E                   & 0.5371                          & 0.6667                         \\ \midrule
-        Spearman                       & A and B                   & 0.9487                          & 1.0                            \\
-        Spearman                       & A and C                   & 0.9487                          & 1.0                            \\
-        Spearman                       & A and D                   & 0.7071                          & 1.0                            \\
-        Spearman                       & A and E                   & 0.5774                          & 0.6667                         \\ \bottomrule
+        \textbf{Comparative Value} & $\tau_p$ & $\tau_g$ & $\rho_p$ & $\rho_g$ & $r_p$ & $r_g$ \\
+        \midrule
+        % Add data rows here:
+        $[0, 2, 1]$ & 1.00 & 1.00 & 0.99 & 1.00 & 1.00 & 1.00 \\
+        $[0, 1, 1]$ & 0.82 & 1.00 & 0.92 & 1.00 & 0.87 & 1.00 \\
+        $[0, 0, 1]$ & 0.00 & 0.50 & 0.11 & 0.50 & 0.00 & 0.50 \\
+        \bottomrule
     \end{tabular}
 \end{table}
 
