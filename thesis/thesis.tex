@@ -34,7 +34,7 @@
 \ThesisSetPlaceOfBirth{Eisenach}
 
 % Supervisors should usually be Professors from the candidate's university. A second supervisor is not always needed. 
-\ThesisSetSupervisors{Maik Fröbe,Prof.\ Dr.\ Unknown Yet}
+\ThesisSetSupervisors{Prof.\ Dr.\ Matthias Hagen,Maik Fröbe}
 
 \ThesisSetSubmissionDate{31}{2}{2024}
 
@@ -100,6 +100,10 @@
 % optional: list of symbols/notation (e.g., using the nomencl package) but usually not needed
 \end{frontmatter}
 
+% Bibliography
+\bibliographystyle{plainnat} % requires package natbib. An alternative is apalike
+\bibliography{literature}    % load file literature.bib
+
 \include{chapter1}
 \include{chapter2}
 \include{chapter3}
@@ -110,9 +114,6 @@
 
 \include{appendixA}
 
-% Bibliography
-\bibliographystyle{plainnat} % requires package natbib. An alternative is apalike
-\bibliography{literature}    % load file literature.bib
 
 \end{document}
 
