@@ -1,0 +1,142 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36" version="25.0.1">
+  <diagram name="Seite-1" id="LMtMYTie6crOYXKiuRn3">
+    <mxGraphModel dx="819" dy="422" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-13" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f6d6ff;" vertex="1" parent="1">
+          <mxGeometry x="200" y="360" width="340" height="290" as="geometry" />
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-1" value="&lt;i&gt;1. document_to_passages.py&lt;/i&gt;&lt;div&gt;&lt;b&gt;Corpus P&lt;/b&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;&lt;b&gt;reprocessing&lt;/b&gt;&lt;/span&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;shadow=0;" vertex="1" parent="1">
+          <mxGeometry x="290" y="360" width="160" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-2" value="Document&lt;div&gt;Storage&lt;/div&gt;&lt;div&gt;&lt;b&gt;old&lt;/b&gt;&lt;/div&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;shadow=0;" vertex="1" parent="1">
+          <mxGeometry x="210" y="410" width="60" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-3" value="ir_dataset &lt;b&gt;old&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="190" y="490" width="100" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-4" value="Passage&lt;div&gt;Storage&lt;/div&gt;&lt;div&gt;&lt;b&gt;old&lt;/b&gt;&lt;/div&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;shadow=0;" vertex="1" parent="1">
+          <mxGeometry x="470" y="410" width="60" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="TDH5jDLED_jrA6ZPfDvP-2" target="TDH5jDLED_jrA6ZPfDvP-4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-7" value="each document in a collection is&lt;div&gt;chunked into smaller passages&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="TDH5jDLED_jrA6ZPfDvP-5">
+          <mxGeometry x="-0.0018" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-8" value="Document&lt;div&gt;Storage&lt;/div&gt;&lt;div&gt;&lt;b&gt;new&lt;/b&gt;&lt;/div&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;shadow=0;" vertex="1" parent="1">
+          <mxGeometry x="210" y="540" width="60" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-9" value="ir_dataset &lt;b&gt;new&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="190" y="620" width="100" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-10" value="Passage&lt;div&gt;Storage&lt;/div&gt;&lt;div&gt;&lt;b&gt;new&lt;/b&gt;&lt;/div&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;shadow=0;" vertex="1" parent="1">
+          <mxGeometry x="470" y="540" width="60" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="TDH5jDLED_jrA6ZPfDvP-8" target="TDH5jDLED_jrA6ZPfDvP-10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-12" value="each document in a collection is&lt;div&gt;chunked into smaller passages&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="TDH5jDLED_jrA6ZPfDvP-11">
+          <mxGeometry x="-0.0018" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-14" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f6d6ff;" vertex="1" parent="1">
+          <mxGeometry x="600" y="360" width="340" height="290" as="geometry" />
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-15" value="&lt;i&gt;2. passage_scorer.py&lt;/i&gt;&lt;div&gt;&lt;b&gt;Passage Scoring&lt;/b&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;shadow=0;" vertex="1" parent="1">
+          <mxGeometry x="700" y="360" width="160" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-26" value="Passage&lt;div&gt;Storage&lt;/div&gt;&lt;div&gt;&lt;b&gt;old&lt;/b&gt;&lt;/div&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;shadow=0;" vertex="1" parent="1">
+          <mxGeometry x="610" y="465" width="60" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-28" value="Retrieval&lt;div&gt;Scores&lt;/div&gt;&lt;div&gt;&lt;b&gt;&lt;font style=&quot;font-size: 8px;&quot;&gt;relevant qrels&lt;/font&gt;&lt;/b&gt;&lt;/div&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;" vertex="1" parent="1">
+          <mxGeometry x="870" y="390" width="60" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-31" value="Retrieval&lt;div&gt;Scores&lt;/div&gt;&lt;div&gt;&lt;b&gt;&lt;font style=&quot;font-size: 8px;&quot;&gt;all qrels&lt;/font&gt;&lt;/b&gt;&lt;/div&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;" vertex="1" parent="1">
+          <mxGeometry x="870" y="540" width="60" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-32" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0;exitDx=0;exitDy=27.5;exitPerimeter=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="TDH5jDLED_jrA6ZPfDvP-26" target="TDH5jDLED_jrA6ZPfDvP-28">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-35" value="For all documents with a&lt;div&gt;relevant qrel, derive a retrieval&lt;/div&gt;&lt;div&gt;score for each passage&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="TDH5jDLED_jrA6ZPfDvP-32">
+          <mxGeometry x="0.0082" y="2" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-33" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0;exitDx=0;exitDy=52.5;exitPerimeter=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="TDH5jDLED_jrA6ZPfDvP-26" target="TDH5jDLED_jrA6ZPfDvP-31">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-34" value="For all documents with a qrel,&lt;div&gt;derive a retrieval score&lt;/div&gt;&lt;div&gt;for each passage&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="TDH5jDLED_jrA6ZPfDvP-33">
+          <mxGeometry x="-0.0098" y="1" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-36" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f6d6ff;" vertex="1" parent="1">
+          <mxGeometry x="200" y="680" width="340" height="290" as="geometry" />
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-37" value="&lt;i&gt;3. rank_correlation_pq.py&lt;/i&gt;&lt;div&gt;&lt;b&gt;Evaluation of Passage Scoring&lt;/b&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;shadow=0;" vertex="1" parent="1">
+          <mxGeometry x="280" y="680" width="180" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-41" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="TDH5jDLED_jrA6ZPfDvP-38" target="TDH5jDLED_jrA6ZPfDvP-40">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-45" value="Aggregate passage&lt;div&gt;scores before correlating&lt;/div&gt;&lt;div&gt;with document qrel&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="TDH5jDLED_jrA6ZPfDvP-41">
+          <mxGeometry x="-0.1366" relative="1" as="geometry">
+            <mxPoint x="30" y="8" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-38" value="Retrieval&lt;div&gt;Scores&lt;/div&gt;&lt;div&gt;&lt;b&gt;&lt;font style=&quot;font-size: 8px;&quot;&gt;all qrels&lt;/font&gt;&lt;/b&gt;&lt;/div&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;" vertex="1" parent="1">
+          <mxGeometry x="210" y="880" width="60" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-42" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;exitPerimeter=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="TDH5jDLED_jrA6ZPfDvP-39" target="TDH5jDLED_jrA6ZPfDvP-40">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-46" value="Compute correlation&lt;div&gt;between document&lt;/div&gt;&lt;div&gt;scores and QREL&lt;/div&gt;" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="TDH5jDLED_jrA6ZPfDvP-42">
+          <mxGeometry x="-0.1448" y="1" relative="1" as="geometry">
+            <mxPoint x="-19" y="7" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-39" value="Correlation&lt;div&gt;Scores&lt;/div&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;" vertex="1" parent="1">
+          <mxGeometry x="470" y="880" width="60" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-40" value="&lt;span style=&quot;background-color: initial;&quot;&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;for all: metrics&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;for all: aggregation methods&lt;/span&gt;&lt;br&gt;&lt;div style=&quot;&quot;&gt;&lt;span style=&quot;white-space: pre;&quot;&gt;&#x9;&lt;/span&gt;for all: transformation methods&lt;/div&gt;" style="shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;fixedSize=1;align=left;" vertex="1" parent="1">
+          <mxGeometry x="260" y="730" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-47" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f6d6ff;" vertex="1" parent="1">
+          <mxGeometry x="600" y="680" width="340" height="290" as="geometry" />
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-48" value="&lt;i&gt;4. candidate_retrieval.py&lt;/i&gt;&lt;div&gt;&lt;b&gt;Canidate Retrieval&lt;/b&gt;&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;shadow=0;" vertex="1" parent="1">
+          <mxGeometry x="680" y="680" width="180" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-49" value="TREC&lt;div&gt;Topics&lt;/div&gt;&lt;div&gt;(e.g. 50)&lt;/div&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;" vertex="1" parent="1">
+          <mxGeometry x="610" y="785" width="60" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-50" value="Docnos&lt;div&gt;&lt;b&gt;NN&lt;/b&gt;&lt;/div&gt;&lt;div&gt;+100,000&lt;/div&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;" vertex="1" parent="1">
+          <mxGeometry x="870" y="785" width="60" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-51" value="Docnos&lt;div&gt;&lt;b&gt;Union&lt;/b&gt;&lt;/div&gt;&lt;div&gt;Naive+NN&lt;/div&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;" vertex="1" parent="1">
+          <mxGeometry x="870" y="880" width="60" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-52" value="Docnos&lt;div&gt;&lt;b&gt;Naive&lt;/b&gt;&lt;/div&gt;&lt;div&gt;100,000&lt;/div&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;" vertex="1" parent="1">
+          <mxGeometry x="870" y="690" width="60" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-54" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0;exitDx=0;exitDy=15;exitPerimeter=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="TDH5jDLED_jrA6ZPfDvP-49" target="TDH5jDLED_jrA6ZPfDvP-52">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-55" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="TDH5jDLED_jrA6ZPfDvP-49" target="TDH5jDLED_jrA6ZPfDvP-50">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-56" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=1;exitDx=0;exitDy=-15;exitPerimeter=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="TDH5jDLED_jrA6ZPfDvP-49" target="TDH5jDLED_jrA6ZPfDvP-51">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="TDH5jDLED_jrA6ZPfDvP-60" value="Select documents from the &lt;b&gt;new&lt;/b&gt; ir_dataset for qrel inference via pairwise preferences" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="620" y="880" width="130" height="70" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

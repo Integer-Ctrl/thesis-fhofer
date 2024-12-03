@@ -50,8 +50,8 @@
         "PASSAGE_DATASET_NEW_PATH": "passages.jsonl.gz",
         "PASSAGE_DATASET_NEW_INDEX_PATH": "passage-indices",
 
-        "CANIDATES_LOCAL_PATH": "canidates.jsonl.gz",
+        "CANDIDATES_LOCAL_PATH": "candidates.jsonl.gz",
         "CANDIDATE_CHATNOIR_PATH": "candidates-chatnoir.jsonl.gz",
-        "CANIDATE_APPROACHES": ["oracle", "naiv", "nearest_neighbor", "union"],
+        "CANDIDATE_APPROACHES": ["oracle", "naiv", "nearest_neighbor", "union"],
         "DUOT5_QID_DOC_DOC_SYSTEM_SCORES_PATH": "duot5-qid-doc-doc-system-scores.jsonl.gz"
 }

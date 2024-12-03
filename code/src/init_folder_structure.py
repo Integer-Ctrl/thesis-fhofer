@@ -44,7 +44,7 @@ def build_paths(config):
         "PASSAGE_DATASET_NEW_PATH": os.path.join(NEW_PATH, config["PASSAGE_DATASET_NEW_PATH"]),
         "PASSAGE_DATASET_NEW_INDEX_PATH": os.path.join(NEW_PATH, config["PASSAGE_DATASET_NEW_INDEX_PATH"]),
 
-        "CANIDATES_PATH": os.path.join(NEW_PATH, config["CANIDATES_PATH"]),
+        "CANDIDATES_PATH": os.path.join(NEW_PATH, config["CANDIDATES_PATH"]),
         "DUOT5_QID_DOC_DOC_SYSTEM_SCORES_PATH": os.path.join(NEW_PATH, config["DUOT5_QID_DOC_DOC_SYSTEM_SCORES_PATH"]),
     }
     return paths
