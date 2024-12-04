@@ -62,9 +62,9 @@ else:
 if CHATNOIR_RETRIEVAL:
     CANDIDATE_PATH = os.path.join(NEW_PATH, config['CANDIDATE_CHATNOIR_PATH'])
 else:
-    CANIDATES_PATH = os.path.join(NEW_PATH, config['CANIDATES_LOCAL_PATH'])
+    CANDIDATES_PATH = os.path.join(NEW_PATH, config['CANDIDATES_LOCAL_PATH'])
 
-APPROACHES = config['CANIDATE_APPROACHES']
+APPROACHES = config['CANDIDATE_APPROACHES']
 
 PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
 KEY_SEPARATOR = config['KEY_SEPARATOR']
@@ -92,9 +92,9 @@ def yield_passages():
                 yield {'docno': line['docno'], 'text': line['text']}
 
 
-#######################
-# APPROACH 1 - ORACLE #
-#######################
+##########
+# ORACLE #
+##########
 
 
 # All already judged documents (those that are in the qrels)
@@ -128,13 +128,13 @@ def yield_docs(dataset):
             yield {'docno': i.doc_id, 'text': i.default_text()}
 
 
-# For each query, retrieve top 2000 passages with bm25
+# For each query, retrieve top 2000 documents with bm25
 def naive_retrieval():
     qid_docnos = {}
 
     dataset = pt.get_dataset(DOCUMENT_DATASET_NEW_NAME_PYTERRIER)
 
-    # Retrieve top 2000 passages for each query
+    # Retrieve top 2000 documents for each query
     if CHATNOIR_RETRIEVAL:
         chatnoir = ChatNoirRetrieve(index=CHATNOIR_INDICES, num_results=2000)
     else:
@@ -151,7 +151,7 @@ def naive_retrieval():
         bm25 = pt.terrier.Retriever(dataset_index, wmodel='BM25', num_results=2000)
 
     for query in tqdm(dataset.irds_ref().queries_iter(),
-                      desc='Retrieving top passages',
+                      desc='Retrieving top documents',
                       unit='query'):
         qid = query.query_id
         query_text = query.default_text()
@@ -244,7 +244,7 @@ def get_passages_text(cache):
             cache[line['docno']] = line['text']
 
 
-# For top 20 most relevant passages for each query, retrieve top 10 passages with bm25
+# For top 20 most relevant passages for each query, retrieve top 10 documents with bm25
 def nearest_neighbor_retrieval():
     qid_docnos = {}
 
@@ -275,7 +275,7 @@ def nearest_neighbor_retrieval():
         bm25 = pt.terrier.Retriever(dataset_index, wmodel='BM25', num_results=20)
 
     for query in tqdm(dataset.irds_ref().queries_iter(),
-                      desc='Retrieving top passages',
+                      desc='Retrieving top documents',
                       unit='query'):
         qid = query.query_id
 
@@ -302,8 +302,8 @@ def nearest_neighbor_retrieval():
 #######################
 
 
-# For each query, retrieve top 2000 passages with bm25 +
-# For top 20 most relevant passages for each query, retrieve top 10 passages with bm25
+# For each query, retrieve top 2000 documents with bm25 +
+# For top 20 most relevant passages for each query, retrieve top 10 documents with bm25
 def union_retrieval():
     qid_docnos = {}
 
@@ -334,7 +334,7 @@ def union_retrieval():
         bm25 = pt.terrier.Retriever(dataset_index, wmodel='BM25', num_results=2000)
 
     for query in tqdm(dataset.irds_ref().queries_iter(),
-                      desc='Retrieving top passages',
+                      desc='Retrieving top documents',
                       unit='query'):
         qid = query.query_id
         query_text = query.default_text()
@@ -467,7 +467,7 @@ if DOCUMENT_DATASET_NEW_NAME in DOCUMENT_DATASET_OLD_NAME:
 
 
 # Write results to file
-with gzip.open(CANIDATES_PATH, 'wt', encoding='UTF-8') as file:
+with gzip.open(CANDIDATES_PATH, 'wt', encoding='UTF-8') as file:
     for approach in APPROACHES:
         # if approach == 'oracle':
         #     file.write(json.dumps({
