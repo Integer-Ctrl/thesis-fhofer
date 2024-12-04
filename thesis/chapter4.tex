@@ -69,22 +69,59 @@ Pearson's Correlation measures the linear relationship between two continuous va
     \item -1: perfect negative linear relationship
 \end{itemize}
 
-\subsection{Unit testing of correlation measures}\label{unit-testing-of-correlation-measures}
+\subsection{Greedy Correlation Coefficient}\label{greedy-correlation-coefficient}
 
-% Table
+\begin{itemize}
+    \item What does intended mean?
+    \item What is the greedy version of the correlation coefficients?
+    \item How does it work?
+\end{itemize}
+
+To ensure that the correlation analysis is working as intended a greedy version of the correlation coefficients was implemented. This version of the correlation coefficients will first determine the best ...
+
+\subsection{Unit testing Correlation Coefficients}\label{unit-testing-of-correlation-Coefficients}
+
 \begin{table}[h!]
     \centering
     \caption{
-        Unit testing of pairwise correlation methods. The table shows the correlation values between the reference scores $[0.2, 0.7, 0.5]$ and three label sets. The first two label sets are expected to have a correlation of 1, while the third label set is expected to have a lower correlation. The tested correlation methods, Spearman's rank correlation coefficient ($\rho$), Kendall's Tau rank correlation coefficient ($\tau$), and Pearson's correlation coefficient ($r$), are implemented in the \textit{pandas.DataFrame} library. The results of the default implementation uses a subscript $p$ (pandas), while the results of the greedy implementation uses a subscript $g$ (greedy).
+        Unit testing correlation methods for reference scores $[0.2, 0.7, 0.5]$ and three label sets: first two with expected correlation of 1, and last one with lower correlation. Methods include Spearman's $\rho$, Kendall's $\tau$, and Pearson's $r$.
     }
     \begin{tabular}{ccccccc}
         \toprule
-        \textbf{Comparative Value} & $\tau_p$ & $\tau_g$ & $\rho_p$ & $\rho_g$ & $r_p$ & $r_g$ \\
+        \textbf{Comparative Set} & \multicolumn{3}{c}{\textbf{Default}} & \multicolumn{3}{c}{\textbf{Greedy}} \\
+        \cmidrule(lr){2-4} \cmidrule(lr){5-7}
+                                 & $\tau$ & $\rho$ & $r$ & $\tau$ & $\rho$ & $r$ \\
         \midrule
-        % Add data rows here:
-        $[0, 2, 1]$ & 1.00 & 1.00 & 0.99 & 1.00 & 1.00 & 1.00 \\
-        $[0, 1, 1]$ & 0.82 & 1.00 & 0.92 & 1.00 & 0.87 & 1.00 \\
-        $[0, 0, 1]$ & 0.00 & 0.50 & 0.11 & 0.50 & 0.00 & 0.50 \\
+        
+        $[0, 2, 1]$ & 1.00 & 0.99 & 1.00 & 1.00  & 1.00  & 1.00 \\
+        $[0, 1, 1]$ & 0.82 & 0.92 & 0.87 & 1.00  & 1.00  & 1.00 \\
+        $[0, 0, 1]$ & 0.00 & 0.11 & 0.00 & 0.50  & 0.50  & 0.50 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection{Correlation Coefficient of Passage Scores}\label{correlation-coefficient-of-passage-scores}
+
+\begin{table}[h!]
+    \centering
+    \caption{5-fold cross-validation of the passage scores.}
+    \begin{tabular}{lcccccc}
+        \toprule
+        \textbf{Retrieval Model} & \multicolumn{3}{c}{\textbf{Default}} & \multicolumn{3}{c}{\textbf{Greedy}} \\
+        \cmidrule(lr){2-4} \cmidrule(lr){5-7}
+                                 & $\tau$ & $\rho$ & $r$ & $\tau$ & $\rho$ & $r$ \\
+        \midrule
+
+        BM25        & & & & & & \\
+        DFR\_BM25    & & & & & & \\
+        DFIZ        & & & & & & \\
+        DLH         & & & & & & \\
+        DHP         & & & & & & \\
+        DirichletLM & & & & & & \\
+        Hiemstra\_LM & & & & & & \\
+        LGD         & & & & & & \\
+        PL2         & & & & & & \\
+        TF\_IDF      & & & & & & \\
         \bottomrule
     \end{tabular}
 \end{table}
