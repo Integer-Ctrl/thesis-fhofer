@@ -16,6 +16,8 @@ def load_config(filename="../config.json"):
 # Get the configuration settings
 config = load_config()
 
+PT_RETRIEVERS = config['PT_RETRIEVERS']
+
 DOCUMENT_DATASET_OLD_NAME = config['DOCUMENT_DATASET_OLD_NAME']
 DOCUMENT_DATASET_OLD_NAME_PYTERRIER = config['DOCUMENT_DATASET_OLD_NAME_PYTERRIER']
 
@@ -84,8 +86,9 @@ for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
 
 
 # retrieval models
-bm25 = pt.terrier.Retriever(dataset_index, wmodel='BM25')
-tfidf = pt.terrier.Retriever(dataset_index, wmodel='TF_IDF')
+retrievers = {}
+for retriever in PT_RETRIEVERS:
+    retrievers[retriever] = pt.terrier.Retriever(dataset_index, wmodel=retriever)
 
 
 # Get reciprocal rank of the original document in a run
@@ -153,30 +156,31 @@ with gzip.open(PASSAGE_DATASET_OLD_SCORE_REL_PATH, 'wt', encoding='UTF-8') as re
                 qrels_for_query = get_qrels_for_query(qid, include_original_document=True)
                 qrels_for_query_wod = get_qrels_for_query(qid, include_original_document=False)
 
-                run_bm25, run_bm25_wod, reciprocal_rank_docno_bm25 = get_infered_run(
-                    bm25, passage['text'], 'bm25', docno)
-                run_tfidf, run_tfidf_wod, reciprocal_rank_docno_tfidf = get_infered_run(
-                    tfidf, passage['text'], 'tfidf', docno)
+                # Infer runs for all retrievers
+                runs = {}
+                runs_wod = {}
+                reciprocal_ranks = {}
+
+                for retriever in PT_RETRIEVERS:
+                    runs[retriever], runs_wod[retriever], reciprocal_ranks[retriever] = get_infered_run(
+                        retrievers[retriever], passage['text'], retriever, docno)
 
                 # Evaluate passage scores
-                p10_bm25, ndcg10_bm25 = evaluate_run(run_bm25, qrels_for_query)
-                p10_bm25_wod, ndcg10_bm25_wod = evaluate_run(run_bm25_wod, qrels_for_query_wod)
+                p10 = {}
+                ndcg10 = {}
 
-                p10_tfidf, ndcg10_tfidf = evaluate_run(run_tfidf, qrels_for_query)
-                p10_tfidf_wod, ndcg10_tfidf_wod = evaluate_run(run_tfidf_wod, qrels_for_query_wod)
+                for retriever in PT_RETRIEVERS:
+                    p10[retriever], ndcg10[retriever] = evaluate_run(runs[retriever], qrels_for_query)
+                    p10[retriever + '_wod'], ndcg10[retriever + '_wod'] = evaluate_run(runs_wod[retriever],
+                                                                                       qrels_for_query_wod)
 
-                scores = {'qid': qid,
-                          'docno': passage['docno'],
-                          'p10_bm25': p10_bm25,
-                          'p10_bm25_wod': p10_bm25_wod,
-                          'p10_tfidf': p10_tfidf,
-                          'p10_tfidf_wod': p10_tfidf_wod,
-                          'ndcg10_bm25': ndcg10_bm25,
-                          'ndcg10_bm25_wod': ndcg10_bm25_wod,
-                          'ndcg10_tfidf': ndcg10_tfidf,
-                          'ndcg10_tfidf_wod': ndcg10_tfidf_wod,
-                          'reciprocal_rank_docno_bm25': reciprocal_rank_docno_bm25,
-                          'reciprocal_rank_docno_tfidf': reciprocal_rank_docno_tfidf}
+                scores = {'qid': qid, 'docno': passage['docno']}
+                for retriever in PT_RETRIEVERS:
+                    scores['p10_' + retriever] = p10[retriever]
+                    scores['p10_' + retriever + '_wod'] = p10[retriever + '_wod']
+                    scores['ndcg10_' + retriever] = ndcg10[retriever]
+                    scores['ndcg10_' + retriever + '_wod'] = ndcg10[retriever + '_wod']
+                    scores['reciprocal_rank_docno_' + retriever] = reciprocal_ranks[retriever]
 
                 # Write to all QRELs file
                 all_qrels_file.write(json.dumps(scores) + '\n')

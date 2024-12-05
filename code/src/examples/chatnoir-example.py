@@ -13,16 +13,6 @@ def load_config(filename="../config.json"):
 config = load_config()
 CHATNOIR_INDICES = config['CHATNOIR_INDICES']
 
-if not pt.java.started():
-    pt.java.init()
-tokeniser = pt.java.autoclass('org.terrier.indexing.tokenisation.Tokeniser').getTokeniser()
-
-
-# Tokenize text
-def pt_tokenize(text):
-    return ' '.join(tokeniser.getTokens(text))
-
-
 text = ' "Well, this is a debate about sexual education, and since that point seemed to be irrelevant to the \
       topic at hand, I didn\'t see much point in commenting."*facepalm*"What are you referring to as \'standard\' \
         sex education?"No comment... (Meaning "safe sex education")"Secondly, I must reiterate the fact that nothing, \
@@ -39,9 +29,9 @@ text = ' "Well, this is a debate about sexual education, and since that point se
                                                     is why take the rsik of being infertile, due to either \
                                                         contraceptives or STD\'s. '
 
-chatnoir = ChatNoirRetrieve(index=CHATNOIR_INDICES, num_results=2000)
+chatnoir = ChatNoirRetrieve(index=CHATNOIR_INDICES, num_results=2000, retrieval_system="bm25")
 # results = chatnoir.search("python library").loc[:, ['qid', 'docno']].head(20)
-results = chatnoir.search(pt_tokenize(text))
+results = chatnoir.search(text)
 print(results)
 results = results.loc[:, ['qid', 'docno']].head(20)
 print(results)
