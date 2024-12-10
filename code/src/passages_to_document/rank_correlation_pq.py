@@ -10,7 +10,8 @@ from greedy_series import GreedySeries
 
 
 # Load the configuration settings
-def load_config(filename="../config.json"):
+# def load_config(filename="../config.json"): does not work with debug
+def load_config(filename="/mnt/ceph/storage/data-tmp/current/ho62zoq/thesis-fhofer/code/src/config.json"):
     with open(filename, "r") as f:
         config = json.load(f)
     return config
@@ -22,36 +23,35 @@ config = load_config()
 ALL_QRELS = config['ALL_QRELS']
 DOCUMENT_DATASET_OLD_NAME = config['DOCUMENT_DATASET_OLD_NAME']
 DOCUMENT_DATASET_OLD_NAME_PYTERRIER = config['DOCUMENT_DATASET_OLD_NAME_PYTERRIER']
+NUMBER_OF_CROSS_VALIDATION_FOLDS = config['NUMBER_OF_CROSS_VALIDATION_FOLDS']
 
 OLD_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_OLD_NAME)
 
-if ALL_QRELS:
-    PASSAGE_DATASET_SCORE_PATH = os.path.join(OLD_PATH, config['PASSAGE_DATASET_OLD_SCORE_AQ_PATH'])
-    PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH = os.path.join(
-        OLD_PATH, config['PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PQ_AQ_PATH'])
-else:
-    PASSAGE_DATASET_SCORE_PATH = os.path.join(OLD_PATH, config['PASSAGE_DATASET_OLD_SCORE_REL_PATH'])
-    PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH = os.path.join(
-        OLD_PATH, config['PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PQ_PATH'])
+PASSAGE_DATASET_SCORE_PATH = os.path.join(OLD_PATH, config['PASSAGE_DATASET_OLD_SCORE_AQ_PATH'])
+# PASSAGE_DATASET_SCORE_PATH = os.path.join(OLD_PATH, 'retrieval-scores-aq-test.jsonl.gz')
+PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH = os.path.join(
+    OLD_PATH, config['PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PQ_AQ_PATH'])
 
 PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
 
 AGGREGATION_METHODS = config['AGGREGATION_METHODS']
 TRANSFORMATION_METHODS = config['TRANSFORMATION_METHODS']
 EVALUATION_METHODS = config['EVALUATION_METHODS']
-METRICS = config['METRICS']
+
+METRICS = []
+for metric in config['METRICS']:
+    for retriever in config['PT_RETRIEVERS']:
+        METRICS.append(metric + '_' + retriever)
 
 # Read qrels and cache relevant qrels
 dataset = pt.get_dataset(DOCUMENT_DATASET_OLD_NAME_PYTERRIER)
 qrels = dataset.get_qrels(variant='relevance')
 qrels_cache = {}
 for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
-    # Only relevant qrels
-    if ALL_QRELS or row['label'] > 0:  # Either all qrels or only relevant qrels
-        if row['qid'] not in qrels_cache:
-            qrels_cache[row['qid']] = qrels.loc[
-                (qrels['qid'] == row['qid']) & (ALL_QRELS or qrels['label'] > 0)
-            ]
+    if row['qid'] not in qrels_cache:
+        qrels_cache[row['qid']] = qrels.loc[
+            (qrels['qid'] == row['qid'])
+        ]
 
 
 # Read passsage scores and cache them
@@ -188,23 +188,22 @@ for aggregation_method in AGGREGATION_METHODS:
             for metric in METRICS:
                 # Iterate over all unique QIDs
                 all_qids = set(entry['qid'] for entry in docno_qid_transformed_scores)
-                query_correlations = []
+                query_correlations = {}
 
                 for qid in all_qids:
                     correlation = get_evaluated_score(docno_qid_transformed_scores,
                                                       qrels_cache, qid, metric, evaluation_method)
-                    query_correlations.append(correlation)
+                    query_correlations[qid] = correlation
 
-                # Calculate the average correlation for the current settings
+                # Save correlation scores for the current settings for each query
                 if query_correlations:
-                    avg_correlation = sum(query_correlations) / len(query_correlations)
                     correlation_scores.append({'aggregation_method': aggregation_method,
                                                'transformation_method': transformation_method,
                                                'evaluation_method': evaluation_method,
                                                'metric': metric,
-                                               'correlation': avg_correlation})
+                                               'correlation_per_query': query_correlations})
 
-correlation_scores = sorted(correlation_scores, key=lambda x: x['correlation'], reverse=True)
+
 with gzip.open(PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH, 'wt', encoding='UTF-8') as file:
     for evaluation_entry in correlation_scores:
         file.write(json.dumps(evaluation_entry) + '\n')

@@ -150,8 +150,8 @@ with gzip.open(PASSAGE_DATASET_OLD_SCORE_REL_PATH, 'wt', encoding='UTF-8') as re
         gzip.open(PASSAGE_DATASET_OLD_SCORE_AQ_PATH, 'wt', encoding='UTF-8') as all_qrels_file:
 
     for qid, docnos in tqdm(qrels_cache.items(), desc='Scoring and saving passages', unit='qid'):
-        for docno in docnos['docid']:
-            for passage in passages_cache[docno]:
+        for docno in tqdm(docnos['docid'], desc='Scoring and saving passages', unit='docno'):
+            for passage in tqdm(passages_cache[docno], desc='Scoring and saving passages', unit='passage'):
                 # wod = without original document
                 qrels_for_query = get_qrels_for_query(qid, include_original_document=True)
                 qrels_for_query_wod = get_qrels_for_query(qid, include_original_document=False)
@@ -177,9 +177,9 @@ with gzip.open(PASSAGE_DATASET_OLD_SCORE_REL_PATH, 'wt', encoding='UTF-8') as re
                 scores = {'qid': qid, 'docno': passage['docno']}
                 for retriever in PT_RETRIEVERS:
                     scores['p10_' + retriever] = p10[retriever]
-                    scores['p10_' + retriever + '_wod'] = p10[retriever + '_wod']
+                    scores['p10_wod_' + retriever] = p10[retriever + '_wod']
                     scores['ndcg10_' + retriever] = ndcg10[retriever]
-                    scores['ndcg10_' + retriever + '_wod'] = ndcg10[retriever + '_wod']
+                    scores['ndcg10_wod_' + retriever] = ndcg10[retriever + '_wod']
                     scores['reciprocal_rank_docno_' + retriever] = reciprocal_ranks[retriever]
 
                 # Write to all QRELs file

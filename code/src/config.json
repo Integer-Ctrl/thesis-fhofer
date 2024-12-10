@@ -12,15 +12,13 @@
         "PASSAGE_ID_SEPARATOR": "___",
         "KEY_SEPARATOR": "---",
 
+        "NUMBER_OF_CROSS_VALIDATION_FOLDS": 5,
+
         "PT_RETRIEVERS": ["BM25", "DFR_BM25", "DFIZ", "DLH", "DPH", "DirichletLM", "Hiemstra_LM", "LGD", "PL2", "TF_IDF"],
         "AGGREGATION_METHODS": ["mean", "max", "min"],
         "TRANSFORMATION_METHODS": ["id", "log", "binned"],
         "EVALUATION_METHODS": ["pearson", "spearman", "kendall", "pearson-greedy", "spearman-greedy", "kendall-greedy"],
-        "METRICS": [
-            "p10_bm25", "p10_bm25_wod", "p10_tfidf", "p10_tfidf_wod",
-            "ndcg10_bm25", "ndcg10_bm25_wod", "ndcg10_tfidf", "ndcg10_tfidf_wod",
-            "reciprocal_rank_docno_bm25", "reciprocal_rank_docno_tfidf"
-        ],
+        "METRICS": ["p10", "p10_wod", "ndcg10", "ndcg10_wod", "reciprocal_rank_docno"],
 
 
     "NOTE_1": "dataset which is used to transfer from it to the new dataset",
@@ -39,6 +37,7 @@
         "PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_AQ_PATH": "passages-to-document-correlation-scores-aq.jsonl.gz",
         "PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PQ_PATH": "passages-to-document-correlation-scores-pq.jsonl.gz",
         "PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PQ_AQ_PATH": "passages-to-document-correlation-scores-pq-aq.jsonl.gz",
+        "CROSS_VALIDATION_PATH": "cross-validation.jsonl.gz",
 
 
     "NOTE_2": "dataset which is used to transfer into it from the old dataset",
