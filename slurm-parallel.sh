@@ -29,17 +29,17 @@ echo "Running passage_scorer_parallel.py..."
 python3 -u code/src/passage_scorer/passage_scorer_parallel.py
 echo "Passage scoring completed."
 
-# # Step 4: Compute rank correlation for passage-to-document conversion
-# echo "Running rank_correlation_pq.py..."
-# python3 -u code/src/passages_to_document/rank_correlation_pq.py
-# echo "Rank correlation computed."
+# Step 4: Compute rank correlation for passage-to-document conversion
+echo "Running rank_correlation_pq.py..."
+python3 -u code/src/passages_to_document/rank_correlation_pq.py
+echo "Rank correlation computed."
 
-# # Step 5: Run cross-validation for evaluation
-# echo "Running cross_validation.py..."
-# python3 -u code/src/passages_to_document/cross_validation
-# echo "Cross-validation completed."
+# Step 5: Run cross-validation for evaluation
+echo "Running cross_validation.py..."
+python3 -u code/src/passages_to_document/cross_validation
+echo "Cross-validation completed."
 
-# # Step 6: Run canidate-retrieval for pairwise candidates
-# echo "Running candidate_retrieval.py..."
-# python3 -u code/src/pairwise_preference/candidate_retrieval.py
-# echo "Candidate retrieval completed."
+# Step 6: Run canidate-retrieval for pairwise candidates
+echo "Running candidate_retrieval.py..."
+python3 -u code/src/pairwise_preference/candidate_retrieval.py
+echo "Candidate retrieval completed."
