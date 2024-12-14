@@ -7,11 +7,14 @@ import pyterrier as pt
 import os
 import copy
 from greedy_series import GreedySeries
+import time
 
 
 # Load the configuration settings
-# def load_config(filename="../config.json"): does not work with debug
-def load_config(filename="/mnt/ceph/storage/data-tmp/current/ho62zoq/thesis-fhofer/code/src/config.json"):
+pwd = os.path.dirname(os.path.abspath(__file__))
+
+
+def load_config(filename=pwd + "/../config.json"):
     with open(filename, "r") as f:
         config = json.load(f)
     return config
@@ -175,35 +178,40 @@ def check_scores_smaller_zero(scores, location=''):
                 print(location, metric, entry[metric])
 
 
-correlation_scores = []
-for aggregation_method in AGGREGATION_METHODS:
-    docno_qid_aggregated_scores = get_docno_qid_aggregated_scores(
-        docno_qid_passages_scores_cache, aggregation_method)
+if __name__ == '__main__':
+    start_time = time.time()
 
-    for transformation_method in TRANSFORMATION_METHODS:
-        docno_qid_transformed_scores = get_docno_qid_transformed_scores(
-            docno_qid_aggregated_scores, transformation_method)
+    correlation_scores = []
+    for aggregation_method in AGGREGATION_METHODS:
+        docno_qid_aggregated_scores = get_docno_qid_aggregated_scores(
+            docno_qid_passages_scores_cache, aggregation_method)
 
-        for evaluation_method in EVALUATION_METHODS:
-            for metric in METRICS:
-                # Iterate over all unique QIDs
-                all_qids = set(entry['qid'] for entry in docno_qid_transformed_scores)
-                query_correlations = {}
+        for transformation_method in TRANSFORMATION_METHODS:
+            docno_qid_transformed_scores = get_docno_qid_transformed_scores(
+                docno_qid_aggregated_scores, transformation_method)
 
-                for qid in all_qids:
-                    correlation = get_evaluated_score(docno_qid_transformed_scores,
-                                                      qrels_cache, qid, metric, evaluation_method)
-                    query_correlations[qid] = correlation
+            for evaluation_method in EVALUATION_METHODS:
+                for metric in METRICS:
+                    # Iterate over all unique QIDs
+                    all_qids = set(entry['qid'] for entry in docno_qid_transformed_scores)
+                    query_correlations = {}
 
-                # Save correlation scores for the current settings for each query
-                if query_correlations:
-                    correlation_scores.append({'aggregation_method': aggregation_method,
-                                               'transformation_method': transformation_method,
-                                               'evaluation_method': evaluation_method,
-                                               'metric': metric,
-                                               'correlation_per_query': query_correlations})
+                    for qid in all_qids:
+                        correlation = get_evaluated_score(docno_qid_transformed_scores,
+                                                          qrels_cache, qid, metric, evaluation_method)
+                        query_correlations[qid] = correlation
 
+                    # Save correlation scores for the current settings for each query
+                    if query_correlations:
+                        correlation_scores.append({'aggregation_method': aggregation_method,
+                                                   'transformation_method': transformation_method,
+                                                   'evaluation_method': evaluation_method,
+                                                   'metric': metric,
+                                                   'correlation_per_query': query_correlations})
 
-with gzip.open(PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH, 'wt', encoding='UTF-8') as file:
-    for evaluation_entry in correlation_scores:
-        file.write(json.dumps(evaluation_entry) + '\n')
+    with gzip.open(PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH, 'wt', encoding='UTF-8') as file:
+        for evaluation_entry in correlation_scores:
+            file.write(json.dumps(evaluation_entry) + '\n')
+
+    end_time = time.time()
+    print('Time taken:', end_time - start_time)

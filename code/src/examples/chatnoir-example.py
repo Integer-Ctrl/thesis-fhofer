@@ -1,9 +1,12 @@
 from chatnoir_pyterrier import ChatNoirRetrieve, Feature
 import json
-import pyterrier as pt
+import os
 
 
-def load_config(filename="../config.json"):
+pwd = os.path.dirname(os.path.abspath(__file__))
+
+
+def load_config(filename=pwd + "/../config.json"):
     with open(filename, "r") as f:
         config = json.load(f)
     return config

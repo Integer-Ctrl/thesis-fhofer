@@ -19,9 +19,9 @@ class SpacyPassageChunker(AbstractPassageChunker):
     def process_batch(self, document_batch) -> None:
 
         batch_document_texts = [document['contents'] for document in document_batch]
-        processed_document_texts = nlp.pipe(batch_document_texts, n_process=12)  # configuration! default n_process=1
+        processed_document_texts = nlp.pipe(batch_document_texts, n_process=1)
 
-        for index, document in tqdm(enumerate(processed_document_texts), total=len(document_batch)):
+        for index, document in enumerate(processed_document_texts):  # Removed tqdm
             document_sentences = list(document.sents)
             sentences_word_count = [
                 len([token for token in sentence])

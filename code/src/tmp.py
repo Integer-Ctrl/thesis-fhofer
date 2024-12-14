@@ -20,7 +20,10 @@ METRICS = ['p10_bm25', 'p10_bm25_wod', 'p10_tfidf', 'p10_tfidf_wod',
 
 
 # Load the configuration settings
-def load_config(filename="./config.json"):
+pwd = os.path.dirname(os.path.abspath(__file__))
+
+
+def load_config(filename=pwd + "/config.json"):
     with open(filename, "r") as f:
         config = json.load(f)
     return config
@@ -117,14 +120,10 @@ def check_qrels_for_single_label():
 
 
 # check if passages contain dublicates
-def check_passages_ducplicate():
-    DOCUMENT_DATASET_OLD_NAME = config['DOCUMENT_DATASET_OLD_NAME']
-    DATA_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_OLD_NAME)
-    PASSAGE_DATASET_OLD_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_OLD_PATH'])
-
+def check_passages_ducplicate(path):
     passagesnos_cnt = Counter()
     passagesnos_list = []
-    with gzip.open(PASSAGE_DATASET_OLD_PATH, 'rt', encoding='UTF-8') as file:
+    with gzip.open(path, 'rt', encoding='UTF-8') as file:
         for line in tqdm(file, desc='Caching passages', unit='passage'):
             line = json.loads(line)
             passagesnos_cnt[line['docno']] += 1
@@ -150,4 +149,24 @@ def check_dataset_ducplicate():
     print(docnos_cnt.most_common(10))
 
 
-pt_read_qrels()
+def trim_string(string, limit):
+    return string[:limit]
+
+
+def check_alloc_mem():
+    cache = {}
+    known_doc_ids = set()
+
+    dataset = ir_datasets.load('msmarco-document/trec-dl-2019/judged')
+
+    for doc in dataset.docs_iter():
+        if doc.doc_id in known_doc_ids:
+            continue
+        known_doc_ids.add(doc.doc_id)
+        cache[doc.doc_id] = trim_string(doc.default_text(), 2000000)
+
+    return cache
+
+
+check_passages_ducplicate('/mnt/ceph/storage/data-in-progress/data-teaching/theses' +
+                          '/thesis-fhofer/data/argsme/2020-04-01/touche-2021-task-1/passages.jsonl.gz')
