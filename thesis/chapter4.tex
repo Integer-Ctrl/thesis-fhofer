@@ -125,3 +125,24 @@ To ensure that the correlation analysis is working as intended a greedy version 
         \bottomrule
     \end{tabular}
 \end{table}
+
+\subsection{Candidate Selection}\label{candidate-selection}
+
+\begin{sidewaystable}
+    \centering
+    \caption{Results for different strategies of candidate selection.}
+    \begin{tabular}{lccccccccc}
+        \toprule
+        \textbf{Dataset} & \multicolumn{3}{c}{\textbf{Naive}} & \multicolumn{3}{c}{\textbf{Nearest Neighbor}} & \multicolumn{3}{c}{\textbf{Union}} \\
+        % \textbf{Dataset} & \multicolumn{3}{c}{\textbf{Naive}} & \multicolumn{3}{c}{\textbf{NN}} & \multicolumn{3}{c}{\textbf{Union}} \\
+        \cmidrule(lr){2-4} \cmidrule(lr){5-7} \cmidrule(lr){8-10}
+                         & Precision & Recall & Documents & Precision & Recall & Documents & Precision & Recall & Documents \\
+                         % & P & R & D & P & R & D & P & R & D \\
+        \midrule
+
+        % argsme/2020-04-01/touche-2021-task-1 & 0.0175 & 0.9586 & 100,000 & 0.0559 & 1.0000 & 38,807 & 0.0146 & 1.0000 & 123582 \\
+        argsme21 & 0.0175 & 0.9586 & 100,000 & 0.0559 & 1.0000 & 38,807 & 0.0146 & 1.0000 & 123582 \\
+
+        \bottomrule 
+    \end{tabular}
+\end{sidewaystable}
