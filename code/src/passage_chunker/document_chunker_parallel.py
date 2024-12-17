@@ -101,7 +101,7 @@ def process_documents(args):
     return results
 
 
-def parallel_process(dataset, num_workers, batch_size=1000):
+def parallel_process_documents(dataset, num_workers, batch_size=1000):
     total_docs = dataset.docs_count()  # Assume the dataset has a length attribute or equivalent.
     chunk_size = total_docs // num_workers
 
@@ -133,6 +133,14 @@ def parallel_process(dataset, num_workers, batch_size=1000):
     return [result for sublist in results for result in sublist]
 
 
+# If ir_dataset already chunked as passages, save to file
+def save_passages_local(dataset, num_workers, batch_size=1000):
+
+    with gzip.open(PASSAGE_DATASET_NEW_PATH, 'wt', encoding='UTF-8') as file:
+        for doc in dataset.docs_iter():
+            file.write(json.dumps({"docno": doc.doc_id, "text": doc.default_text()}) + '\n')
+
+
 BATCH_SIZE = 1000
 NUM_WORKERS = 16
 
@@ -141,9 +149,11 @@ time_start = time.time()
 print(f"Current memory usage: {tracemalloc.get_traced_memory()[0] / 1024 ** 3:.2f} GB, \
       Peak memory usage: {tracemalloc.get_traced_memory()[1] / 1024 ** 3:.2f} GB")
 
+# TODO: remove the False condition
 if TYPE_OLD == 'document':
+    print(f"Chunking {DOCUMENT_DATASET_OLD_NAME} dataset")
     dataset = ir_datasets.load(DOCUMENT_DATASET_OLD_NAME_PYTHON_API)
-    results = parallel_process(dataset, NUM_WORKERS, batch_size=BATCH_SIZE)
+    results = parallel_process_documents(dataset, NUM_WORKERS, batch_size=BATCH_SIZE)
 
     with gzip.open(PASSAGE_DATASET_OLD_PATH, 'wt', encoding='UTF-8') as file:
         for result in results:
@@ -151,16 +161,27 @@ if TYPE_OLD == 'document':
     print(f"Current memory usage: {tracemalloc.get_traced_memory()[0] / 1024 ** 3:.2f} GB, \
           Peak memory usage: {tracemalloc.get_traced_memory()[1] / 1024 ** 3:.2f} GB")
 
+if TYPE_OLD == 'passage':
+    print(f"Dataset {DOCUMENT_DATASET_OLD_NAME} is already chunked and now saved")
+    dataset = ir_datasets.load(DOCUMENT_DATASET_OLD_NAME_PYTHON_API)
+    save_passages_local(dataset, NUM_WORKERS, BATCH_SIZE)
+
 # Chunk new dataset and save to file
 if DOCUMENT_DATASET_OLD_NAME not in DOCUMENT_DATASET_NEW_NAME and TYPE_NEW == 'document':
+    print(f"Chunking {DOCUMENT_DATASET_NEW_NAME} dataset")
     dataset = ir_datasets.load(DOCUMENT_DATASET_NEW_NAME_PYTHON_API)
-    results = parallel_process(dataset, NUM_WORKERS, batch_size=BATCH_SIZE)
+    results = parallel_process_documents(dataset, NUM_WORKERS, batch_size=BATCH_SIZE)
 
     with gzip.open(PASSAGE_DATASET_NEW_PATH, 'wt', encoding='UTF-8') as file:
         for result in results:
             file.write((json.dumps(result) + '\n'))
     print(f"Current memory usage: {tracemalloc.get_traced_memory()[0] / 1024 ** 3:.2f} GB, \
           Peak memory usage: {tracemalloc.get_traced_memory()[1] / 1024 ** 3:.2f} GB")
+
+if TYPE_NEW == 'passage':
+    print(f"Dataset {DOCUMENT_DATASET_NEW_NAME} is already chunked and now saved")
+    dataset = ir_datasets.load(DOCUMENT_DATASET_NEW_NAME_PYTHON_API)
+    save_passages_local(dataset, NUM_WORKERS, BATCH_SIZE)
 
 time_end = time.time()
 print(f"Processed and saved documents in {(time_end - time_start) / 60} minutes")
