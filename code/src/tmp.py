@@ -168,5 +168,28 @@ def check_alloc_mem():
     return cache
 
 
-check_passages_ducplicate('/mnt/ceph/storage/data-in-progress/data-teaching/theses' +
-                          '/thesis-fhofer/data/argsme/2020-04-01/touche-2021-task-1/passages.jsonl.gz')
+qid_docnos_naive_retrieval = {1: ['doc1', 'doc2', 'doc3'], 2: ['doc4', 'doc5', 'doc6']}
+qid_docnos_nearest_neighbor_retrieval = {1: ['doc1', 'doc8', 'doc9'], 2: ['doc10', 'doc11', 'doc12']}
+
+
+def combine_dicts():
+
+    qid_docnos_union_retrieval = {}
+
+    def union_retrieval():
+
+        for key, value in qid_docnos_naive_retrieval.items():
+            qid_docnos_union_retrieval[key] = value
+
+        for key, value in qid_docnos_nearest_neighbor_retrieval.items():
+            if key in qid_docnos_union_retrieval:
+                qid_docnos_union_retrieval[key] = list(set(qid_docnos_union_retrieval[key] + value))
+            else:
+                qid_docnos_union_retrieval[key] = value
+
+        return qid_docnos_union_retrieval
+
+    print(union_retrieval())
+
+
+combine_dicts()
