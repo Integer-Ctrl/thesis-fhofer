@@ -218,7 +218,7 @@ def process_qid(args):
 
 # Parallel processing
 if __name__ == "__main__":
-    NUM_WORKERS = 32
+    NUM_WORKERS = 50
     start_time = time.time()
 
     # Clear files before writing in parallel

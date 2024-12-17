@@ -214,4 +214,4 @@ if __name__ == '__main__':
             file.write(json.dumps(evaluation_entry) + '\n')
 
     end_time = time.time()
-    print('Time taken:', end_time - start_time)
+    print(f'Finished rank correlation per query in: {(end_time - start_time) / 60} minutes.')

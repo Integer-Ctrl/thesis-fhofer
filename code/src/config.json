@@ -6,7 +6,7 @@
         "PER_QUERY": true,
         "ALL_QRELS": true,
 
-        "CHATNOIR_RETRIEVAL": true,
+        "CHATNOIR_RETRIEVAL": false,
         "CHATNOIR_INDICES": "msmarco-document",
 
         "PASSAGE_ID_SEPARATOR": "___",
