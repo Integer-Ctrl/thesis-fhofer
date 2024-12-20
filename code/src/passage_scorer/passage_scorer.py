@@ -38,12 +38,13 @@ PASSAGE_DATASET_OLD_SCORE_REL_PATH = os.path.join(OLD_PATH, config['PASSAGE_DATA
 PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
 
 # Script should only compute passage scores for one qid at a time
-if len(sys.argv) < 2:
-    print("Please provide a QID as an argument.")
+if len(sys.argv) < 3:
+    print("Please provide a job ID and the number of jobs as an argument.")
     sys.exit(1)
 
 JOB_ID = int(sys.argv[1])
-QID = None
+NUM_JOBS = int(sys.argv[2])
+QIDS = None
 
 # Read qrels and cache relevant qrels
 dataset = pt.get_dataset(DOCUMENT_DATASET_OLD_NAME_PYTERRIER)
@@ -56,11 +57,17 @@ for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
         ].rename(columns={'qid': 'query', 'docno': 'docid', 'label': 'rel'})  # Rename columns
         qrels_cache[row['qid']]['query'] = 0  # Dummy value to enable merge of run and qrels (TrecEval)
 
+# Distribute QIDs among jobs
 keys = list(qrels_cache.keys())
-if JOB_ID > len(keys):
-    print("Job ID is out of range. Nothing to do.")
-    sys.exit(0)
-QID = keys[JOB_ID - 1]
+total_qids = len(keys)
+
+# Determine the range of QIDs for this job
+qids_per_job = (total_qids + NUM_JOBS - 1) // NUM_JOBS  # Ceiling division
+start_index = (JOB_ID - 1) * qids_per_job
+end_index = min(start_index + qids_per_job, total_qids)
+
+# Assign QIDs for the current job
+QIDS = keys[start_index:end_index]
 
 # Initialize PyTerrier and Tokenizer
 if not pt.java.started():
@@ -213,23 +220,24 @@ def process_qid(qid):
 if __name__ == '__main__':
     start_time = time.time()
 
-    relevant_path = os.path.join(PASSAGE_DATASET_OLD_SCORE_REL_PATH, f"qid_{QID}.jsonl.gz")
-    all_path = os.path.join(PASSAGE_DATASET_OLD_SCORE_AQ_PATH, f"qid_{QID}.jsonl.gz")
+    for QID in QIDS:
+        relevant_path = os.path.join(PASSAGE_DATASET_OLD_SCORE_REL_PATH, f"qid_{QID}.jsonl.gz")
+        all_path = os.path.join(PASSAGE_DATASET_OLD_SCORE_AQ_PATH, f"qid_{QID}.jsonl.gz")
 
-    # Check if scores already exist
-    if os.path.exists(relevant_path) and os.path.exists(all_path):
-        print(f"Scores for QID {QID} already exist. Exiting.")
-        sys.exit(0)
+        # Check if scores already exist
+        if os.path.exists(relevant_path) and os.path.exists(all_path):
+            print(f"Scores for QID {QID} already exist. Exiting.")
+            continue
 
-    results, relevant_results = process_qid(QID)
+        results, relevant_results = process_qid(QID)
 
-    end_time = time.time()
-    print(f"Job {JOB_ID} finished processing QID {QID} in {(end_time - start_time) / 60} minutes.")
+        end_time = time.time()
+        print(f"Job {JOB_ID} finished processing QID {QID} in {(end_time - start_time) / 60} minutes.")
 
-    with gzip.open(relevant_path, 'wt', encoding='UTF-8') as relevant_qrels_file:
-        for scores in relevant_results:
-            relevant_qrels_file.write(json.dumps(scores) + '\n')
+        with gzip.open(relevant_path, 'wt', encoding='UTF-8') as relevant_qrels_file:
+            for scores in relevant_results:
+                relevant_qrels_file.write(json.dumps(scores) + '\n')
 
-    with gzip.open(all_path, 'wt', encoding='UTF-8') as all_qrels_file:
-        for scores in results:
-            all_qrels_file.write(json.dumps(scores) + '\n')
+        with gzip.open(all_path, 'wt', encoding='UTF-8') as all_qrels_file:
+            for scores in results:
+                all_qrels_file.write(json.dumps(scores) + '\n')

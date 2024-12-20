@@ -25,7 +25,7 @@ echo "Folder structure initialized."
 
 # Step 2: Run passage scorer with the task ID as an argument
 echo "Running passage_scorer.py..."
-python3 -u code/src/passage_scorer/passage_scorer.py ${SLURM_ARRAY_TASK_ID}
+python3 -u code/src/passage_scorer/passage_scorer.py ${SLURM_ARRAY_TASK_ID} ${$SLURM_ARRAY_TASK_MAX}
 echo "Passage scoring completed."
 
 # Save logs, only first job responsible for creating the folder
