@@ -8,7 +8,6 @@ import time
 import tracemalloc
 from tqdm import tqdm
 
-tracemalloc.start()
 # Load the configuration settings
 pwd = os.path.dirname(os.path.abspath(__file__))
 
@@ -102,26 +101,49 @@ def process_documents(args):
 
 
 def parallel_process_documents(dataset, num_workers, batch_size=1000):
-    total_docs = dataset.docs_count()  # Assume the dataset has a length attribute or equivalent.
-    chunk_size = total_docs // num_workers
+
+    # Only chunk judged documents
+    judged_doc_ids = set()
+    for qrel in dataset.qrels_iter():
+        judged_doc_ids.add(qrel.doc_id)
+
+    total_chunked_docs = 0
+    total_judged_docs = len(judged_doc_ids)
+    chunk_size = total_judged_docs // num_workers
 
     # Divide dataset into slices for each worker
     known_doc_ids = set()
     slices = []
-    for i in range(num_workers):
-        if i < num_workers - 1:
-            chunk = list(dataset.docs_iter()[i * chunk_size:(i + 1) * chunk_size])
-        else:
-            chunk = list(dataset.docs_iter()[i * chunk_size:])
 
-        # Remove duplicates within the chunk
-        unique_chunk = []
-        for doc in chunk:
-            if doc.doc_id not in known_doc_ids:
-                known_doc_ids.add(doc.doc_id)
-                unique_chunk.append(doc)
+    chunk = list()
+    chunk_docs_count = 0
 
-        slices.append(unique_chunk)
+    for document in dataset.docs_iter():
+        # Skip documents that are not judged
+        if document.doc_id not in judged_doc_ids:
+            continue
+
+        # Skip documents that have already been processed
+        if document.doc_id in known_doc_ids:
+            continue
+        known_doc_ids.add(document.doc_id)
+
+        chunk.append(document)
+        chunk_docs_count += 1
+
+        # Create a chunk for the current worker
+        if chunk_docs_count >= chunk_size:
+            slices.append(chunk)
+            chunk = list()
+            total_chunked_docs += chunk_docs_count
+            chunk_docs_count = 0
+
+    # Add the remaining documents to the last worker chunk
+    if chunk:
+        slices[-1].extend(chunk)
+
+    total_chunked_docs += chunk_docs_count
+    print(f"Total judged documents: {total_judged_docs}, Total chunked documents: {total_chunked_docs}")
 
     # Prepare arguments for each process
     process_args = [(chunk, batch_size, PASSAGE_ID_SEPARATOR) for chunk in slices]
@@ -144,12 +166,8 @@ def save_passages_local(dataset, num_workers, batch_size=1000):
 BATCH_SIZE = 1000
 NUM_WORKERS = 16
 
-# Chunk old dataset and save to file
 time_start = time.time()
-print(f"Current memory usage: {tracemalloc.get_traced_memory()[0] / 1024 ** 3:.2f} GB, \
-      Peak memory usage: {tracemalloc.get_traced_memory()[1] / 1024 ** 3:.2f} GB")
 
-# TODO: remove the False condition
 if TYPE_OLD == 'document':
     print(f"Chunking {DOCUMENT_DATASET_OLD_NAME} dataset")
     dataset = ir_datasets.load(DOCUMENT_DATASET_OLD_NAME_PYTHON_API)
@@ -158,8 +176,6 @@ if TYPE_OLD == 'document':
     with gzip.open(PASSAGE_DATASET_OLD_PATH, 'wt', encoding='UTF-8') as file:
         for result in results:
             file.write((json.dumps(result) + '\n'))
-    print(f"Current memory usage: {tracemalloc.get_traced_memory()[0] / 1024 ** 3:.2f} GB, \
-          Peak memory usage: {tracemalloc.get_traced_memory()[1] / 1024 ** 3:.2f} GB")
 
 if TYPE_OLD == 'passage':
     print(f"Dataset {DOCUMENT_DATASET_OLD_NAME} is already chunked and now saved")
@@ -175,8 +191,6 @@ if DOCUMENT_DATASET_OLD_NAME not in DOCUMENT_DATASET_NEW_NAME and TYPE_NEW == 'd
     with gzip.open(PASSAGE_DATASET_NEW_PATH, 'wt', encoding='UTF-8') as file:
         for result in results:
             file.write((json.dumps(result) + '\n'))
-    print(f"Current memory usage: {tracemalloc.get_traced_memory()[0] / 1024 ** 3:.2f} GB, \
-          Peak memory usage: {tracemalloc.get_traced_memory()[1] / 1024 ** 3:.2f} GB")
 
 if TYPE_NEW == 'passage':
     print(f"Dataset {DOCUMENT_DATASET_NEW_NAME} is already chunked and now saved")
@@ -185,6 +199,3 @@ if TYPE_NEW == 'passage':
 
 time_end = time.time()
 print(f"Processed and saved documents in {(time_end - time_start) / 60} minutes")
-print(f"Current memory usage: {tracemalloc.get_traced_memory()[0] / 1024 ** 3:.2f} GB, \
-      Peak memory usage: {tracemalloc.get_traced_memory()[1] / 1024 ** 3:.2f} GB")
-tracemalloc.stop()

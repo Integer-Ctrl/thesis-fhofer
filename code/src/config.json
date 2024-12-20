@@ -31,8 +31,8 @@
 
         "PASSAGE_DATASET_OLD_PATH": "passages.jsonl.gz",
         "PASSAGE_DATASET_OLD_INDEX_PATH": "passage-indices",
-        "PASSAGE_DATASET_OLD_SCORE_REL_PATH": "retrieval-scores.jsonl.gz",
-        "PASSAGE_DATASET_OLD_SCORE_AQ_PATH": "retrieval-scores-aq.jsonl.gz",
+        "PASSAGE_DATASET_OLD_SCORE_REL_PATH": "retrieval-scores-rel/",
+        "PASSAGE_DATASET_OLD_SCORE_AQ_PATH": "retrieval-scores-aq/",
 
         "PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH": "rank-correlation-scores.jsonl.gz",
         "PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_AQ_PATH": "rank-correlation-scores-aq.jsonl.gz",
