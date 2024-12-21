@@ -55,6 +55,7 @@ if CHATNOIR_RETRIEVAL:
 else:
     CANDIDATES_PATH = os.path.join(NEW_PATH, config['CANDIDATES_LOCAL_PATH'])
 
+RECALL_PRECISION_PATH = os.path.join(NEW_PATH, 'recall_precision.txt')
 APPROACHES = config['CANDIDATE_APPROACHES']
 
 PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
@@ -372,56 +373,58 @@ def compute_recall_precision(qid_docnos_cache, filename=None):
     return recall, precision
 
 
-# Recall and Precision for each approach
-# docnos_oracle = oracle_retrieval()
-docnos_naive = naive_retrieval()
-docnos_nearest_neighbor = nearest_neighbor_retrieval()
-docnos_union = union_retrieval()
-
-# # Print the number of documents (docnos) for each approach
-# # print(f'Oracle: {sum([len(docnos) for docnos in docnos_oracle.values()])} documents (docnos)')
-print(f'Naive: {sum([len(docnos) for docnos in docnos_naive.values()])} documents (docnos)')
-print(f'Nearest Neighbor: {sum([len(docnos) for docnos in docnos_nearest_neighbor.values()])} documents (docnos)')
-print(f'Union: {sum([len(docnos) for docnos in docnos_union.values()])} documents (docnos)')
-
-# # Compute Recall and Precision for each approach
-# # Only for old dataset possible
-if DOCUMENT_DATASET_NEW_NAME in DOCUMENT_DATASET_OLD_NAME:
-    # recall_oracle, precision_oracle = compute_recall_precision(docnos_oracle, filename='recall_precision_oracle.pdf')
-    pass
-
-recall_naive, precision_naive = compute_recall_precision(docnos_naive, filename='recall_precision_naive.pdf')
-recall_nearest_neighbor, precision_nearest_neighbor = compute_recall_precision(
-    docnos_nearest_neighbor, filename='recall_precision_nearest_neighbor.pdf')
-recall_union, precision_union = compute_recall_precision(docnos_union, filename='recall_precision_union.pdf')
-
-# print(f'Oracle: Recall={recall_oracle}, Precision={precision_oracle}')
-print(f'Naive: Recall={recall_naive}, Precision={precision_naive}')
-print(f'Nearest Neighbor: Recall={recall_nearest_neighbor}, Precision={precision_nearest_neighbor}')
-print(f'Union: Recall={recall_union}, Precision={precision_union}')
-
-
-# Write results to file
-with gzip.open(CANDIDATES_PATH, 'wt', encoding='UTF-8') as file:
-    for approach in APPROACHES:
-        if approach == 'naive':
+def write_candidates(candidates_file, candidates, recall, precision):
+    with gzip.open(candidates_file, 'wt', encoding='UTF-8') as file:
+        for qid, docnos in candidates.items():
             file.write(json.dumps({
-                "approach_name": approach,
-                "recall": recall_naive,
-                "precision": precision_naive,
-                "judge": docnos_naive
+                "qid": qid,
+                "docnos": docnos
             }) + '\n')
-        if approach == 'nearest_neighbor':
-            file.write(json.dumps({
-                "approach_name": approach,
-                "recall": recall_nearest_neighbor,
-                "precision": precision_nearest_neighbor,
-                "judge": docnos_nearest_neighbor
-            }) + '\n')
-        if approach == 'union':
-            file.write(json.dumps({
-                "approach_name": approach,
-                "recall": recall_union,
-                "precision": precision_union,
-                "judge": docnos_union
-            }) + '\n')
+
+    with open(RECALL_PRECISION_PATH, 'a') as recall_precision_file:
+        recall_precision_file.write(json.dumps({
+            "approach_name": candidates_file.split('/')[-1].split('.')[0],
+            "recall": recall,
+            "precision": precision
+        }) + '\n')
+
+
+if __name__ == '__main__':
+    # Reset recall and precision file
+    with open(RECALL_PRECISION_PATH, 'w') as recall_precision_file:
+        recall_precision_file.write('')
+
+    # Recall and Precision for each approach
+    docnos_naive = naive_retrieval()
+    docnos_nearest_neighbor = nearest_neighbor_retrieval()
+    docnos_union = union_retrieval()
+
+    # # Print the number of documents (docnos) for each approach
+    print(f'Naive: {sum([len(docnos) for docnos in docnos_naive.values()])} documents (docnos)')
+    print(f'Nearest Neighbor: {sum([len(docnos) for docnos in docnos_nearest_neighbor.values()])} documents (docnos)')
+    print(f'Union: {sum([len(docnos) for docnos in docnos_union.values()])} documents (docnos)')
+
+    recall_naive, precision_naive = compute_recall_precision(docnos_naive, filename='recall_precision_naive.pdf')
+    recall_nearest_neighbor, precision_nearest_neighbor = compute_recall_precision(
+        docnos_nearest_neighbor, filename='recall_precision_nearest_neighbor.pdf')
+    recall_union, precision_union = compute_recall_precision(docnos_union, filename='recall_precision_union.pdf')
+
+    # print(f'Oracle: Recall={recall_oracle}, Precision={precision_oracle}')
+    print(f'Naive: Recall={recall_naive}, Precision={precision_naive}')
+    print(f'Nearest Neighbor: Recall={recall_nearest_neighbor}, Precision={precision_nearest_neighbor}')
+    print(f'Union: Recall={recall_union}, Precision={precision_union}')
+
+    # Write results to file
+    naive_file_name = os.path.join(CANDIDATES_PATH, 'naive.jsonl.gz')
+    nearest_neighbor_file_name = os.path.join(CANDIDATE_PATH, 'nearest_neighbor.jsonl.gz')
+    union_file_name = os.path.join(CANDIDATE_PATH, 'union.jsonl.gz')
+
+    write_candidates(naive_file_name, docnos_naive,
+                     recall_naive, precision_naive)
+
+    write_candidates(nearest_neighbor_file_name, docnos_nearest_neighbor,
+                     recall_nearest_neighbor, precision_nearest_neighbor)
+
+    write_candidates(union_file_name, docnos_union,
+                     recall_union, precision_union)
+

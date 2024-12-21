@@ -114,4 +114,4 @@ cross_validation_scores = dict(sorted(cross_validation_scores.items(), key=lambd
 
 with gzip.open(CROSS_VALIDATION_PATH, 'wt', encoding='UTF-8') as file:
     for key, score in cross_validation_scores.items():
-        file.write(json.dumps({'key': key, 'score': score}) + '\n')
+        file.write(json.dumps({'eval_method___retriever': key, 'score': score}) + '\n')

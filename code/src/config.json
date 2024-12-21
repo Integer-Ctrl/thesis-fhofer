@@ -39,6 +39,7 @@
         "PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PQ_PATH": "rank-correlation-scores-pq.jsonl.gz",
         "PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PQ_AQ_PATH": "rank-correlation-scores-pq-aq.jsonl.gz",
         "CROSS_VALIDATION_PATH": "cross-validation.jsonl.gz",
+        "CROSS_VALIDATION_SCORES_PATH": "cross-validation-scores.jsonl.gz",
 
 
     "NOTE_2": "dataset which is used to transfer into it from the old dataset",
@@ -52,8 +53,8 @@
         "PASSAGE_DATASET_NEW_PATH": "passages.jsonl.gz",
         "PASSAGE_DATASET_NEW_INDEX_PATH": "passage-indices",
 
-        "CANDIDATES_LOCAL_PATH": "candidates.jsonl.gz",
-        "CANDIDATE_CHATNOIR_PATH": "candidates-chatnoir.jsonl.gz",
+        "CANDIDATES_LOCAL_PATH": "candidates/",
+        "CANDIDATE_CHATNOIR_PATH": "candidates-chatnoir/",
         "CANDIDATE_APPROACHES": ["oracle", "naiv", "nearest_neighbor", "union"],
         "DUOT5_QID_DOC_DOC_SYSTEM_SCORES_PATH": "duot5-qid-doc-doc-system-scores.jsonl.gz"
 }
