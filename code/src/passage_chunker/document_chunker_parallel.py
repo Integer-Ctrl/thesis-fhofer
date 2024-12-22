@@ -100,50 +100,74 @@ def process_documents(args):
     return results
 
 
-def parallel_process_documents(dataset, num_workers, batch_size=1000):
+def parallel_process_documents(dataset, num_workers, only_relevant_docs, batch_size=1000):
 
-    # Only chunk judged documents
-    judged_doc_ids = set()
-    for qrel in dataset.qrels_iter():
-        judged_doc_ids.add(qrel.doc_id)
+    if only_relevant_docs:
+        # Only chunk judged documents
+        judged_doc_ids = set()
+        for qrel in dataset.qrels_iter():
+            judged_doc_ids.add(qrel.doc_id)
 
-    total_chunked_docs = 0
-    total_judged_docs = len(judged_doc_ids)
-    chunk_size = total_judged_docs // num_workers
+        total_chunked_docs = 0
+        total_judged_docs = len(judged_doc_ids)
+        chunk_size = total_judged_docs // num_workers
 
-    # Divide dataset into slices for each worker
-    known_doc_ids = set()
-    slices = []
+        # Divide dataset into slices for each worker
+        known_doc_ids = set()
+        slices = []
 
-    chunk = list()
-    chunk_docs_count = 0
+        chunk = list()
+        chunk_docs_count = 0
 
-    for document in dataset.docs_iter():
-        # Skip documents that are not judged
-        if document.doc_id not in judged_doc_ids:
-            continue
+        for document in dataset.docs_iter():
+            # Skip documents that are not judged
+            if document.doc_id not in judged_doc_ids:
+                continue
 
-        # Skip documents that have already been processed
-        if document.doc_id in known_doc_ids:
-            continue
-        known_doc_ids.add(document.doc_id)
+            # Skip documents that have already been processed
+            if document.doc_id in known_doc_ids:
+                continue
+            known_doc_ids.add(document.doc_id)
 
-        chunk.append(document)
-        chunk_docs_count += 1
+            chunk.append(document)
+            chunk_docs_count += 1
 
-        # Create a chunk for the current worker
-        if chunk_docs_count >= chunk_size:
-            slices.append(chunk)
-            chunk = list()
-            total_chunked_docs += chunk_docs_count
-            chunk_docs_count = 0
+            # Create a chunk for the current worker
+            if chunk_docs_count >= chunk_size:
+                slices.append(chunk)
+                chunk = list()
+                total_chunked_docs += chunk_docs_count
+                chunk_docs_count = 0
 
-    # Add the remaining documents to the last worker chunk
-    if chunk:
-        slices[-1].extend(chunk)
+        # Add the remaining documents to the last worker chunk
+        if chunk:
+            slices[-1].extend(chunk)
 
-    total_chunked_docs += chunk_docs_count
-    print(f"Total judged documents: {total_judged_docs}, Total chunked documents: {total_chunked_docs}")
+    # Chunk all documents
+    else:
+        total_docs = dataset.docs_count()
+        chunk_size = total_docs // num_workers
+
+        # Divide dataset into slices for each worker
+        known_doc_ids = set()
+        slices = []
+        for i in range(num_workers):
+            if i < num_workers - 1:
+                chunk = list(dataset.docs_iter()[i * chunk_size:(i + 1) * chunk_size])
+            else:
+                chunk = list(dataset.docs_iter()[i * chunk_size:])
+
+            # Remove duplicates within the chunk
+            unique_chunk = []
+            for doc in chunk:
+                if doc.doc_id not in known_doc_ids:
+                    known_doc_ids.add(doc.doc_id)
+                    unique_chunk.append(doc)
+
+            slices.append(unique_chunk)
+
+        total_chunked_docs += chunk_docs_count
+        print(f"Total judged documents: {total_judged_docs}, Total chunked documents: {total_chunked_docs}")
 
     # Prepare arguments for each process
     process_args = [(chunk, batch_size, PASSAGE_ID_SEPARATOR) for chunk in slices]
@@ -171,7 +195,7 @@ time_start = time.time()
 if TYPE_OLD == 'document':
     print(f"Chunking {DOCUMENT_DATASET_OLD_NAME} dataset")
     dataset = ir_datasets.load(DOCUMENT_DATASET_OLD_NAME_PYTHON_API)
-    results = parallel_process_documents(dataset, NUM_WORKERS, batch_size=BATCH_SIZE)
+    results = parallel_process_documents(dataset, NUM_WORKERS, only_relevant_docs=True, batch_size=BATCH_SIZE)
 
     with gzip.open(PASSAGE_DATASET_OLD_PATH, 'wt', encoding='UTF-8') as file:
         for result in results:
@@ -186,13 +210,13 @@ if TYPE_OLD == 'passage':
 if DOCUMENT_DATASET_OLD_NAME not in DOCUMENT_DATASET_NEW_NAME and TYPE_NEW == 'document':
     print(f"Chunking {DOCUMENT_DATASET_NEW_NAME} dataset")
     dataset = ir_datasets.load(DOCUMENT_DATASET_NEW_NAME_PYTHON_API)
-    results = parallel_process_documents(dataset, NUM_WORKERS, batch_size=BATCH_SIZE)
+    results = parallel_process_documents(dataset, NUM_WORKERS, only_relevant_docs=False, batch_size=BATCH_SIZE)
 
     with gzip.open(PASSAGE_DATASET_NEW_PATH, 'wt', encoding='UTF-8') as file:
         for result in results:
             file.write((json.dumps(result) + '\n'))
 
-if TYPE_NEW == 'passage':
+if DOCUMENT_DATASET_OLD_NAME not in DOCUMENT_DATASET_NEW_NAME and TYPE_NEW == 'passage':
     print(f"Dataset {DOCUMENT_DATASET_NEW_NAME} is already chunked and now saved")
     dataset = ir_datasets.load(DOCUMENT_DATASET_NEW_NAME_PYTHON_API)
     save_passages_local(dataset, NUM_WORKERS, BATCH_SIZE)
