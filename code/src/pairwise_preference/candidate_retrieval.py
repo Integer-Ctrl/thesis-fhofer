@@ -59,7 +59,7 @@ FILE_PATTERN = os.path.join(PASSAGE_DATASET_OLD_SCORE_REL_PATH, "qid_*.jsonl.gz"
 NUMBER_PATTERN = re.compile(r"qid_(\d+)\.jsonl\.gz")
 
 if CHATNOIR_RETRIEVAL:
-    CANDIDATE_PATH = os.path.join(NEW_PATH, config['CANDIDATE_CHATNOIR_PATH'])
+    CANDIDATES_PATH = os.path.join(NEW_PATH, config['CANDIDATE_CHATNOIR_PATH'])
 else:
     CANDIDATES_PATH = os.path.join(NEW_PATH, config['CANDIDATES_LOCAL_PATH'])
 
@@ -88,6 +88,7 @@ target_passages_text_cache = {}
 
 with gzip.open(PASSAGE_DATASET_NEW_PATH, 'rt', encoding='UTF-8') as file:
     for line in file:
+        line = json.loads(line)
         docno, passageno = line['docno'].split(PASSAGE_ID_SEPARATOR)
         if docno not in target_passages_text_cache:
             target_docno_passagenos[docno] = []
@@ -183,7 +184,7 @@ source_passages_text_cache = {}
 queries_relevant_passagenos = {}
 
 with gzip.open(PASSAGE_DATASET_OLD_PATH, 'rt', encoding='UTF-8') as file:
-    for line in tqdm(file, desc='Caching passages', unit='passage'):
+    for line in file:
         line = json.loads(line)
         docno, passageno = line['docno'].split(PASSAGE_ID_SEPARATOR)
         if docno not in source_docno_passagenos:
@@ -380,7 +381,9 @@ def compute_recall_precision(qid_docnos_cache, filename=None):
 with gzip.open(CROSS_VALIDATION_SCORES_PATH, 'rt', encoding='UTF-8') as file:
     for line in file:  # already decending sorted
         data = json.loads(line)  # return only best scoring method
-        best_scoring_metric = data['eval_method___retriever___metric'].split('___')[-1]
+        best_scoring_metric = data['eval_method___retriever___metric'].split(KEY_SEPARATOR)[-1]
+        best_scoring_retriever = data['eval_method___retriever___metric'].split(KEY_SEPARATOR)[1]
+        best_scoring_metric_retriever = best_scoring_metric + '_' + best_scoring_retriever
         break
 
 # 3. get all passage scores in dictionary format qid: {docno: score} # just score of the best scoring method
@@ -400,7 +403,7 @@ for file_path in glob(FILE_PATTERN):
             # Store the best score in the passages_score_cache
             if qid not in passages_score_cache:
                 passages_score_cache[qid] = {}
-            passages_score_cache[qid][docno] = data[best_scoring_metric]
+            passages_score_cache[qid][docno] = data[best_scoring_metric_retriever]
 
 # # 4. get all qrels in dictinary format qid: {docno: relevance} # all relevance scores
 # qrels_cache = {}
@@ -499,8 +502,8 @@ if __name__ == '__main__':
 
     # Write results to file
     naive_file_name = os.path.join(CANDIDATES_PATH, 'naive.jsonl.gz')
-    nearest_neighbor_file_name = os.path.join(CANDIDATE_PATH, 'nearest_neighbor.jsonl.gz')
-    union_file_name = os.path.join(CANDIDATE_PATH, 'union.jsonl.gz')
+    nearest_neighbor_file_name = os.path.join(CANDIDATES_PATH, 'nearest_neighbor.jsonl.gz')
+    union_file_name = os.path.join(CANDIDATES_PATH, 'union.jsonl.gz')
 
     write_candidates(naive_file_name, docnos_naive,
                      recall_naive, precision_naive)

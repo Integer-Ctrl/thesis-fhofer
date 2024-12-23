@@ -192,4 +192,20 @@ def combine_dicts():
     print(union_retrieval())
 
 
-combine_dicts()
+def check_query_keys():
+    dataset = pt.get_dataset('irds:argsme/2020-04-01/touche-2021-task-1')
+    for query in dataset.get_topics():
+        print(query.keys(), '\n')
+        print(query['qid'], '\n')
+        print(query['query'], '\n')
+        print(query['question'], '\n')
+        print(query['question_type'], '\n')
+        print(query['question_category'], '\n')
+        print(query['question_category_type'], '\n')
+        print(query['question_category_type_subtype'], '\n')
+        print(query['question_category_type_subtype_topic'], '\n')
+        print(query['question_category_type_subtype_topic_premises'], '\n')
+        print(query['question_category_type_subtype_topic_conclusion'], '\n')
+        print(query['question_category_type_subtype_topic_premises_conclusion'], '\n')
+        print(query['question_category_type_subtype_topic_premises_conclusion_query'], '\n')
+        break

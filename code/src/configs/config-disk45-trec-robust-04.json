@@ -24,9 +24,9 @@
     "NOTE_1": "dataset which is used to transfer from it to the new dataset",
 
         "TYPE_OLD": "document",
-        "DOCUMENT_DATASET_OLD_NAME": "msmarco-document/trec-dl-2019/judged",
-        "DOCUMENT_DATASET_OLD_NAME_PYTERRIER": "irds:msmarco-document/trec-dl-2019/judged",
-        "DOCUMENT_DATASET_OLD_NAME_PYTHON_API": "msmarco-document/trec-dl-2019/judged",
+        "DOCUMENT_DATASET_OLD_NAME": "disks45/nocr/trec-robust-2004",
+        "DOCUMENT_DATASET_OLD_NAME_PYTERRIER": "irds:disks45/nocr/trec-robust-2004",
+        "DOCUMENT_DATASET_OLD_NAME_PYTHON_API": "disks45/nocr/trec-robust-2004",
         "DOCUMENT_DATASET_OLD_INDEX_PATH": "document-indices",
 
         "PASSAGE_DATASET_OLD_PATH": "passages.jsonl.gz",
@@ -43,10 +43,10 @@
 
     "NOTE_2": "dataset which is used to transfer into it from the old dataset",
 
-        "TYPE_NEW": "passage",
-        "DOCUMENT_DATASET_NEW_NAME": "msmarco-passage/trec-dl-2019/judged",
-        "DOCUMENT_DATASET_NEW_NAME_PYTERRIER": "irds:msmarco-passage/trec-dl-2019/judged",
-        "DOCUMENT_DATASET_NEW_NAME_PYTHON_API": "msmarco-passage/trec-dl-2019/judged",
+        "TYPE_NEW": "document",
+        "DOCUMENT_DATASET_NEW_NAME": "disks45/nocr/trec-robust-2004",
+        "DOCUMENT_DATASET_NEW_NAME_PYTERRIER": "irds:disks45/nocr/trec-robust-2004",
+        "DOCUMENT_DATASET_NEW_NAME_PYTHON_API": "disks45/nocr/trec-robust-2004",
         "DOCUMENT_DATASET_NEW_INDEX_PATH": "document-indices",
 
         "PASSAGE_DATASET_NEW_PATH": "passages.jsonl.gz",
