@@ -20,10 +20,10 @@ echo "Running init_folder_structure.py..."
 python3 -u code/src/init_folder_structure.py
 echo "Folder structure initialized."
 
-# # Step 2: Run document to passages chunker
-# echo "Running document_chunker_parallel.py..."
-# python3 -u code/src/passage_chunker/document_chunker_parallel.py
-# echo "Document to passages conversion completed."
+# Step 2: Run document to passages chunker
+echo "Running document_chunker_parallel.py..."
+python3 -u code/src/passage_chunker/document_chunker_parallel.py
+echo "Document to passages conversion completed."
 
 # Step 3: Build index
 echo "Building index..."
