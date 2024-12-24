@@ -207,7 +207,7 @@ if TYPE_OLD == 'passage':
     save_passages_local(dataset, NUM_WORKERS, BATCH_SIZE)
 
 # Chunk new dataset and save to file
-if DOCUMENT_DATASET_OLD_NAME not in DOCUMENT_DATASET_NEW_NAME and TYPE_NEW == 'document':
+if TYPE_NEW == 'document':
     print(f"Chunking {DOCUMENT_DATASET_NEW_NAME} dataset")
     dataset = ir_datasets.load(DOCUMENT_DATASET_NEW_NAME_PYTHON_API)
     results = parallel_process_documents(dataset, NUM_WORKERS, only_relevant_docs=False, batch_size=BATCH_SIZE)
@@ -216,7 +216,7 @@ if DOCUMENT_DATASET_OLD_NAME not in DOCUMENT_DATASET_NEW_NAME and TYPE_NEW == 'd
         for result in results:
             file.write((json.dumps(result) + '\n'))
 
-if DOCUMENT_DATASET_OLD_NAME not in DOCUMENT_DATASET_NEW_NAME and TYPE_NEW == 'passage':
+if TYPE_NEW == 'passage':
     print(f"Dataset {DOCUMENT_DATASET_NEW_NAME} is already chunked and now saved")
     dataset = ir_datasets.load(DOCUMENT_DATASET_NEW_NAME_PYTHON_API)
     save_passages_local(dataset, NUM_WORKERS, BATCH_SIZE)
