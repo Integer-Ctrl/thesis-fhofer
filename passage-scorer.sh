@@ -1,9 +1,9 @@
 #!/bin/bash
-#SBATCH --job-name=passage_pipeline             # Job name
+#SBATCH --job-name=passage_scorer             # Job name
 #SBATCH --partition=gammaweb                    # Partition name
 #SBATCH --exclude=gammaweb10                    # Exclude gammaweb10 node
-#SBATCH --array=1-51                            # Array job with 100 tasks
-#SBATCH --mem=12G                               # Memory request
+#SBATCH --array=1-1                             # Array job with 100 tasks
+#SBATCH --mem=15G                               # Memory request
 #SBATCH --ntasks=1                              # Number of tasks
 #SBATCH --nodes=1                               # Number of nodes
 #SBATCH --cpus-per-task=2                       # Number of CPU cores per task
@@ -25,7 +25,7 @@ echo "Folder structure initialized."
 
 # Step 2: Run passage scorer with the task ID as an argument
 echo "Running passage_scorer.py..."
-python3 -u code/src/passage_scorer/passage_scorer.py ${SLURM_ARRAY_TASK_ID} ${$SLURM_ARRAY_TASK_MAX}
+python3 -u code/src/passage_scorer/passage_scorer.py ${SLURM_ARRAY_TASK_ID} ${SLURM_ARRAY_TASK_MAX}
 echo "Passage scoring completed."
 
 # Save logs, only first job responsible for creating the folder
