@@ -28,11 +28,11 @@ DOCUMENT_DATASET_SOURCE_NAME_PYTHON_API = config['DOCUMENT_DATASET_SOURCE_NAME_P
 DOCUMENT_DATASET_TARGET_NAME = config['DOCUMENT_DATASET_TARGET_NAME']
 DOCUMENT_DATASET_TARGET_NAME_PYTHON_API = config['DOCUMENT_DATASET_TARGET_NAME_PYTHON_API']
 
-OLD_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_SOURCE_NAME)
-NEW_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_TARGET_NAME)
+SOURCE_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_SOURCE_NAME)
+TARGET_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_TARGET_NAME)
 
-PASSAGE_DATASET_SOURCE_PATH = os.path.join(OLD_PATH, config['PASSAGE_DATASET_SOURCE_PATH'])
-PASSAGE_DATASET_TARGET_PATH = os.path.join(NEW_PATH, config['PASSAGE_DATASET_TARGET_PATH'])
+PASSAGE_DATASET_SOURCE_PATH = os.path.join(SOURCE_PATH, config['PASSAGE_DATASET_SOURCE_PATH'])
+PASSAGE_DATASET_TARGET_PATH = os.path.join(TARGET_PATH, config['PASSAGE_DATASET_TARGET_PATH'])
 
 TYPE_SOURCE = config['TYPE_SOURCE']  # do not chunk if the dataset is already chunked
 TYPE_TARGET = config['TYPE_TARGET']  # do not chunk if the dataset is already chunked
@@ -198,7 +198,7 @@ if DOCUMENT_DATASET_SOURCE_NAME == DOCUMENT_DATASET_TARGET_NAME:
 
     # Check if the dataset is already chunked
     if os.path.exists(PASSAGE_DATASET_SOURCE_PATH):
-        print(f"Dataset {DOCUMENT_DATASET_SOURCE_NAME} is already chunked and now saved")
+        print(f"Dataset {DOCUMENT_DATASET_SOURCE_NAME} is already chunked and saved")
 
     else:
         if TYPE_SOURCE == 'document':

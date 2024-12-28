@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=passage_scorer             # Job name
+#SBATCH --job-name=passage_scorer               # Job name
 #SBATCH --partition=gammaweb                    # Partition name
 #SBATCH --exclude=gammaweb10                    # Exclude gammaweb10 node
 #SBATCH --array=1-11                            # Array job with 100 tasks
@@ -8,8 +8,8 @@
 #SBATCH --nodes=1                               # Number of nodes
 #SBATCH --cpus-per-task=2                       # Number of CPU cores per task
 #SBATCH --time=48:00:00                         # Time limit
-#SBATCH --output=logs/%A_%a.out                 # Logs will be stored in this format
-#SBATCH --error=logs/%A_%a.err                  # Error logs will be stored here
+#SBATCH --output=logs/passage_scorer/%A_%a.out  # Logs will be stored in this format
+#SBATCH --error=logs/passage_scorer/%A_%a.err   # Error logs will be stored here
 
 echo ${SLURM_ARRAY_JOB_ID}
 

@@ -23,16 +23,16 @@ config = load_config()
 PT_RETRIEVERS = config['PT_RETRIEVERS']
 
 DOCUMENT_DATASET_SOURCE_NAME = config['DOCUMENT_DATASET_SOURCE_NAME']
+DOCUMENT_DATASET_TARGET_NAME = config['DOCUMENT_DATASET_TARGET_NAME']
+
 DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER = config['DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER']
+DOCUMENT_DATASET_TARGET_NAME_PYTERRIER = config['DOCUMENT_DATASET_TARGET_NAME_PYTERRIER']
 
-OLD_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_SOURCE_NAME)
+SOURCE_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_SOURCE_NAME)
+TARGET_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_SOURCE_NAME)
 
-DOCUMENT_DATASET_SOURCE_INDEX_PATH = os.path.join(OLD_PATH, config['DOCUMENT_DATASET_SOURCE_INDEX_PATH'])
-
-PASSAGE_DATASET_SOURCE_PATH = os.path.join(OLD_PATH, config['PASSAGE_DATASET_SOURCE_PATH'])
-
-PASSAGE_DATASET_SOURCE_SCORE_AQ_PATH = os.path.join(OLD_PATH, config['PASSAGE_DATASET_SOURCE_SCORE_AQ_PATH'])
-PASSAGE_DATASET_SOURCE_SCORE_REL_PATH = os.path.join(OLD_PATH, config['PASSAGE_DATASET_SOURCE_SCORE_REL_PATH'])
+DOCUMENT_DATASET_SOURCE_INDEX_PATH = os.path.join(TARGET_PATH, config['DOCUMENT_DATASET_SOURCE_INDEX_PATH'])
+DOCUMENT_DATASET_TARGET_INDEX_PATH = os.path.join(TARGET_PATH, config['DOCUMENT_DATASET_TARGET_INDEX_PATH'])
 
 PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
 
@@ -40,8 +40,6 @@ PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
 if not pt.java.started():
     pt.java.init()
 tokeniser = pt.java.autoclass('org.terrier.indexing.tokenisation.Tokeniser').getTokeniser()
-
-dataset = pt.get_dataset(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
 
 
 # Document yield function for indexing without duplicates
@@ -53,12 +51,29 @@ def yield_docs(dataset):
             yield {'docno': i.doc_id, 'text': i.default_text()}
 
 
-# Index dataset
+# Index source document dataset
 if not os.path.exists(DOCUMENT_DATASET_SOURCE_INDEX_PATH):
+    print(f"Indexing dataset {DOCUMENT_DATASET_SOURCE_NAME}")
+    dataset = pt.get_dataset(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
     indexer = pt.IterDictIndexer(DOCUMENT_DATASET_SOURCE_INDEX_PATH)
     index_ref = indexer.index(yield_docs(dataset),
                               meta={'docno': 50, 'text': 20000})
 else:
+    print("Index already exists")
     index_ref = pt.IndexRef.of(DOCUMENT_DATASET_SOURCE_INDEX_PATH + '/data.properties')
+
+dataset_index = pt.IndexFactory.of(index_ref)
+
+
+# Index target document dataset
+if not os.path.exists(DOCUMENT_DATASET_TARGET_INDEX_PATH):
+    print(f"Indexing dataset {DOCUMENT_DATASET_TARGET_NAME}")
+    dataset = pt.get_dataset(DOCUMENT_DATASET_TARGET_NAME_PYTERRIER)
+    indexer = pt.IterDictIndexer(DOCUMENT_DATASET_TARGET_INDEX_PATH)
+    index_ref = indexer.index(yield_docs(dataset),
+                              meta={'docno': 50, 'text': 20000})
+else:
+    print("Index already exists")
+    index_ref = pt.IndexRef.of(DOCUMENT_DATASET_TARGET_INDEX_PATH + '/data.properties')
 
 dataset_index = pt.IndexFactory.of(index_ref)
