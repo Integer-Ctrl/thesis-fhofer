@@ -37,7 +37,7 @@ PASSAGE_DATASET_SOURCE_SCORE_REL_PATH = os.path.join(SOURCE_PATH, config['PASSAG
 
 PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
 
-# Script should only compute passage scores for one qid at a time
+# Script should only compute passage scores for none existing qids
 if len(sys.argv) < 3:
     print("Please provide a job ID and the number of jobs as an argument.")
     sys.exit(1)

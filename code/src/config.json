@@ -35,9 +35,7 @@
         "PASSAGE_DATASET_SOURCE_SCORE_AQ_PATH": "retrieval-scores-aq/",
 
         "RANK_CORRELATION_SCORE_PATH": "rank-correlation-scores.jsonl.gz",
-        "RANK_CORRELATION_SCORE_AQ_PATH": "rank-correlation-scores-aq.jsonl.gz",
-        "RANK_CORRELATION_SCORE_PQ_PATH": "rank-correlation-scores-pq.jsonl.gz",
-        "RANK_CORRELATION_SCORE_PQ_AQ_PATH": "rank-correlation-scores-pq-aq.jsonl.gz",
+        "RANK_CORRELATION_SCORE_PQ_AQ_PATH": "rank-correlation-scores-pq-aq/",
         "CROSS_VALIDATION_PATH": "cross-validation.jsonl.gz",
         "CROSS_VALIDATION_SCORES_PATH": "cross-validation-scores.jsonl.gz",
 

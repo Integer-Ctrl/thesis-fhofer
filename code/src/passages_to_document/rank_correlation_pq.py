@@ -1,4 +1,4 @@
-import pandas as pd
+import re
 import gzip
 from tqdm import tqdm
 import json
@@ -8,6 +8,8 @@ import os
 import copy
 from greedy_series import GreedySeries
 import time
+from glob import glob
+import sys
 
 
 # Load the configuration settings
@@ -30,9 +32,13 @@ NUMBER_OF_CROSS_VALIDATION_FOLDS = config['NUMBER_OF_CROSS_VALIDATION_FOLDS']
 
 SOURCE_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_SOURCE_NAME)
 
-PASSAGE_DATASET_SCORE_PATH = os.path.join(SOURCE_PATH, config['PASSAGE_DATASET_SOURCE_SCORE_AQ_PATH'])
-# PASSAGE_DATASET_SCORE_PATH = os.path.join(SOURCE_PATH, 'retrieval-scores-aq-test.jsonl.gz')
-RANK_CORRELATION_SCORE_PATH = os.path.join(
+# Pattern to match the files
+PASSAGE_DATASET_SOURCE_SCORE_AQ_PATH = os.path.join(SOURCE_PATH, config['PASSAGE_DATASET_SOURCE_SCORE_AQ_PATH'])
+FILE_PATTERN = os.path.join(PASSAGE_DATASET_SOURCE_SCORE_AQ_PATH, "qid_*.jsonl.gz")
+# Regular expression to extract the number
+NUMBER_PATTERN = re.compile(r"qid_(\d+)\.jsonl\.gz")
+
+RANK_CORRELATION_SCORE_PQ_AQ_PATH = os.path.join(
     SOURCE_PATH, config['RANK_CORRELATION_SCORE_PQ_AQ_PATH'])
 
 PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
@@ -45,6 +51,14 @@ METRICS = []
 for metric in config['METRICS']:
     for retriever in config['PT_RETRIEVERS']:
         METRICS.append(metric + '_' + retriever)
+
+# Script should only compute passage scores for none existing qids
+if len(sys.argv) < 3:
+    print("Please provide a job ID and the number of jobs as an argument.")
+    sys.exit(1)
+
+JOB_ID = int(sys.argv[1])
+NUM_JOBS = int(sys.argv[2])
 
 # Read qrels and cache relevant qrels
 dataset = pt.get_dataset(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
@@ -59,16 +73,22 @@ for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
 
 # Read passsage scores and cache them
 docno_qid_passages_scores_cache = {}
-with gzip.open(PASSAGE_DATASET_SCORE_PATH, 'rt', encoding='UTF-8') as file:
-    for line in tqdm(file, desc='Caching passage scores', unit='passage'):
-        line = json.loads(line)
-        docno, passageno = line['docno'].split(PASSAGE_ID_SEPARATOR)
-        qid = line['qid']
-        if docno not in docno_qid_passages_scores_cache:
-            docno_qid_passages_scores_cache[docno] = {}
-        if qid not in docno_qid_passages_scores_cache[docno]:
-            docno_qid_passages_scores_cache[docno][qid] = []
-        docno_qid_passages_scores_cache[docno][qid] += [line]
+for file_path in glob(FILE_PATTERN):
+    # Extract the file name
+    file_name = os.path.basename(file_path)
+    # Extract the query ID from the file path
+    qid = int(NUMBER_PATTERN.search(file_name).group(1))
+
+    with gzip.open(file_path, 'rt', encoding='UTF-8') as file:
+        for line in file:
+            line = json.loads(line)
+            docno, passageno = line['docno'].split(PASSAGE_ID_SEPARATOR)
+            qid = line['qid']
+            if docno not in docno_qid_passages_scores_cache:
+                docno_qid_passages_scores_cache[docno] = {}
+            if qid not in docno_qid_passages_scores_cache[docno]:
+                docno_qid_passages_scores_cache[docno][qid] = []
+            docno_qid_passages_scores_cache[docno][qid] += [line]
 
 
 # Function to get dictonary of aggregated score for a document using passage scores
@@ -179,39 +199,56 @@ def check_scores_smaller_zero(scores, location=''):
 
 
 if __name__ == '__main__':
+
     start_time = time.time()
 
-    correlation_scores = []
+    combinations = []
     for aggregation_method in AGGREGATION_METHODS:
+        for transformation_method in TRANSFORMATION_METHODS:
+            for evaluation_method in EVALUATION_METHODS:
+                combinations += [(aggregation_method, transformation_method, evaluation_method)]
+
+    # Determine the range of combinations for this job
+    total_combinations = len(combinations)
+    combinations_per_job = (total_combinations + NUM_JOBS - 1) // NUM_JOBS
+    start_index = (JOB_ID - 1) * combinations_per_job
+    end_index = min(start_index + combinations_per_job, total_combinations)
+
+    COMBINATIONS = combinations[start_index:end_index]
+
+    correlation_scores = []
+    for combination in COMBINATIONS:
+        aggregation_method, transformation_method, evaluation_method = combination
+
         docno_qid_aggregated_scores = get_docno_qid_aggregated_scores(
             docno_qid_passages_scores_cache, aggregation_method)
 
-        for transformation_method in TRANSFORMATION_METHODS:
-            docno_qid_transformed_scores = get_docno_qid_transformed_scores(
-                docno_qid_aggregated_scores, transformation_method)
+        docno_qid_transformed_scores = get_docno_qid_transformed_scores(
+            docno_qid_aggregated_scores, transformation_method)
 
-            for evaluation_method in EVALUATION_METHODS:
-                for metric in METRICS:
-                    # Iterate over all unique QIDs
-                    all_qids = set(entry['qid'] for entry in docno_qid_transformed_scores)
-                    query_correlations = {}
+        for metric in METRICS:
+            # Iterate over all unique QIDs
+            all_qids = set(entry['qid'] for entry in docno_qid_transformed_scores)
+            query_correlations = {}
 
-                    for qid in all_qids:
-                        correlation = get_evaluated_score(docno_qid_transformed_scores,
-                                                          qrels_cache, qid, metric, evaluation_method)
-                        query_correlations[qid] = correlation
+            for qid in all_qids:
+                correlation = get_evaluated_score(docno_qid_transformed_scores,
+                                                  qrels_cache, qid, metric, evaluation_method)
+                query_correlations[qid] = correlation
 
-                    # Save correlation scores for the current settings for each query
-                    if query_correlations:
-                        correlation_scores.append({'aggregation_method': aggregation_method,
-                                                   'transformation_method': transformation_method,
-                                                   'evaluation_method': evaluation_method,
-                                                   'metric': metric,
-                                                   'correlation_per_query': query_correlations})
+            # Save correlation scores for the current settings for each query
+            if query_correlations:
+                correlation_scores.append({'aggregation_method': aggregation_method,
+                                           'transformation_method': transformation_method,
+                                           'evaluation_method': evaluation_method,
+                                           'metric': metric,
+                                           'correlation_per_query': query_correlations})
 
-    with gzip.open(RANK_CORRELATION_SCORE_PATH, 'wt', encoding='UTF-8') as file:
+    # Save the correlation scores to an indexed file
+    rank_correlation_job_path = os.path.join(RANK_CORRELATION_SCORE_PQ_AQ_PATH, f'job_{JOB_ID}.jsonl.gz')
+    with gzip.open(rank_correlation_job_path, 'at', encoding='UTF-8') as file:
         for evaluation_entry in correlation_scores:
             file.write(json.dumps(evaluation_entry) + '\n')
 
     end_time = time.time()
-    print(f'Finished rank correlation per query in: {(end_time - start_time) / 60} minutes.')
+    print(f"Job {JOB_ID} finished rank correlation per query in {(end_time - start_time) / 60} minutes.")
