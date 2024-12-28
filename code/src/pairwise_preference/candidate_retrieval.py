@@ -27,34 +27,34 @@ config = load_config()
 ALL_QRELS = config['ALL_QRELS']
 PER_QUERY = config['PER_QUERY']
 
-TYPE_OLD = config['TYPE_OLD']
-TYPE_NEW = config['TYPE_NEW']  # retrieve documents or passages from new dataset
+TYPE_SOURCE = config['TYPE_SOURCE']
+TYPE_TARGET = config['TYPE_TARGET']  # retrieve documents or passages from new dataset
 
 # Either retrrieve with local index or with ChatNoir API
 CHATNOIR_RETRIEVAL = config['CHATNOIR_RETRIEVAL']
 CHATNOIR_INDICES = config['CHATNOIR_INDICES']
 
-DOCUMENT_DATASET_NEW_NAME = config['DOCUMENT_DATASET_NEW_NAME']
-DOCUMENT_DATASET_OLD_NAME = config['DOCUMENT_DATASET_OLD_NAME']
-DOCUMENT_DATASET_NEW_NAME_PYTERRIER = config['DOCUMENT_DATASET_NEW_NAME_PYTERRIER']
-DOCUMENT_DATASET_OLD_NAME_PYTERRIER = config['DOCUMENT_DATASET_OLD_NAME_PYTERRIER']
-DOCUMENT_DATASET_NEW_NAME_PYTHON_API = config['DOCUMENT_DATASET_NEW_NAME_PYTHON_API']
-DOCUMENT_DATASET_OLD_NAME_PYTHON_API = config['DOCUMENT_DATASET_OLD_NAME_PYTHON_API']
+DOCUMENT_DATASET_TARGET_NAME = config['DOCUMENT_DATASET_TARGET_NAME']
+DOCUMENT_DATASET_SOURCE_NAME = config['DOCUMENT_DATASET_SOURCE_NAME']
+DOCUMENT_DATASET_TARGET_NAME_PYTERRIER = config['DOCUMENT_DATASET_TARGET_NAME_PYTERRIER']
+DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER = config['DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER']
+DOCUMENT_DATASET_TARGET_NAME_PYTHON_API = config['DOCUMENT_DATASET_TARGET_NAME_PYTHON_API']
+DOCUMENT_DATASET_SOURCE_NAME_PYTHON_API = config['DOCUMENT_DATASET_SOURCE_NAME_PYTHON_API']
 
-NEW_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_NEW_NAME)
-OLD_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_OLD_NAME)
+NEW_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_TARGET_NAME)
+OLD_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_SOURCE_NAME)
 
-if TYPE_NEW == 'document':
-    DATASET_NEW_INDEX_PATH = os.path.join(NEW_PATH, config['DOCUMENT_DATASET_NEW_INDEX_PATH'])
-if TYPE_NEW == 'passage':
-    DATASET_NEW_INDEX_PATH = os.path.join(NEW_PATH, config['PASSAGE_DATASET_NEW_INDEX_PATH'])
-PASSAGE_DATASET_NEW_PATH = os.path.join(OLD_PATH, config['PASSAGE_DATASET_NEW_PATH'])
+if TYPE_TARGET == 'document':
+    DATASET_NEW_INDEX_PATH = os.path.join(NEW_PATH, config['DOCUMENT_DATASET_TARGET_INDEX_PATH'])
+if TYPE_TARGET == 'passage':
+    DATASET_NEW_INDEX_PATH = os.path.join(NEW_PATH, config['PASSAGE_DATASET_TARGET_INDEX_PATH'])
+PASSAGE_DATASET_TARGET_PATH = os.path.join(OLD_PATH, config['PASSAGE_DATASET_TARGET_PATH'])
 
-PASSAGE_DATASET_OLD_PATH = os.path.join(OLD_PATH, config['PASSAGE_DATASET_OLD_PATH'])
-PASSAGE_DATASET_OLD_INDEX_PATH = os.path.join(OLD_PATH, config['PASSAGE_DATASET_OLD_INDEX_PATH'])
+PASSAGE_DATASET_SOURCE_PATH = os.path.join(OLD_PATH, config['PASSAGE_DATASET_SOURCE_PATH'])
+PASSAGE_DATASET_SOURCE_INDEX_PATH = os.path.join(OLD_PATH, config['PASSAGE_DATASET_SOURCE_INDEX_PATH'])
 # Pattern to match the files
-PASSAGE_DATASET_OLD_SCORE_REL_PATH = os.path.join(OLD_PATH, config['PASSAGE_DATASET_OLD_SCORE_REL_PATH'])
-FILE_PATTERN = os.path.join(PASSAGE_DATASET_OLD_SCORE_REL_PATH, "qid_*.jsonl.gz")
+PASSAGE_DATASET_SOURCE_SCORE_REL_PATH = os.path.join(OLD_PATH, config['PASSAGE_DATASET_SOURCE_SCORE_REL_PATH'])
+FILE_PATTERN = os.path.join(PASSAGE_DATASET_SOURCE_SCORE_REL_PATH, "qid_*.jsonl.gz")
 # Regular expression to extract the number
 NUMBER_PATTERN = re.compile(r"qid_(\d+)\.jsonl\.gz")
 
@@ -86,7 +86,7 @@ def pt_tokenize(text):
 target_docno_passagenos = {}
 target_passages_text_cache = {}
 
-with gzip.open(PASSAGE_DATASET_NEW_PATH, 'rt', encoding='UTF-8') as file:
+with gzip.open(PASSAGE_DATASET_TARGET_PATH, 'rt', encoding='UTF-8') as file:
     for line in file:
         line = json.loads(line)
         docno, passageno = line['docno'].split(PASSAGE_ID_SEPARATOR)
@@ -107,7 +107,7 @@ with gzip.open(PASSAGE_DATASET_NEW_PATH, 'rt', encoding='UTF-8') as file:
 def oracle_retrieval():
     qid_docnos = {}
 
-    dataset = pt.get_dataset(DOCUMENT_DATASET_OLD_NAME_PYTERRIER)
+    dataset = pt.get_dataset(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
     qrels = dataset.get_qrels(variant='relevance')
     for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
         if row['qid'] not in qid_docnos:
@@ -138,7 +138,7 @@ qid_docnos_naive_retrieval = {}
 
 
 def naive_retrieval():
-    dataset = pt.get_dataset(DOCUMENT_DATASET_NEW_NAME_PYTERRIER)
+    dataset = pt.get_dataset(DOCUMENT_DATASET_TARGET_NAME_PYTERRIER)
 
     # Retrieve top 2000 documents for each query
     if CHATNOIR_RETRIEVAL:
@@ -183,7 +183,7 @@ source_docno_passagenos = {}
 source_passages_text_cache = {}
 queries_relevant_passagenos = {}
 
-with gzip.open(PASSAGE_DATASET_OLD_PATH, 'rt', encoding='UTF-8') as file:
+with gzip.open(PASSAGE_DATASET_SOURCE_PATH, 'rt', encoding='UTF-8') as file:
     for line in file:
         line = json.loads(line)
         docno, passageno = line['docno'].split(PASSAGE_ID_SEPARATOR)
@@ -193,7 +193,7 @@ with gzip.open(PASSAGE_DATASET_OLD_PATH, 'rt', encoding='UTF-8') as file:
         source_docno_passagenos[docno] += [line['docno']]
         source_passages_text_cache[docno][line['docno']] = line['text']
 
-dataset = pt.get_dataset(DOCUMENT_DATASET_OLD_NAME_PYTERRIER)
+dataset = pt.get_dataset(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
 qrels = dataset.get_qrels(variant='relevance')
 for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
     if row['label'] > 0:
@@ -209,7 +209,7 @@ qid_docnos_nearest_neighbor_retrieval = {}
 
 
 def nearest_neighbor_retrieval():
-    dataset = pt.get_dataset(DOCUMENT_DATASET_NEW_NAME_PYTERRIER)
+    dataset = pt.get_dataset(DOCUMENT_DATASET_TARGET_NAME_PYTERRIER)
 
     # Retrieve for each relevant passage for its corresponding qid the top 20 docnos
     if CHATNOIR_RETRIEVAL:
@@ -330,7 +330,7 @@ def compute_recall_precision(qid_docnos_cache, filename=None):
     num_retrieved_documents_per_query = {}
     num_retrieved_relevant_documents_per_query = {}
 
-    dataset = pt.get_dataset(DOCUMENT_DATASET_OLD_NAME_PYTERRIER)
+    dataset = pt.get_dataset(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
     qrels = dataset.get_qrels(variant='relevance')
     for index, row in qrels.iterrows():
         if row['label'] > 0:
@@ -369,7 +369,7 @@ def compute_recall_precision(qid_docnos_cache, filename=None):
 
 # # 1. get all passages in dictionary format docno: {passageno: text}
 # passages_text_cache = {}
-# with gzip.open(PASSAGE_DATASET_OLD_PATH, 'rt', encoding='UTF-8') as file:
+# with gzip.open(PASSAGE_DATASET_SOURCE_PATH, 'rt', encoding='UTF-8') as file:
 #     for line in tqdm(file, desc='Caching passages', unit='passage'):
 #         line = json.loads(line)
 #         docno, _ = line['docno'].split(PASSAGE_ID_SEPARATOR)
@@ -407,7 +407,7 @@ for file_path in glob(FILE_PATTERN):
 
 # # 4. get all qrels in dictinary format qid: {docno: relevance} # all relevance scores
 # qrels_cache = {}
-# dataset = pt.get_dataset(DOCUMENT_DATASET_OLD_NAME_PYTERRIER)
+# dataset = pt.get_dataset(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
 # qrels = dataset.get_qrels(variant='relevance')
 # for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
 #     qrels_cache = {}
@@ -419,7 +419,7 @@ for file_path in glob(FILE_PATTERN):
 
 # # 5. get all queries in dictionary format query_id: text
 # queries_cache = {}
-# dataset = ir_datasets.load(DOCUMENT_DATASET_OLD_NAME_PYTHON_API)
+# dataset = ir_datasets.load(DOCUMENT_DATASET_SOURCE_NAME_PYTHON_API)
 # for query in dataset.queries_iter():
 #     queries_cache[query.query_id] = query.default_text()
 

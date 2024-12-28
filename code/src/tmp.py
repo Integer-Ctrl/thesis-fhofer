@@ -135,9 +135,9 @@ def check_passages_ducplicate(path):
 
 # check if dataset contain dublicates
 def check_dataset_ducplicate():
-    DOCUMENT_DATASET_OLD_NAME_PYTHON_API = config['DOCUMENT_DATASET_OLD_NAME_PYTHON_API']
+    DOCUMENT_DATASET_SOURCE_NAME_PYTHON_API = config['DOCUMENT_DATASET_SOURCE_NAME_PYTHON_API']
 
-    dataset = ir_datasets.load(DOCUMENT_DATASET_OLD_NAME_PYTHON_API)
+    dataset = ir_datasets.load(DOCUMENT_DATASET_SOURCE_NAME_PYTHON_API)
     docnos_cnt = Counter()
     docnos_list = []
 

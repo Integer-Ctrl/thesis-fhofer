@@ -21,17 +21,17 @@ config = load_config()
 
 PT_RETRIEVERS = config['PT_RETRIEVERS']
 
-DOCUMENT_DATASET_OLD_NAME = config['DOCUMENT_DATASET_OLD_NAME']
-DOCUMENT_DATASET_OLD_NAME_PYTERRIER = config['DOCUMENT_DATASET_OLD_NAME_PYTERRIER']
+DOCUMENT_DATASET_SOURCE_NAME = config['DOCUMENT_DATASET_SOURCE_NAME']
+DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER = config['DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER']
 
-OLD_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_OLD_NAME)
+OLD_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_SOURCE_NAME)
 
-DOCUMENT_DATASET_OLD_INDEX_PATH = os.path.join(OLD_PATH, config['DOCUMENT_DATASET_OLD_INDEX_PATH'])
+DOCUMENT_DATASET_SOURCE_INDEX_PATH = os.path.join(OLD_PATH, config['DOCUMENT_DATASET_SOURCE_INDEX_PATH'])
 
-PASSAGE_DATASET_OLD_PATH = os.path.join(OLD_PATH, config['PASSAGE_DATASET_OLD_PATH'])
+PASSAGE_DATASET_SOURCE_PATH = os.path.join(OLD_PATH, config['PASSAGE_DATASET_SOURCE_PATH'])
 
-PASSAGE_DATASET_OLD_SCORE_AQ_PATH = os.path.join(OLD_PATH, config['PASSAGE_DATASET_OLD_SCORE_AQ_PATH'])
-PASSAGE_DATASET_OLD_SCORE_REL_PATH = os.path.join(OLD_PATH, config['PASSAGE_DATASET_OLD_SCORE_REL_PATH'])
+PASSAGE_DATASET_SOURCE_SCORE_AQ_PATH = os.path.join(OLD_PATH, config['PASSAGE_DATASET_SOURCE_SCORE_AQ_PATH'])
+PASSAGE_DATASET_SOURCE_SCORE_REL_PATH = os.path.join(OLD_PATH, config['PASSAGE_DATASET_SOURCE_SCORE_REL_PATH'])
 
 PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
 
@@ -57,19 +57,19 @@ def yield_docs(dataset):
 
 
 # Index dataset
-dataset = pt.get_dataset(DOCUMENT_DATASET_OLD_NAME_PYTERRIER)
-if not os.path.exists(DOCUMENT_DATASET_OLD_INDEX_PATH):
-    indexer = pt.IterDictIndexer(DOCUMENT_DATASET_OLD_INDEX_PATH)
+dataset = pt.get_dataset(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
+if not os.path.exists(DOCUMENT_DATASET_SOURCE_INDEX_PATH):
+    indexer = pt.IterDictIndexer(DOCUMENT_DATASET_SOURCE_INDEX_PATH)
     index_ref = indexer.index(yield_docs(dataset),
                               meta={'docno': 50, 'text': 20000})
 else:
-    index_ref = pt.IndexRef.of(DOCUMENT_DATASET_OLD_INDEX_PATH + '/data.properties')
+    index_ref = pt.IndexRef.of(DOCUMENT_DATASET_SOURCE_INDEX_PATH + '/data.properties')
 
 dataset_index = pt.IndexFactory.of(index_ref)
 
 # Read passages and cache them
 passages_cache = {}
-with gzip.open(PASSAGE_DATASET_OLD_PATH, 'rt', encoding='UTF-8') as file:
+with gzip.open(PASSAGE_DATASET_SOURCE_PATH, 'rt', encoding='UTF-8') as file:
     for line in tqdm(file, desc='Caching passages', unit='passage'):
         line = json.loads(line)
         docno, passageno = line['docno'].split(PASSAGE_ID_SEPARATOR)
@@ -149,8 +149,8 @@ def evaluate_run(run, qrels_for_query):
 
 
 # Write passage scores to file
-with gzip.open(PASSAGE_DATASET_OLD_SCORE_REL_PATH, 'wt', encoding='UTF-8') as relevant_qrels_file, \
-        gzip.open(PASSAGE_DATASET_OLD_SCORE_AQ_PATH, 'wt', encoding='UTF-8') as all_qrels_file:
+with gzip.open(PASSAGE_DATASET_SOURCE_SCORE_REL_PATH, 'wt', encoding='UTF-8') as relevant_qrels_file, \
+        gzip.open(PASSAGE_DATASET_SOURCE_SCORE_AQ_PATH, 'wt', encoding='UTF-8') as all_qrels_file:
 
     for qid, docnos in tqdm(qrels_cache.items(), desc='Scoring and saving passages', unit='qid'):
         for docno in tqdm(docnos['docid'], desc='Scoring and saving passages', unit='docno'):

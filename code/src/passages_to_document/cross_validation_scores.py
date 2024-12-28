@@ -17,10 +17,10 @@ def load_config(filename=pwd + "/../config.json"):
 # Get the configuration settings
 config = load_config()
 
-DOCUMENT_DATASET_OLD_NAME = config['DOCUMENT_DATASET_OLD_NAME']
-DOCUMENT_DATASET_OLD_NAME_PYTERRIER = config['DOCUMENT_DATASET_OLD_NAME_PYTERRIER']
+DOCUMENT_DATASET_SOURCE_NAME = config['DOCUMENT_DATASET_SOURCE_NAME']
+DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER = config['DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER']
 
-OLD_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_OLD_NAME)
+OLD_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_SOURCE_NAME)
 
 PT_RETRIEVERS = config['PT_RETRIEVERS']
 EVALUATION_METHODS = config['EVALUATION_METHODS']
@@ -29,8 +29,8 @@ METRICS = config['METRICS']
 NUMBER_OF_CROSS_VALIDATION_FOLDS = config['NUMBER_OF_CROSS_VALIDATION_FOLDS']
 KEY_SEPARATOR = config['KEY_SEPARATOR']
 
-PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH = os.path.join(
-    OLD_PATH, config['PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PQ_AQ_PATH'])
+RANK_CORRELATION_SCORE_PATH = os.path.join(
+    OLD_PATH, config['RANK_CORRELATION_SCORE_PQ_AQ_PATH'])
 CROSS_VALIDATION_SCORES_PATH = os.path.join(OLD_PATH, config['CROSS_VALIDATION_SCORES_PATH'])
 
 
@@ -43,7 +43,7 @@ def get_key(list):
 
 
 correlation_scores_eva_metric = {}
-with gzip.open(PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH, 'rt', encoding='UTF-8') as file:
+with gzip.open(RANK_CORRELATION_SCORE_PATH, 'rt', encoding='UTF-8') as file:
     for line in file:
         line = json.loads(line)
         agr_met = line['aggregation_method']
@@ -66,7 +66,7 @@ with gzip.open(PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH, 'rt', encoding='UTF-
 
 # 2. get all qids
 qids = []
-dataset = pt.get_dataset(DOCUMENT_DATASET_OLD_NAME_PYTERRIER)
+dataset = pt.get_dataset(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
 for query in dataset.irds_ref().queries_iter():
     qids.append(query.query_id)
 

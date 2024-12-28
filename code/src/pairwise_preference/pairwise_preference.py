@@ -28,17 +28,17 @@ def load_config(filename=pwd + "/../config.json"):
 # Get the configuration settings
 config = load_config()
 
-DOCUMENT_DATASET_OLD_NAME = config['DOCUMENT_DATASET_OLD_NAME']
-DOCUMENT_DATASET_OLD_NAME_PYTERRIER = config['DOCUMENT_DATASET_OLD_NAME_PYTERRIER']
-DOCUMENT_DATASET_OLD_NAME_PYTHON_API = config['DOCUMENT_DATASET_OLD_NAME_PYTHON_API']
+DOCUMENT_DATASET_SOURCE_NAME = config['DOCUMENT_DATASET_SOURCE_NAME']
+DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER = config['DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER']
+DOCUMENT_DATASET_SOURCE_NAME_PYTHON_API = config['DOCUMENT_DATASET_SOURCE_NAME_PYTHON_API']
 
-DATA_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_OLD_NAME)
+DATA_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_SOURCE_NAME)
 
-PASSAGE_DATASET_OLD_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_OLD_PATH'])
-PASSAGE_DATASET_OLD_SCORE_REL_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_OLD_SCORE_REL_PATH'])
+PASSAGE_DATASET_SOURCE_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_SOURCE_PATH'])
+PASSAGE_DATASET_SOURCE_SCORE_REL_PATH = os.path.join(DATA_PATH, config['PASSAGE_DATASET_SOURCE_SCORE_REL_PATH'])
 # TODO: switch between AQ and PQ
-PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH = os.path.join(
-    DATA_PATH, config['PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH'])
+RANK_CORRELATION_SCORE_PATH = os.path.join(
+    DATA_PATH, config['RANK_CORRELATION_SCORE_PATH'])
 PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
 
 KEY_SEPARATOR = config['KEY_SEPARATOR']
@@ -61,7 +61,7 @@ def get_key(query_id: str, rel_doc_id: str, unk_doc_id: str, system: str) -> str
 
 # 1. get all passages in dictionary format docno: {passageno: text}
 def get_passages_text(cache):
-    with gzip.open(PASSAGE_DATASET_OLD_PATH, 'rt', encoding='UTF-8') as file:
+    with gzip.open(PASSAGE_DATASET_SOURCE_PATH, 'rt', encoding='UTF-8') as file:
         for line in tqdm(file, desc='Caching passages', unit='passage'):
             line = json.loads(line)
             docno, _ = line['docno'].split(PASSAGE_ID_SEPARATOR)
@@ -72,14 +72,14 @@ def get_passages_text(cache):
 
 # 2. get type of best scoring metric in rank correlation
 def get_best_scoring_methods():
-    with gzip.open(PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH, 'rt', encoding='UTF-8') as file:
+    with gzip.open(RANK_CORRELATION_SCORE_PATH, 'rt', encoding='UTF-8') as file:
         for line in file:  # already decending sorted
             return json.loads(line)  # return only best scoring method
 
 
 # 3. get all passage scores in dictionary format qid: {docno: score} # just score of the best scoring method
 def get_passages_scores(cache, metric):
-    with gzip.open(PASSAGE_DATASET_OLD_SCORE_REL_PATH, 'rt', encoding='UTF-8') as file:
+    with gzip.open(PASSAGE_DATASET_SOURCE_SCORE_REL_PATH, 'rt', encoding='UTF-8') as file:
         for line in tqdm(file, desc='Caching passage scores', unit='passage'):
             data = json.loads(line)
             qid = data['qid']        # Extract query ID
@@ -93,7 +93,7 @@ def get_passages_scores(cache, metric):
 
 # 4. get all qrels in dictinary format qid: {docno: relevance} # all relevance scores
 def get_qrels(cache):
-    dataset = pt.get_dataset(DOCUMENT_DATASET_OLD_NAME_PYTERRIER)
+    dataset = pt.get_dataset(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
     qrels = dataset.get_qrels(variant='relevance')
     for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
         if row['qid'] not in cache:
@@ -103,7 +103,7 @@ def get_qrels(cache):
 
 # 5. get all queries in dictionary format query_id: text
 def get_queries(queries_cache):
-    dataset = ir_datasets.load(DOCUMENT_DATASET_OLD_NAME_PYTHON_API)
+    dataset = ir_datasets.load(DOCUMENT_DATASET_SOURCE_NAME_PYTHON_API)
     for query in dataset.queries_iter():
         queries_cache[query.query_id] = query.default_text()
 

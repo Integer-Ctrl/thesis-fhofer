@@ -24,16 +24,16 @@ def load_config(filename=pwd + "/../config.json"):
 config = load_config()
 
 ALL_QRELS = config['ALL_QRELS']
-DOCUMENT_DATASET_OLD_NAME = config['DOCUMENT_DATASET_OLD_NAME']
-DOCUMENT_DATASET_OLD_NAME_PYTERRIER = config['DOCUMENT_DATASET_OLD_NAME_PYTERRIER']
+DOCUMENT_DATASET_SOURCE_NAME = config['DOCUMENT_DATASET_SOURCE_NAME']
+DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER = config['DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER']
 NUMBER_OF_CROSS_VALIDATION_FOLDS = config['NUMBER_OF_CROSS_VALIDATION_FOLDS']
 
-OLD_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_OLD_NAME)
+OLD_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_SOURCE_NAME)
 
-PASSAGE_DATASET_SCORE_PATH = os.path.join(OLD_PATH, config['PASSAGE_DATASET_OLD_SCORE_AQ_PATH'])
+PASSAGE_DATASET_SCORE_PATH = os.path.join(OLD_PATH, config['PASSAGE_DATASET_SOURCE_SCORE_AQ_PATH'])
 # PASSAGE_DATASET_SCORE_PATH = os.path.join(OLD_PATH, 'retrieval-scores-aq-test.jsonl.gz')
-PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH = os.path.join(
-    OLD_PATH, config['PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PQ_AQ_PATH'])
+RANK_CORRELATION_SCORE_PATH = os.path.join(
+    OLD_PATH, config['RANK_CORRELATION_SCORE_PQ_AQ_PATH'])
 
 PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
 
@@ -47,7 +47,7 @@ for metric in config['METRICS']:
         METRICS.append(metric + '_' + retriever)
 
 # Read qrels and cache relevant qrels
-dataset = pt.get_dataset(DOCUMENT_DATASET_OLD_NAME_PYTERRIER)
+dataset = pt.get_dataset(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
 qrels = dataset.get_qrels(variant='relevance')
 qrels_cache = {}
 for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
@@ -209,7 +209,7 @@ if __name__ == '__main__':
                                                    'metric': metric,
                                                    'correlation_per_query': query_correlations})
 
-    with gzip.open(PASSAGES_TO_DOCUMENT_CORRELATION_SCORE_PATH, 'wt', encoding='UTF-8') as file:
+    with gzip.open(RANK_CORRELATION_SCORE_PATH, 'wt', encoding='UTF-8') as file:
         for evaluation_entry in correlation_scores:
             file.write(json.dumps(evaluation_entry) + '\n')
 

@@ -22,17 +22,17 @@ config = load_config()
 
 PT_RETRIEVERS = config['PT_RETRIEVERS']
 
-DOCUMENT_DATASET_OLD_NAME = config['DOCUMENT_DATASET_OLD_NAME']
-DOCUMENT_DATASET_OLD_NAME_PYTERRIER = config['DOCUMENT_DATASET_OLD_NAME_PYTERRIER']
+DOCUMENT_DATASET_SOURCE_NAME = config['DOCUMENT_DATASET_SOURCE_NAME']
+DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER = config['DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER']
 
-OLD_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_OLD_NAME)
+OLD_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_SOURCE_NAME)
 
-DOCUMENT_DATASET_OLD_INDEX_PATH = os.path.join(OLD_PATH, config['DOCUMENT_DATASET_OLD_INDEX_PATH'])
+DOCUMENT_DATASET_SOURCE_INDEX_PATH = os.path.join(OLD_PATH, config['DOCUMENT_DATASET_SOURCE_INDEX_PATH'])
 
-PASSAGE_DATASET_OLD_PATH = os.path.join(OLD_PATH, config['PASSAGE_DATASET_OLD_PATH'])
+PASSAGE_DATASET_SOURCE_PATH = os.path.join(OLD_PATH, config['PASSAGE_DATASET_SOURCE_PATH'])
 
-PASSAGE_DATASET_OLD_SCORE_AQ_PATH = os.path.join(OLD_PATH, config['PASSAGE_DATASET_OLD_SCORE_AQ_PATH'])
-PASSAGE_DATASET_OLD_SCORE_REL_PATH = os.path.join(OLD_PATH, config['PASSAGE_DATASET_OLD_SCORE_REL_PATH'])
+PASSAGE_DATASET_SOURCE_SCORE_AQ_PATH = os.path.join(OLD_PATH, config['PASSAGE_DATASET_SOURCE_SCORE_AQ_PATH'])
+PASSAGE_DATASET_SOURCE_SCORE_REL_PATH = os.path.join(OLD_PATH, config['PASSAGE_DATASET_SOURCE_SCORE_REL_PATH'])
 
 PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
 
@@ -50,16 +50,16 @@ def yield_docs(dataset):
 
 
 # Index dataset
-dataset = pt.get_dataset(DOCUMENT_DATASET_OLD_NAME_PYTERRIER)
-if not os.path.exists(DOCUMENT_DATASET_OLD_INDEX_PATH):
-    indexer = pt.IterDictIndexer(DOCUMENT_DATASET_OLD_INDEX_PATH)
+dataset = pt.get_dataset(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
+if not os.path.exists(DOCUMENT_DATASET_SOURCE_INDEX_PATH):
+    indexer = pt.IterDictIndexer(DOCUMENT_DATASET_SOURCE_INDEX_PATH)
     index_ref = indexer.index(yield_docs(dataset),
                               meta={'docno': 50, 'text': 20000})
 
 # Read passages and cache them
 passages_cache = {}
 passage_counter = 0
-with gzip.open(PASSAGE_DATASET_OLD_PATH, 'rt', encoding='UTF-8') as file:
+with gzip.open(PASSAGE_DATASET_SOURCE_PATH, 'rt', encoding='UTF-8') as file:
     for line in file:
         line = json.loads(line)
         docno, passageno = line['docno'].split(PASSAGE_ID_SEPARATOR)
@@ -202,8 +202,8 @@ def process_qid(args):
 
         with WRITE_LOCK:
             print(f"Writing results for QID {qid} to file in process with PID: {pid}")
-            with gzip.open(PASSAGE_DATASET_OLD_SCORE_REL_PATH, 'at', encoding='UTF-8') as relevant_qrels_file, \
-                    gzip.open(PASSAGE_DATASET_OLD_SCORE_AQ_PATH, 'at', encoding='UTF-8') as all_qrels_file:
+            with gzip.open(PASSAGE_DATASET_SOURCE_SCORE_REL_PATH, 'at', encoding='UTF-8') as relevant_qrels_file, \
+                    gzip.open(PASSAGE_DATASET_SOURCE_SCORE_AQ_PATH, 'at', encoding='UTF-8') as all_qrels_file:
 
                 # Write to all QRELs file
                 for scores in results:
@@ -222,8 +222,8 @@ if __name__ == "__main__":
     start_time = time.time()
 
     # Clear files before writing in parallel
-    with open(PASSAGE_DATASET_OLD_SCORE_REL_PATH, 'wt') as relevant_qrels_file, \
-            open(PASSAGE_DATASET_OLD_SCORE_AQ_PATH, 'wt') as all_qrels_file:
+    with open(PASSAGE_DATASET_SOURCE_SCORE_REL_PATH, 'wt') as relevant_qrels_file, \
+            open(PASSAGE_DATASET_SOURCE_SCORE_AQ_PATH, 'wt') as all_qrels_file:
         pass
 
     # Calculate chunk size to evenly distribute keys
@@ -232,7 +232,7 @@ if __name__ == "__main__":
     qids_chunks = [qids[i:i + chunk_size] for i in range(0, len(qids), chunk_size)]
 
     # Prepare arguments for each process
-    process_args = [(qids, DOCUMENT_DATASET_OLD_INDEX_PATH) for qids in qids_chunks]
+    process_args = [(qids, DOCUMENT_DATASET_SOURCE_INDEX_PATH) for qids in qids_chunks]
 
     with ProcessPoolExecutor(max_workers=NUM_WORKERS) as executor:
         executor.map(process_qid, process_args)

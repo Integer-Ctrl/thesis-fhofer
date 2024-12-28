@@ -2,7 +2,7 @@
 #SBATCH --job-name=passage_scorer             # Job name
 #SBATCH --partition=gammaweb                    # Partition name
 #SBATCH --exclude=gammaweb10                    # Exclude gammaweb10 node
-#SBATCH --array=1-1                             # Array job with 100 tasks
+#SBATCH --array=1-11                            # Array job with 100 tasks
 #SBATCH --mem=15G                               # Memory request
 #SBATCH --ntasks=1                              # Number of tasks
 #SBATCH --nodes=1                               # Number of nodes
@@ -17,11 +17,6 @@ echo ${SLURM_ARRAY_JOB_ID}
 echo "Loading Python virtual environment..."
 source ../thesis-fhofer/pyenv/bin/activate
 echo "Python virtual environment loaded."
-
-# Step 1: Initialize folder structure
-echo "Running init_folder_structure.py..."
-python3 -u code/src/init_folder_structure.py
-echo "Folder structure initialized."
 
 # Step 2: Run passage scorer with the task ID as an argument
 echo "Running passage_scorer.py..."

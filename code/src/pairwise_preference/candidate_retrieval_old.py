@@ -24,31 +24,31 @@ config = load_config()
 ALL_QRELS = config['ALL_QRELS']
 PER_QUERY = config['PER_QUERY']
 
-TYPE_OLD = config['TYPE_OLD']
-TYPE_NEW = config['TYPE_NEW']  # retrieve documents or passages from new dataset
+TYPE_SOURCE = config['TYPE_SOURCE']
+TYPE_TARGET = config['TYPE_TARGET']  # retrieve documents or passages from new dataset
 
 # Either retrrieve with local index or with ChatNoir API
 CHATNOIR_RETRIEVAL = config['CHATNOIR_RETRIEVAL']
 CHATNOIR_INDICES = config['CHATNOIR_INDICES']
 
-DOCUMENT_DATASET_NEW_NAME = config['DOCUMENT_DATASET_NEW_NAME']
-DOCUMENT_DATASET_OLD_NAME = config['DOCUMENT_DATASET_OLD_NAME']
-DOCUMENT_DATASET_NEW_NAME_PYTERRIER = config['DOCUMENT_DATASET_NEW_NAME_PYTERRIER']
-DOCUMENT_DATASET_OLD_NAME_PYTERRIER = config['DOCUMENT_DATASET_OLD_NAME_PYTERRIER']
-DOCUMENT_DATASET_NEW_NAME_PYTHON_API = config['DOCUMENT_DATASET_NEW_NAME_PYTHON_API']
-DOCUMENT_DATASET_OLD_NAME_PYTHON_API = config['DOCUMENT_DATASET_OLD_NAME_PYTHON_API']
+DOCUMENT_DATASET_TARGET_NAME = config['DOCUMENT_DATASET_TARGET_NAME']
+DOCUMENT_DATASET_SOURCE_NAME = config['DOCUMENT_DATASET_SOURCE_NAME']
+DOCUMENT_DATASET_TARGET_NAME_PYTERRIER = config['DOCUMENT_DATASET_TARGET_NAME_PYTERRIER']
+DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER = config['DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER']
+DOCUMENT_DATASET_TARGET_NAME_PYTHON_API = config['DOCUMENT_DATASET_TARGET_NAME_PYTHON_API']
+DOCUMENT_DATASET_SOURCE_NAME_PYTHON_API = config['DOCUMENT_DATASET_SOURCE_NAME_PYTHON_API']
 
-NEW_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_NEW_NAME)
-OLD_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_OLD_NAME)
+NEW_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_TARGET_NAME)
+OLD_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_SOURCE_NAME)
 
-if TYPE_NEW == 'document':
-    DATASET_NEW_INDEX_PATH = os.path.join(NEW_PATH, config['DOCUMENT_DATASET_NEW_INDEX_PATH'])
-if TYPE_NEW == 'passage':
-    DATASET_NEW_INDEX_PATH = os.path.join(NEW_PATH, config['PASSAGE_DATASET_NEW_INDEX_PATH'])
+if TYPE_TARGET == 'document':
+    DATASET_NEW_INDEX_PATH = os.path.join(NEW_PATH, config['DOCUMENT_DATASET_TARGET_INDEX_PATH'])
+if TYPE_TARGET == 'passage':
+    DATASET_NEW_INDEX_PATH = os.path.join(NEW_PATH, config['PASSAGE_DATASET_TARGET_INDEX_PATH'])
 
-PASSAGE_DATASET_OLD_INDEX_PATH = os.path.join(OLD_PATH, config['PASSAGE_DATASET_OLD_INDEX_PATH'])
+PASSAGE_DATASET_SOURCE_INDEX_PATH = os.path.join(OLD_PATH, config['PASSAGE_DATASET_SOURCE_INDEX_PATH'])
 
-PASSAGE_DATASET_OLD_PATH = os.path.join(OLD_PATH, config['PASSAGE_DATASET_OLD_PATH'])
+PASSAGE_DATASET_SOURCE_PATH = os.path.join(OLD_PATH, config['PASSAGE_DATASET_SOURCE_PATH'])
 
 if CHATNOIR_RETRIEVAL:
     CANDIDATE_PATH = os.path.join(NEW_PATH, config['CANDIDATE_CHATNOIR_PATH'])
@@ -80,7 +80,7 @@ def pt_tokenize(text):
 # Passage yield function for indexing
 def yield_passages():
     known_passagenos = set()
-    with gzip.open(PASSAGE_DATASET_OLD_PATH, 'rt', encoding='UTF-8') as file:
+    with gzip.open(PASSAGE_DATASET_SOURCE_PATH, 'rt', encoding='UTF-8') as file:
         for line in file:
             line = json.loads(line)
             if line['docno'] not in known_passagenos:
@@ -99,7 +99,7 @@ def yield_passages():
 def oracle_retrieval():
     qid_docnos = {}
 
-    dataset = pt.get_dataset(DOCUMENT_DATASET_OLD_NAME_PYTERRIER)
+    dataset = pt.get_dataset(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
     qrels = dataset.get_qrels(variant='relevance')
     for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
         if row['qid'] not in qid_docnos:
@@ -130,7 +130,7 @@ qid_docnos_naive_retrieval = {}
 
 
 def naive_retrieval():
-    dataset = pt.get_dataset(DOCUMENT_DATASET_NEW_NAME_PYTERRIER)
+    dataset = pt.get_dataset(DOCUMENT_DATASET_TARGET_NAME_PYTERRIER)
 
     # Retrieve top 2000 documents for each query
     if CHATNOIR_RETRIEVAL:
@@ -192,7 +192,7 @@ def get_queries_best_passages_one_per_document(cache, scores):
 # HELPER for APPROACH 2
 # Get for each query all relevant passages in dictionary format qid: [passageno]
 docno_passagenos = {}
-with gzip.open(PASSAGE_DATASET_OLD_PATH, 'rt', encoding='UTF-8') as file:
+with gzip.open(PASSAGE_DATASET_SOURCE_PATH, 'rt', encoding='UTF-8') as file:
     for line in tqdm(file, desc='Caching passages', unit='passage'):
         line = json.loads(line)
         docno, passageno = line['docno'].split(PASSAGE_ID_SEPARATOR)
@@ -200,7 +200,7 @@ with gzip.open(PASSAGE_DATASET_OLD_PATH, 'rt', encoding='UTF-8') as file:
             docno_passagenos[docno] = []
         docno_passagenos[docno] += [line['docno']]
 
-dataset = pt.get_dataset(DOCUMENT_DATASET_OLD_NAME_PYTERRIER)
+dataset = pt.get_dataset(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
 qrels = dataset.get_qrels(variant='relevance')
 for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
     if row['label'] > 0:
@@ -212,7 +212,7 @@ for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
 
 
 # HELPER for APPROACH 2: get all passages text in dictionary format docno: [{passageno: text}]
-with gzip.open(PASSAGE_DATASET_OLD_PATH, 'rt', encoding='UTF-8') as file:
+with gzip.open(PASSAGE_DATASET_SOURCE_PATH, 'rt', encoding='UTF-8') as file:
     for line in file:
         line = json.loads(line)
         passages_text_cache[line['docno']] = line['text']
@@ -224,7 +224,7 @@ qid_docnos_nearest_neighbor_retrieval = {}
 
 
 def nearest_neighbor_retrieval():
-    dataset = pt.get_dataset(DOCUMENT_DATASET_NEW_NAME_PYTERRIER)
+    dataset = pt.get_dataset(DOCUMENT_DATASET_TARGET_NAME_PYTERRIER)
 
     # Retrieve for each relevant passage for its corresponding qid the top 20 docnos
     if CHATNOIR_RETRIEVAL:
@@ -340,7 +340,7 @@ def compute_recall_precision(qid_docnos_cache, filename=None):
     num_retrieved_documents_per_query = {}
     num_retrieved_relevant_documents_per_query = {}
 
-    dataset = pt.get_dataset(DOCUMENT_DATASET_OLD_NAME_PYTERRIER)
+    dataset = pt.get_dataset(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
     qrels = dataset.get_qrels(variant='relevance')
     for index, row in qrels.iterrows():
         if row['label'] > 0:
