@@ -1,3 +1,4 @@
+import glob
 import gzip
 import json
 import pyterrier as pt
@@ -29,8 +30,10 @@ METRICS = config['METRICS']
 NUMBER_OF_CROSS_VALIDATION_FOLDS = config['NUMBER_OF_CROSS_VALIDATION_FOLDS']
 KEY_SEPARATOR = config['KEY_SEPARATOR']
 
-RANK_CORRELATION_SCORE_PATH = os.path.join(
+RANK_CORRELATION_SCORE_PQ_AQ_PATH = os.path.join(
     SOURCE_PATH, config['RANK_CORRELATION_SCORE_PQ_AQ_PATH'])
+FILE_PATTERN = os.path.join(RANK_CORRELATION_SCORE_PQ_AQ_PATH, "job_*.jsonl.gz")
+
 CROSS_VALIDATION_SCORES_PATH = os.path.join(SOURCE_PATH, config['CROSS_VALIDATION_SCORES_PATH'])
 
 
@@ -43,25 +46,26 @@ def get_key(list):
 
 
 correlation_scores_eva_metric = {}
-with gzip.open(RANK_CORRELATION_SCORE_PATH, 'rt', encoding='UTF-8') as file:
-    for line in file:
-        line = json.loads(line)
-        agr_met = line['aggregation_method']
-        tra_met = line['transformation_method']
-        eva_met = line['evaluation_method']
-        for pt_retriever in PT_RETRIEVERS:
-            if pt_retriever in line['metric']:  # eg p10_BM25
-                retriever = pt_retriever
-                metric = line['metric'].replace('_' + pt_retriever, '')
-        correlation_per_query = line['correlation_per_query']
+for file_path in glob.glob(FILE_PATTERN):
+    with gzip.open(file_path, 'rt', encoding='UTF-8') as file:
+        for line in file:
+            line = json.loads(line)
+            agr_met = line['aggregation_method']
+            tra_met = line['transformation_method']
+            eva_met = line['evaluation_method']
+            for pt_retriever in PT_RETRIEVERS:
+                if pt_retriever in line['metric']:  # eg p10_BM25
+                    retriever = pt_retriever
+                    metric = line['metric'].replace('_' + pt_retriever, '')
+            correlation_per_query = line['correlation_per_query']
 
-        key1 = get_key([eva_met, retriever, metric])
-        key2 = get_key([agr_met, tra_met])
+            key1 = get_key([eva_met, retriever, metric])
+            key2 = get_key([agr_met, tra_met])
 
-        # Correlation scores for each evaluation method and retriever
-        if key1 not in correlation_scores_eva_metric:
-            correlation_scores_eva_metric[key1] = {}
-        correlation_scores_eva_metric[key1][key2] = correlation_per_query
+            # Correlation scores for each evaluation method and retriever
+            if key1 not in correlation_scores_eva_metric:
+                correlation_scores_eva_metric[key1] = {}
+            correlation_scores_eva_metric[key1][key2] = correlation_per_query
 
 
 # 2. get all qids

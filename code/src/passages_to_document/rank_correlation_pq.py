@@ -191,11 +191,11 @@ def get_evaluated_score(docno_qid_transformed_scores, qrels_cache, qid,
         return correlation
 
 
-def check_scores_smaller_zero(scores, location=''):
-    for entry in scores:
-        for metric in METRICS:
-            if entry[metric] < 0:
-                print(location, metric, entry[metric])
+# def check_scores_smaller_zero(scores, location=''):
+#     for entry in scores:
+#         for metric in METRICS:
+#             if entry[metric] < 0:
+#                 print(location, metric, entry[metric])
 
 
 if __name__ == '__main__':
@@ -219,6 +219,7 @@ if __name__ == '__main__':
     correlation_scores = []
     for combination in COMBINATIONS:
         aggregation_method, transformation_method, evaluation_method = combination
+        print(f"Job {JOB_ID} processing {aggregation_method}, {transformation_method}, {evaluation_method}")
 
         docno_qid_aggregated_scores = get_docno_qid_aggregated_scores(
             docno_qid_passages_scores_cache, aggregation_method)

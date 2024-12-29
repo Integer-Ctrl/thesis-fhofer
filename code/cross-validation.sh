@@ -7,8 +7,8 @@
 #SBATCH --nodes=1                                     # Number of nodes
 #SBATCH --cpus-per-task=2                             # Number of CPU cores per task
 #SBATCH --time=48:00:00                               # Time limit (48 hours)
-#SBATCH --output=logs/cross_validation/%A_%a.out      # Standard output log
-#SBATCH --error=logs/cross_validation/%A_%a.err       # Standard error log
+#SBATCH --output=logs/cross_validation/slurm_%j.out   # Standard output log
+#SBATCH --error=logs/cross_validation/slurm_%j.err       # Standard error log
 
 echo ${SLURM_ARRAY_JOB_ID}
 
