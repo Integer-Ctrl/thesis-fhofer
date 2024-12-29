@@ -2,8 +2,8 @@
 #SBATCH --job-name=passage_scorer               # Job name
 #SBATCH --partition=gammaweb                    # Partition name
 #SBATCH --exclude=gammaweb10                    # Exclude gammaweb10 node
-#SBATCH --array=1-10                            # Array job with 100 tasks
-#SBATCH --mem=15G                               # Memory request
+#SBATCH --array=1-11                            # Array job with 100 tasks
+#SBATCH --mem=16G                               # Memory request
 #SBATCH --ntasks=1                              # Number of tasks
 #SBATCH --nodes=1                               # Number of nodes
 #SBATCH --cpus-per-task=2                       # Number of CPU cores per task
@@ -15,7 +15,7 @@ echo ${SLURM_ARRAY_JOB_ID}
 
 # Load Python virtual environment
 echo "Loading Python virtual environment..."
-source ../thesis-fhofer/pyenv/bin/activate
+source ../../thesis-fhofer/pyenv/bin/activate
 echo "Python virtual environment loaded."
 
 # Step 2: Run passage scorer with the task ID as an argument

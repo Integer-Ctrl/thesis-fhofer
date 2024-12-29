@@ -12,7 +12,7 @@
 
 # Load Python virtual environment
 echo "Loading Python virtual environment..."
-source ../thesis-fhofer/pyenv/bin/activate
+source ../../thesis-fhofer/pyenv/bin/activate
 echo "Python virtual environment loaded."
 
 # Step 1: Initialize folder structure

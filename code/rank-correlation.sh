@@ -15,7 +15,7 @@ echo ${SLURM_ARRAY_JOB_ID}
 
 # Load Python virtual environment
 echo "Loading Python virtual environment..."
-source ../thesis-fhofer/pyenv/bin/activate
+source ../../thesis-fhofer/pyenv/bin/activate
 echo "Python virtual environment loaded."
 
 # Step 1: Compute rank correlation for passage-to-document conversion

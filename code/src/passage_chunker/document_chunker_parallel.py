@@ -102,13 +102,14 @@ def process_documents(args):
 
 def parallel_process_documents(dataset, num_workers, only_judged_docs, batch_size=1000):
 
+    total_chunked_docs = 0
+
     if only_judged_docs:
         # Only chunk judged documents
         judged_doc_ids = set()
         for qrel in dataset.qrels_iter():
             judged_doc_ids.add(qrel.doc_id)
 
-        total_chunked_docs = 0
         total_judged_docs = len(judged_doc_ids)
         chunk_size = total_judged_docs // num_workers
 
@@ -142,6 +143,7 @@ def parallel_process_documents(dataset, num_workers, only_judged_docs, batch_siz
         # Add the remaining documents to the last worker chunk
         if chunk:
             slices[-1].extend(chunk)
+            total_chunked_docs += chunk_docs_count
 
     # Chunk all documents
     else:
@@ -166,8 +168,9 @@ def parallel_process_documents(dataset, num_workers, only_judged_docs, batch_siz
 
             slices.append(unique_chunk)
 
-        total_chunked_docs += chunk_docs_count
-        print(f"Total judged documents: {total_judged_docs}, Total chunked documents: {total_chunked_docs}")
+        total_chunked_docs += total_docs
+
+    print(f"Total chunked documents: {total_chunked_docs}")
 
     # Prepare arguments for each process
     process_args = [(chunk, batch_size, PASSAGE_ID_SEPARATOR) for chunk in slices]
