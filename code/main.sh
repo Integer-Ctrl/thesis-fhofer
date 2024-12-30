@@ -10,16 +10,20 @@
 
 echo "Starting main job at $(date)"
 
-# Step 1: Run passage chunker
-job1_id=$(sbatch passage-chunker.sh | awk '{print $4}')
-echo "Passage chunker job submitted with ID: ${job1_id}"
+# # Step 1: Run passage chunker
+# job1_id=$(sbatch passage-chunker.sh | awk '{print $4}')
+# echo "Passage chunker job submitted with ID: ${job1_id}"
 
-# Step 2: Run passage scorer
-job2_id=$(sbatch --dependency=afterok:${job1_id} passage-scorer.sh | awk '{print $4}')
-echo "Passage scorer job submitted with ID: ${job2_id}"
+# # Step 2: Run passage scorer
+# job2_id=$(sbatch --dependency=afterok:${job1_id} passage-scorer.sh | awk '{print $4}')
+# echo "Passage scorer job submitted with ID: ${job2_id}"
+
+# # Step 3: Run rank correlation per query
+# job3_id=$(sbatch --dependency=afterok:${job2_id} rank-correlation.sh | awk '{print $4}')
+# echo "Rank correlation job submitted with ID: ${job3_id}"
 
 # Step 3: Run rank correlation per query
-job3_id=$(sbatch --dependency=afterok:${job2_id} rank-correlation.sh | awk '{print $4}')
+job3_id=$(sbatch rank-correlation.sh | awk '{print $4}')
 echo "Rank correlation job submitted with ID: ${job3_id}"
 
 # Step 4: Run cross-validation

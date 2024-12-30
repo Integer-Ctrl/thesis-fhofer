@@ -462,7 +462,7 @@ def write_candidates(candidates_file, candidates, recall, precision):
                             "query": qid_text,
                             "source_dataset_id": DOCUMENT_DATASET_SOURCE_NAME,
                             "target_dataset_id": DOCUMENT_DATASET_TARGET_NAME,
-                            "known_relevant_passage": {"doco": known_relevant_passageno,
+                            "known_relevant_passage": {"docno": known_relevant_passageno,
                                                        "text": source_passages_text_cache[known_relevant_docno]
                                                        [known_relevant_passageno]},
                             "passage_to_judge": {"docno": target_passageno,

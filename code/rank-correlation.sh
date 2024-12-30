@@ -13,6 +13,11 @@
 
 echo ${SLURM_ARRAY_JOB_ID}
 
+# Save logs, only first job responsible for creating the folder
+if [ "${SLURM_ARRAY_TASK_ID}" -eq 1 ]; then
+    mkdir -p logs/rank_correlation/${SLURM_ARRAY_JOB_ID}
+fi
+
 # Load Python virtual environment
 echo "Loading Python virtual environment..."
 source ../../thesis-fhofer/pyenv/bin/activate
@@ -23,13 +28,8 @@ echo "Running rank_correlation_pq.py..."
 python3 -u src/passages_to_document/rank_correlation_pq.py ${SLURM_ARRAY_TASK_ID} ${SLURM_ARRAY_TASK_MAX}
 echo "Rank correlation computed."
 
-# Save logs, only first job responsible for creating the folder
-if [ "${SLURM_ARRAY_TASK_ID}" -eq 1 ]; then
-    mkdir -p logs/rank_correlation/${SLURM_ARRAY_JOB_ID}
-fi
-
 # Move logs to the folder if it exists
 if [ -d "logs/rank_correlation/${SLURM_ARRAY_JOB_ID}" ]; then
-    mv logs/rank_correlation/${SLURM_ARRAY_JOB_ID}_*.out logs/rank_correlation/${SLURM_ARRAY_JOB_ID}
-    mv logs/rank_correlation/${SLURM_ARRAY_JOB_ID}_*.err logs/rank_correlation/${SLURM_ARRAY_JOB_ID}
+    mv logs/rank_correlation/${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}.out logs/rank_correlation/${SLURM_ARRAY_JOB_ID}
+    mv logs/rank_correlation/${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}.err logs/rank_correlation/${SLURM_ARRAY_JOB_ID}
 fi

@@ -13,6 +13,11 @@
 
 echo ${SLURM_ARRAY_JOB_ID}
 
+# Save logs, only first job responsible for creating the folder
+if [ "${SLURM_ARRAY_TASK_ID}" -eq 1 ]; then
+    mkdir -p logs/passage_scorer/${SLURM_ARRAY_JOB_ID}
+fi
+
 # Load Python virtual environment
 echo "Loading Python virtual environment..."
 source ../../thesis-fhofer/pyenv/bin/activate
@@ -23,13 +28,9 @@ echo "Running passage_scorer.py..."
 python3 -u src/passage_scorer/passage_scorer.py ${SLURM_ARRAY_TASK_ID} ${SLURM_ARRAY_TASK_MAX}
 echo "Passage scoring completed."
 
-# Save logs, only first job responsible for creating the folder
-if [ "${SLURM_ARRAY_TASK_ID}" -eq 1 ]; then
-    mkdir -p logs/passage_scorer/${SLURM_ARRAY_JOB_ID}
-fi
 
 # Move logs to the folder if it exists
 if [ -d "logs/passage_scorer/${SLURM_ARRAY_JOB_ID}" ]; then
-    mv logs/passage_scorer/${SLURM_ARRAY_JOB_ID}_*.out logs/passage_scorer/${SLURM_ARRAY_JOB_ID}
-    mv logs/passage_scorer/${SLURM_ARRAY_JOB_ID}_*.err logs/passage_scorer/${SLURM_ARRAY_JOB_ID}
+    mv logs/passage_scorer/${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}.out logs/passage_scorer/${SLURM_ARRAY_JOB_ID}
+    mv logs/passage_scorer/${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}.err logs/passage_scorer/${SLURM_ARRAY_JOB_ID}
 fi

@@ -54,6 +54,6 @@
         "CANDIDATES_LOCAL_PATH": "candidates/",
         "CANDIDATE_CHATNOIR_PATH": "candidates-chatnoir/",
         "CANDIDATE_APPROACHES": ["oracle", "naiv", "nearest_neighbor", "union"],
-        "DUOT5_QID_DOC_DOC_SYSTEM_SCORES_PATH": "duot5-qid-doc-doc-system-scores.jsonl.gz",
-        "DUOPROMPT_CACHE_PATH": "duoprompt.cache.jsonl.gz"
+        "DUOPROMPT_CACHE_PATH": "duoprompt.cache.jsonl.gz",
+        "DUOT5_CACHE_PATH": "duot5.cache.jsonl.gz"
 }
