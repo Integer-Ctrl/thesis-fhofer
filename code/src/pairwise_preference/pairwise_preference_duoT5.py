@@ -96,6 +96,10 @@ for key, group in tqdm(grouped_candidates.items(), desc="Infer relevance"):
         unk_doc_texts.append(candidate['passage_to_judge']['text'])
         pairwise_pref_count += 1
 
+    # If there are no unknown documents to infer, continue to the next group
+    if len(unk_doc_ids) == 0:
+        continue
+
     # Infer the relevance of the unknown documents
     inferred_scores = duoprompt.infer_oneshot_text(query_text=query_text,
                                                    rel_doc_text=rel_doc_text,
