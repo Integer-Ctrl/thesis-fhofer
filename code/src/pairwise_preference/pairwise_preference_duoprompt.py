@@ -46,10 +46,6 @@ if os.path.exists(DUOPROMPT_CACHE_PATH):
             key = get_key([line['qid'], line['known_relevant_passage_id'], line['passage_to_judge_id']])
             candidates_cache[key] = line['score']
 
-    # Delete the cache file
-    os.remove(DUOPROMPT_CACHE_PATH)
-
-
 grouped_candidates = {}
 with gzip.open(CANDIDATES_PATH, 'rt') as file:
     for line in file:
@@ -88,12 +84,11 @@ for key, group in tqdm(grouped_candidates.items(), desc="Infer relevance"):
             print("Error: qid mismatch")
             exit()
 
-        # If the score is already in the cache, use it
+        # If the score is already in the cache, dont infer it again
         key = get_key([candidate['qid'],
                        candidate['known_relevant_passage']['docno'],
                        candidate['passage_to_judge']['docno']])
         if key in candidates_cache:
-            unk_doc_scores[candidate['passage_to_judge']['docno']] = candidates_cache[key]
             continue
 
         # If the score is not in the cache, add the unknown document to the list
