@@ -47,8 +47,8 @@ def build_paths(config):
 
         "CANDIDATES_LOCAL_PATH": os.path.join(TARGET_PATH, config["CANDIDATES_LOCAL_PATH"]),
         "CANDIDATE_CHATNOIR_PATH": os.path.join(TARGET_PATH, config["CANDIDATE_CHATNOIR_PATH"]),
-        "DUOT5_QID_DOC_DOC_SYSTEM_SCORES_PATH": os.path.join(
-            TARGET_PATH, config["DUOT5_QID_DOC_DOC_SYSTEM_SCORES_PATH"]),
+        "LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH": os.path.join(
+            TARGET_PATH, config["LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH"]),
     }
     return paths
 

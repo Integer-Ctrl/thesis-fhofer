@@ -10,29 +10,34 @@
 
 echo "Starting main job at $(date)"
 
-# # Step 1: Run passage chunker
-# job1_id=$(sbatch passage-chunker.sh | awk '{print $4}')
-# echo "Passage chunker job submitted with ID: ${job1_id}"
+# Step 1: Run passage chunker
+job1_id=$(sbatch passage-chunker.sh | awk '{print $4}')
+echo "Passage chunker job submitted with ID: ${job1_id}"
 
-# # Step 2: Run passage scorer
-# job2_id=$(sbatch --dependency=afterok:${job1_id} passage-scorer.sh | awk '{print $4}')
-# echo "Passage scorer job submitted with ID: ${job2_id}"
+# Step 2: Run passage scorer
+job2_id=$(sbatch --dependency=afterok:${job1_id} passage-scorer.sh | awk '{print $4}')
+echo "Passage scorer job submitted with ID: ${job2_id}"
 
-# # Step 3: Run rank correlation per query
-# job3_id=$(sbatch --dependency=afterok:${job2_id} rank-correlation.sh | awk '{print $4}')
-# echo "Rank correlation job submitted with ID: ${job3_id}"
+# Step 3: Run rank correlation (scores) per query
+job3_id=$(sbatch --dependency=afterok:${job2_id} rank-correlation-scores.sh | awk '{print $4}')
+echo "Rank correlation (scores) job submitted with ID: ${job3_id}"
 
-# Step 3: Run rank correlation per query
-job3_id=$(sbatch rank-correlation.sh | awk '{print $4}')
-echo "Rank correlation job submitted with ID: ${job3_id}"
-
-# Step 4: Run cross-validation
-job4_id=$(sbatch --dependency=afterok:${job3_id} cross-validation.sh | awk '{print $4}')
+# Step 4: Run cross-validation-scores
+job4_id=$(sbatch --dependency=afterok:${job3_id} cross-validation-scores.sh | awk '{print $4}')
 echo "Cross-validation job submitted with ID: ${job4_id}"
 
 # Step 5: Run candidate retrieval
 job5_id=$(sbatch --dependency=afterok:${job4_id} candidate-retrieval.sh | awk '{print $4}')
 echo "Candidate retrieval job submitted with ID: ${job5_id}"
+
+# Step 6: Run pairwise preference
+job6_id=$(sbatch --dependency=afterok:${job5_id} pairwise-preference.sh | awk '{print $4}')
+
+# Step 7: Run rank correlation (labels) per query
+job7_id=$(sbatch --dependency=afterok:${job6_id} rank-correlation-labels.sh | awk '{print $4}')
+
+# Step 8: Run cross-validation-labels
+job8_id=$(sbatch --dependency=afterok:${job7_id} cross-validation-labels.sh | awk '{print $4}')
 
 echo "Main job completed at $(date)"
 

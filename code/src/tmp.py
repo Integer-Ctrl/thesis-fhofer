@@ -5,6 +5,7 @@ import ir_datasets
 import gzip
 from tqdm import tqdm
 from collections import Counter
+import glob
 
 DATASET_NAME = 'irds:argsme/2020-04-01/touche-2021-task-1'  # PyTerrier dataset name
 PASSAGE_PATH = 'data/' + DATASET_NAME.replace('irds:', '') + '/passage-dataset/passages.jsonl.gz'
@@ -195,17 +196,69 @@ def combine_dicts():
 def check_query_keys():
     dataset = pt.get_dataset('irds:argsme/2020-04-01/touche-2021-task-1')
     for query in dataset.get_topics():
-        print(query.keys(), '\n')
-        print(query['qid'], '\n')
-        print(query['query'], '\n')
-        print(query['question'], '\n')
-        print(query['question_type'], '\n')
-        print(query['question_category'], '\n')
-        print(query['question_category_type'], '\n')
-        print(query['question_category_type_subtype'], '\n')
-        print(query['question_category_type_subtype_topic'], '\n')
-        print(query['question_category_type_subtype_topic_premises'], '\n')
-        print(query['question_category_type_subtype_topic_conclusion'], '\n')
-        print(query['question_category_type_subtype_topic_premises_conclusion'], '\n')
-        print(query['question_category_type_subtype_topic_premises_conclusion_query'], '\n')
         break
+
+
+def check_correlation_dublicates():
+
+    DOCUMENT_DATASET_SOURCE_NAME = config['DOCUMENT_DATASET_SOURCE_NAME']
+    SOURCE_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_SOURCE_NAME)
+    KEY_SEPARATOR = config['KEY_SEPARATOR']
+    RANK_CORRELATION_SCORE_PQ_AQ_PATH = os.path.join(
+        SOURCE_PATH, config['RANK_CORRELATION_SCORE_PQ_AQ_PATH'])
+    FILE_PATTERN = os.path.join(RANK_CORRELATION_SCORE_PQ_AQ_PATH, "job_*.jsonl.gz")
+    PT_RETRIEVERS = config['PT_RETRIEVERS']
+
+    def get_key(list):
+        return KEY_SEPARATOR.join(list)
+
+    files = 0
+    correlation_scores_eva_ret = {}
+    for file_path in glob.glob(FILE_PATTERN):
+        with gzip.open(file_path, 'rt', encoding='UTF-8') as file:
+            files += 1
+            for line in file:
+                line = json.loads(line)
+                agr_met = line['aggregation_method']
+                tra_met = line['transformation_method']
+                eva_met = line['evaluation_method']
+                for pt_retriever in PT_RETRIEVERS:
+                    if pt_retriever in line['metric']:  # eg p10_BM25
+                        retriever = pt_retriever
+                        metric = line['metric'].replace('_' + pt_retriever, '')
+                correlation_per_query = line['correlation_per_query']
+
+                key1 = get_key([eva_met, retriever])
+                key2 = get_key([agr_met, tra_met, metric])
+
+                # Correlation scores for each evaluation method and retriever
+                if key1 not in correlation_scores_eva_ret:
+                    correlation_scores_eva_ret[key1] = {}
+                if key2 in correlation_scores_eva_ret[key1]:
+                    print('Dublicate:', key1, key2)
+                correlation_scores_eva_ret[key1][key2] = correlation_per_query
+
+    print(f"Files: {files}")
+
+
+def count_scores_per_qid():
+    path = '/mnt/ceph/storage/data-in-progress/data-teaching/theses/thesis-fhofer/data/argsme/2020-04-01-backup/touche\
+-2021-task-1/backup/retrieval-scores-aq.jsonl.gz'
+
+    with gzip.open(path, 'rt', encoding='UTF-8') as file:
+        total = 0
+        scores = {}
+        for line in tqdm(file, desc='Caching scores', unit='score'):
+            line = json.loads(line)
+            qid = line['qid']
+            if qid not in scores:
+                scores[qid] = 0
+            scores[qid] += 1
+            total += 1
+
+    print(scores)
+    print(f"Total: {total}")
+    print(f"Qids: {len(scores)}")
+
+
+count_scores_per_qid()

@@ -125,7 +125,7 @@ def get_docno_qid_transformed_scores(docno_qid_aggregated_scores, transformation
         for metric in METRICS:
             if transformation_method == 'id':
                 pass
-            elif transformation_method == 'log' and entry[metric] != 0:
+            elif transformation_method == 'log' and entry[metric] > 0:
                 entry[metric] = float(np.log(entry[metric]))
             elif transformation_method == 'binned':
                 entry[metric] = float(np.digitize(entry[metric], bins))
@@ -247,7 +247,7 @@ if __name__ == '__main__':
 
     # Save the correlation scores to an indexed file
     rank_correlation_job_path = os.path.join(RANK_CORRELATION_SCORE_PQ_AQ_PATH, f'job_{JOB_ID}.jsonl.gz')
-    with gzip.open(rank_correlation_job_path, 'at', encoding='UTF-8') as file:
+    with gzip.open(rank_correlation_job_path, 'wt', encoding='UTF-8') as file:
         for evaluation_entry in correlation_scores:
             file.write(json.dumps(evaluation_entry) + '\n')
 

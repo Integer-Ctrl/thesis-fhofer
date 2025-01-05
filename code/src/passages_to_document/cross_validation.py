@@ -44,10 +44,15 @@ def get_key(list):
     return KEY_SEPARATOR.join(list)
 
 
+print(PT_RETRIEVERS)
 correlation_scores_eva_ret = {}
+files = 0
+entries_in_files = 0
 for file_path in glob.glob(FILE_PATTERN):
     with gzip.open(file_path, 'rt', encoding='UTF-8') as file:
+        files += 1
         for line in file:
+            entries_in_files += 1
             line = json.loads(line)
             agr_met = line['aggregation_method']
             tra_met = line['transformation_method']
@@ -64,8 +69,13 @@ for file_path in glob.glob(FILE_PATTERN):
             # Correlation scores for each evaluation method and retriever
             if key1 not in correlation_scores_eva_ret:
                 correlation_scores_eva_ret[key1] = {}
+            if key2 in correlation_scores_eva_ret[key1]:
+                print('Dublicate:', key1, key2)
+                exit()
             correlation_scores_eva_ret[key1][key2] = correlation_per_query
 
+print(f"Files: {files}, Entries: {entries_in_files}")
+print(f"Correlation scores: {len(correlation_scores_eva_ret)}")
 
 # 2. get all qids
 qids = []
