@@ -1,5 +1,15 @@
 \chapter{Methodology}\label{methodology}
 
+In this Chapter, I present the individual steps of the pipeline used to process the datasets. I begin by introducing all the datasets on which the transfer process was performed and evaluated. Subsequently, I discuss each step of the processing pipeline in detail. The goal is to automatically infer \texttt{qrels}for the target dataset through pairwise preferences based on the existing \texttt{qrels} of the source dataset.
+
+The first step in the processing pipeline involves segmenting all documents in the source dataset, that contain at least one \texttt{qrel}, into passages. Relevant information within a document, if present, is typically confined to specific parts and not in the whole document. To improve the results in the pairwise preferences later, the focus is on filtering out only those passages that are highly relevant to a query.
+
+The second step identifies the passages of a document that are most relevant to the query of its \texttt{qrel}. For each \texttt{qrel} in the source dataset, i.e., the \texttt{(query, document, label)} triples, all passages of the document are treated as individual queries and submitted as requests against the source dataset. Based on the responses to these requests, various metrics are calculated to measure the proportion of relevant documents retrieved in the document ranking. Passages containing a large amount of relevant information for the query of the \texttt{qrel} retrieve more relevant documents and achieve better metrics than those contributing little or no information to the query.
+
+In the third step, the quality of the assigned passage scores is evaluated using different rank correlation methods. Based on the evaluation results, the metric with the highest rank correlation is used to select candidates for the pairwise preferences. In this selection phase, documents, referred to as candidates, are identified in the target dataset for which \texttt{qrels} will be determined. A candidate, similar to a \texttt{qrel}, consists of a query $q$, a candidate $c$, and a set of known, relevant passages for $q$ from the source dataset. Since the relevant texts used later for pairwise preference are passages rather than documents, each candidate $c$ is also divided into passages $c=(c_1, c_2, ..., c_n)$.
+
+In the final step, the pairwise preferences are inferred. All candidates, i.e., triples consisting of \texttt{(query text, relevant passage text, unknown passage text)}, are fed into a pairwise ranking model to determine whether the unknown passage is as relevant as the relevant passage concerning the query text. From the results of the pairwise preferences, labels for the respective unknown passages are generated through the aggregation of all pairwise preferences with the $k$ top relevant passages. A label for an entire document in the target Dataset is then created by aggregating the labels of all its passages.
+\\
 Workflow of the research:
 \begin{itemize}
     \item Datasets
@@ -11,6 +21,36 @@ Workflow of the research:
 
 \section{Datasets}\label{datasets}
 
+\begin{table}[h!]
+    \centering
+    \caption{List of source datasets and their associated retrieval tasks from which existing \texttt{qrels} where transferd into the target dataset \textbf{ClueWeb22}.}
+    \begin{tabular}{cccrr}
+        \toprule
+        \multicolumn{2}{c}{\textbf{Corpus}} & \multicolumn{3}{c}{\textbf{ Associated Retrieval Tasks}} \\
+        \cmidrule(lr){1-2} \cmidrule(lr){3-5}
+        Name & Documents  & Name & Queries & Qrels \\
+        \midrule
+        
+        \multirow{2}{*}{Args.me} & \multirow{2}{*}{0.4~m} & Touché 2020 & 49 & 2,298 \\
+        & & Touché 2021 & 50 & 3,711\\
+
+        \multirow{2}{*}{ClueWeb09} & \multirow{2}{*}{?~m} & ? & ? & ? \\
+        & & ? & ? & ? \\
+
+        \multirow{2}{*}{ClueWeb12} & \multirow{2}{*}{?~m} & ? & ? & ? \\
+        & & ? & ? & ? \\
+
+        \multirow{3}{*}{Disk4+5} & \multirow{3}{*}{0.5~m} & Robust04 & 250 & 311,410 \\
+        & & TREC-7 & 50 & 80,345 \\
+        & & TREC-8 & 50 & 86,830 \\
+
+        \multirow{2}{*}{MS MARCO} & \multirow{2}{*}{3.2~m} & Deep Learning 2019 & 43 & 16,258 \\
+        & & Deep Learning 2020 & 45 & 9,098 \\
+        
+        \bottomrule
+    \end{tabular}
+\end{table}
+
 For the selection of datasets, it was important to choosen datasets that are widely used in the field of information retrieval and that already contain relevance judgements. For that reason I decided to use the ClueWeb09 and ClueWeb12 datasets.
 
 \begin{itemize}
@@ -20,7 +60,7 @@ For the selection of datasets, it was important to choosen datasets that are wid
     \item Ancestor datasets (maybe used for transfering relevance labels)
 \end{itemize}
 
-\section{Documents to Passages}\label{documents-to-passages}
+\section{Documents Segmentation}\label{document-segmentation}
 
 The first step in the research process was to convert the documents in the datasets to passages. This was done to reduce the size of the documents and to make the relevance judgements more fine-grained.
 
@@ -32,7 +72,7 @@ The first step in the research process was to convert the documents in the datas
     \item Number of passages per document
 \end{itemize}
 
-\section{Inferring Relevance Scores of Passages}\label{inferring-relevance-scores-of-passages}
+\section{Passage Scoring}\label{passage-scoring}
 
 The next step was to infer relevance scores for the passages. This was done by using the relevance judgements, qrels, of the documents in the original datasets. For each qrel in the dataset with a label of 1 or 2, the corresponding passages of the document were used as a query to retrieve the documents of the dataset. 
 
@@ -45,7 +85,7 @@ The next step was to infer relevance scores for the passages. This was done by u
     \item What metrics were used to evaluate the retrieval performance?
 \end{itemize}
 
-\section{Relevance Labels of Passages}\label{relevance-labels-of-passages}
+\section{Rank Correlation}\label{rank-correlation-scores}
 
 The relevance scores of the passages were then used to assign relevance labels to the passages. To do this, I used to open source tool \href{https://github.com/seanmacavaney/autoqrels}{autoqrels}. The tool can be used to automatically assign relevance labels to passages based on the relevance scores of the passages.
 
@@ -57,7 +97,7 @@ The relevance scores of the passages were then used to assign relevance labels t
 \end{itemize}
 
 
-\section{Pairwise Transfering Relevance Labels Across Datasets}\label{pairwise-transfering-relevance-labels-across-datasets}
+\section{Pairwise Preferences}\label{pairwise-transfering-relevance-labels-across-datasets}
 
 To transfer relevance labels from the old dataset to the new dataset, the DuoT5 transformer model was utilized. This model takes a query and two documents as input and outputs a relevance score, which represents the probability that the first document is more relevant than the second. Here, a "document" refers to a passage. To assign a relevance label to a passage in the new dataset, it is compared against the top 20 to 30 passages for the same query in the old dataset. Pairwise comparison results and their associated queries are cached to avoid redundant calculations, and the final relevance score is determined by averaging the pairwise results. Two approaches are used to select passages for comparison, as detailed below.
 
