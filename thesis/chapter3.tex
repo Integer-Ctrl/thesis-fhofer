@@ -9,21 +9,13 @@ The second step identifies the passages of a document that are most relevant to 
 In the third step, the quality of the assigned passage scores is evaluated using different rank correlation methods. Based on the evaluation results, the metric with the highest rank correlation is used to select candidates for the pairwise preferences. In this selection phase, documents, referred to as candidates, are identified in the target dataset for which \texttt{qrels} will be determined. A candidate, similar to a \texttt{qrel}, consists of a query $q$, a candidate $c$, and a set of known, relevant passages for $q$ from the source dataset. Since the relevant texts used later for pairwise preference are passages rather than documents, each candidate $c$ is also divided into passages $c=(c_1, c_2, ..., c_n)$.
 
 In the final step, the pairwise preferences are inferred. All candidates, i.e., triples consisting of \texttt{(query text, relevant passage text, unknown passage text)}, are fed into a pairwise ranking model to determine whether the unknown passage is as relevant as the relevant passage concerning the query text. From the results of the pairwise preferences, labels for the respective unknown passages are generated through the aggregation of all pairwise preferences with the $k$ top relevant passages. A label for an entire document in the target Dataset is then created by aggregating the labels of all its passages.
-\\
-Workflow of the research:
-\begin{itemize}
-    \item Datasets
-    \item Documents to passages
-    \item Inferring relevance scores of passages
-    \item Relevance labels of passages
-    \item Transfering relevance labels across datasets
-\end{itemize}
 
 \section{Datasets}\label{datasets}
 
 \begin{table}[h!]
     \centering
-    \caption{List of source datasets and their associated retrieval tasks from which existing \texttt{qrels} where transferd into the target dataset \textbf{ClueWeb22}.}
+    \caption{List of source datasets and their associated retrieval tasks from which existing \texttt{qrels} where transferd into the target dataset \texttt{ClueWeb22}.}
+    \label{table:datasets}
     \begin{tabular}{cccrr}
         \toprule
         \multicolumn{2}{c}{\textbf{Corpus}} & \multicolumn{3}{c}{\textbf{ Associated Retrieval Tasks}} \\
@@ -51,14 +43,7 @@ Workflow of the research:
     \end{tabular}
 \end{table}
 
-For the selection of datasets, it was important to choosen datasets that are widely used in the field of information retrieval and that already contain relevance judgements. For that reason I decided to use the ClueWeb09 and ClueWeb12 datasets.
-
-\begin{itemize}
-    \item What were realy choosen in the final thesis?
-    \item Age
-    \item Number of queries, documents, qrels
-    \item Ancestor datasets (maybe used for transfering relevance labels)
-\end{itemize}
+To simplify data handling, I used \texttt{ir\_datasets}~\citep{macavaney:2021}, a Python package that provides numerous datasets and their associated retrieval tasks. The advantage of \texttt{ir\_datasets} is that it provides a standardized interface for accessing data. Using various iterators, the package manages access to corpora, queries, and \texttt{qrels}, enabling the processing pipeline to handle different datasets in a uniform way. The datasets used in this research are listed in Table~\ref{table:datasets}. The source datasets were selected because they are widely used in the field of information retrieval and already contain relevance judgments. These relevance judgments from the source datasets are later transferd to the target dataset, \texttt{ClueWeb22}. The target dataset, \texttt{ClueWeb22}, was chosen because it is currently the newest ClueWeb corpus in the \texttt{Lemur Project}\footnote{https://lemurproject.org}. It is significantly large, containing over 1.0~billion documents. Due to its size, the ratio of \texttt{qrels} to documents is relatively low. Therefore, the goal is to leverage the existing \texttt{qrels} from the source datasets and their associated retrieval tasks to generate new \texttt{qrels} for ClueWeb22, thereby enriching the corpus with additional relevance judgments. 
 
 \section{Documents Segmentation}\label{document-segmentation}
 
