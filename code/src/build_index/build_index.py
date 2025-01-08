@@ -20,19 +20,11 @@ def load_config(filename=pwd + "/../config.json"):
 # Get the configuration settings
 config = load_config()
 
-PT_RETRIEVERS = config['PT_RETRIEVERS']
-
 DOCUMENT_DATASET_SOURCE_NAME = config['DOCUMENT_DATASET_SOURCE_NAME']
-DOCUMENT_DATASET_TARGET_NAME = config['DOCUMENT_DATASET_TARGET_NAME']
-
 DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER = config['DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER']
-DOCUMENT_DATASET_TARGET_NAME_PYTERRIER = config['DOCUMENT_DATASET_TARGET_NAME_PYTERRIER']
 
 SOURCE_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_SOURCE_NAME)
-TARGET_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_SOURCE_NAME)
-
-DOCUMENT_DATASET_SOURCE_INDEX_PATH = os.path.join(TARGET_PATH, config['DOCUMENT_DATASET_SOURCE_INDEX_PATH'])
-DOCUMENT_DATASET_TARGET_INDEX_PATH = os.path.join(TARGET_PATH, config['DOCUMENT_DATASET_TARGET_INDEX_PATH'])
+DOCUMENT_DATASET_SOURCE_INDEX_PATH = os.path.join(SOURCE_PATH, config['DOCUMENT_DATASET_SOURCE_INDEX_PATH'])
 
 PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
 
@@ -61,19 +53,5 @@ if not os.path.exists(DOCUMENT_DATASET_SOURCE_INDEX_PATH):
 else:
     print("Index already exists")
     index_ref = pt.IndexRef.of(DOCUMENT_DATASET_SOURCE_INDEX_PATH + '/data.properties')
-
-dataset_index = pt.IndexFactory.of(index_ref)
-
-
-# Index target document dataset
-if not os.path.exists(DOCUMENT_DATASET_TARGET_INDEX_PATH):
-    print(f"Indexing dataset {DOCUMENT_DATASET_TARGET_NAME}")
-    dataset = pt.get_dataset(DOCUMENT_DATASET_TARGET_NAME_PYTERRIER)
-    indexer = pt.IterDictIndexer(DOCUMENT_DATASET_TARGET_INDEX_PATH)
-    index_ref = indexer.index(yield_docs(dataset),
-                              meta={'docno': 50, 'text': 20000})
-else:
-    print("Index already exists")
-    index_ref = pt.IndexRef.of(DOCUMENT_DATASET_TARGET_INDEX_PATH + '/data.properties')
 
 dataset_index = pt.IndexFactory.of(index_ref)

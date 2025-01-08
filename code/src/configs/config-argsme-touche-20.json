@@ -6,8 +6,8 @@
         "PER_QUERY": true,
         "ALL_QRELS": true,
 
-        "CHATNOIR_RETRIEVAL": true,
-        "CHATNOIR_INDICES": "msmarco-document",
+        "CHATNOIR_RETRIEVAL": false,
+        "CHATNOIR_INDICES": "clueweb22/b",
 
         "PASSAGE_ID_SEPARATOR": "___",
         "KEY_SEPARATOR": "---",
@@ -31,14 +31,13 @@
 
         "PASSAGE_DATASET_SOURCE_PATH": "passages.jsonl.gz",
         "PASSAGE_DATASET_SOURCE_INDEX_PATH": "passage-indices",
-        "PASSAGE_DATASET_SOURCE_SCORE_REL_PATH": "retrieval-scores.jsonl.gz",
-        "PASSAGE_DATASET_SOURCE_SCORE_AQ_PATH": "retrieval-scores-aq.jsonl.gz",
+        "PASSAGE_DATASET_SOURCE_SCORE_REL_PATH": "retrieval-scores-rel/",
+        "PASSAGE_DATASET_SOURCE_SCORE_AQ_PATH": "retrieval-scores-aq/",
 
         "RANK_CORRELATION_SCORE_PATH": "rank-correlation-scores.jsonl.gz",
-        "RANK_CORRELATION_SCORE_AQ_PATH": "rank-correlation-scores-aq.jsonl.gz",
-        "RANK_CORRELATION_SCORE_PQ_PATH": "rank-correlation-scores-pq.jsonl.gz",
-        "RANK_CORRELATION_SCORE_PQ_AQ_PATH": "rank-correlation-scores-pq-aq.jsonl.gz",
+        "RANK_CORRELATION_SCORE_PQ_AQ_PATH": "rank-correlation-scores-pq-aq/",
         "CROSS_VALIDATION_PATH": "cross-validation.jsonl.gz",
+        "CROSS_VALIDATION_SCORES_PATH": "cross-validation-scores.jsonl.gz",
 
 
     "NOTE_2": "dataset which is used to transfer into it from the old dataset",
@@ -52,8 +51,12 @@
         "PASSAGE_DATASET_TARGET_PATH": "passages.jsonl.gz",
         "PASSAGE_DATASET_TARGET_INDEX_PATH": "passage-indices",
 
-        "CANDIDATES_LOCAL_PATH": "candidates.jsonl.gz",
-        "CANDIDATE_CHATNOIR_PATH": "candidates-chatnoir.jsonl.gz",
+        "LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH": "label-rank-correlation-scores-pq-aq/",
+        "LABEL_CROSS_VALIDATION_PATH": "label-cross-validation.jsonl.gz",
+
+        "CANDIDATES_LOCAL_PATH": "candidates/",
+        "CANDIDATE_CHATNOIR_PATH": "candidates-chatnoir/",
         "CANDIDATE_APPROACHES": ["oracle", "naiv", "nearest_neighbor", "union"],
-        "DUOT5_QID_DOC_DOC_SYSTEM_SCORES_PATH": "duot5-qid-doc-doc-system-scores.jsonl.gz"
+        "DUOPROMPT_CACHE_PATH": "duoprompt.jsonl.gz",
+        "DUOT5_CACHE_PATH": "duot5.jsonl.gz"
 }

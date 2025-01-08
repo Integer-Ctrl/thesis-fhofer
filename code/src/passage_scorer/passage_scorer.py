@@ -80,23 +80,7 @@ def pt_tokenize(text):
     return ' '.join(tokeniser.getTokens(text))
 
 
-# Document yield function for indexing without duplicates
-def yield_docs(dataset):
-    known_docnos = set()
-    for i in dataset.irds_ref().docs_iter():
-        if i.doc_id not in known_docnos:
-            known_docnos.add(i.doc_id)
-            yield {'docno': i.doc_id, 'text': i.default_text()}
-
-
-# Index dataset
-if not os.path.exists(DOCUMENT_DATASET_SOURCE_INDEX_PATH):
-    indexer = pt.IterDictIndexer(DOCUMENT_DATASET_SOURCE_INDEX_PATH)
-    index_ref = indexer.index(yield_docs(dataset),
-                              meta={'docno': 50, 'text': 20000})
-else:
-    index_ref = pt.IndexRef.of(DOCUMENT_DATASET_SOURCE_INDEX_PATH + '/data.properties')
-
+index_ref = pt.IndexRef.of(DOCUMENT_DATASET_SOURCE_INDEX_PATH + '/data.properties')
 dataset_index = pt.IndexFactory.of(index_ref)
 
 # Read passages and cache them

@@ -23,20 +23,16 @@ PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
 DOCUMENT_DATASET_SOURCE_NAME = config['DOCUMENT_DATASET_SOURCE_NAME']
 DOCUMENT_DATASET_SOURCE_NAME_PYTHON_API = config['DOCUMENT_DATASET_SOURCE_NAME_PYTHON_API']
 
-DOCUMENT_DATASET_TARGET_NAME = config['DOCUMENT_DATASET_TARGET_NAME']
-DOCUMENT_DATASET_TARGET_NAME_PYTHON_API = config['DOCUMENT_DATASET_TARGET_NAME_PYTHON_API']
-
 SOURCE_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_SOURCE_NAME)
-TARGET_PATH = os.path.join(SOURCE_PATH, config["DOCUMENT_DATASET_TARGET_NAME"])
-
 PASSAGE_DATASET_SOURCE_PATH = os.path.join(SOURCE_PATH, config['PASSAGE_DATASET_SOURCE_PATH'])
-PASSAGE_DATASET_TARGET_PATH = os.path.join(TARGET_PATH, config['PASSAGE_DATASET_TARGET_PATH'])
 
 
+# Class to chunk documents into passages
 class PassageChunker:
 
-    def __init__(self, ir_dataset):
-        self.dataset = ir_datasets.load(ir_dataset)
+    def __init__(self, ir_dataset, docs_to_chunk):
+        self.dataset = ir_dataset
+        self.docs_to_chunk = docs_to_chunk
 
     def dynamic_document_segmentation(self, path, batch_size=1000):
         # Initialize the passage chunker
@@ -51,6 +47,10 @@ class PassageChunker:
         with gzip.open(path, 'wt', encoding='UTF-8') as file:
 
             for doc in tqdm(self.dataset.docs_iter(), desc='Chunking and saving documents', unit='doc'):
+                # Skip documents that should not be chunked
+                if doc.doc_id not in self.docs_to_chunk:
+                    continue
+
                 # Skip documents that have already been processed
                 if doc.doc_id in known_doc_ids:
                     continue
@@ -99,11 +99,55 @@ class PassageChunker:
         print(f"Processed and saved {doc_count} documents to {PASSAGE_DATASET_SOURCE_PATH}")
 
 
-# Chunk old dataset and save to file
-chunker = PassageChunker(DOCUMENT_DATASET_SOURCE_NAME_PYTHON_API)
-chunker.dynamic_document_segmentation(PASSAGE_DATASET_SOURCE_PATH, batch_size=4000)
+# Get list of doc ids that should be chunked
+# For each QID, chunk 50 non relevant documents with a label <= 0
+# For each QID, chunk 50 relevant documents for each label > 0
+# If there are less than 50 documents for a label, chunk for each label as much as the smallest label count
+def get_docs_to_chunk(dataset):
+    dict = {}
 
-# If the dataset to transfer into is different, chunk the new dataset
-if DOCUMENT_DATASET_TARGET_NAME != DOCUMENT_DATASET_SOURCE_NAME:
-    chunker = PassageChunker(DOCUMENT_DATASET_TARGET_NAME_PYTHON_API)
-    chunker.dynamic_document_segmentation(PASSAGE_DATASET_TARGET_PATH, batch_size=4000)
+    for qrel in dataset.qrels_iter():
+        qid = qrel.query_id
+        doc_id = qrel.doc_id
+        label = qrel.relevance
+
+        if qid not in dict:
+            dict[qid] = {}
+
+        if label <= 0:
+            if '0' not in dict[qid]:
+                dict[qid]['0'] = []
+            dict[qid]['0'] += [doc_id]
+
+        if label > 0:
+            lable_str = str(label)
+            if lable_str not in dict[qid]:
+                dict[qid][lable_str] = []
+            dict[qid][lable_str] += [doc_id]
+
+    # Round to smallest label count or 50
+    for qid in dict:
+        min_label_count = min([[len(count)] for count in dict[qid].values()])
+        min_label_count = min(min_label_count[0], 50)
+
+        for label in dict[qid]:
+            dict[qid][label] = dict[qid][label][:min_label_count]
+
+        print(f"QID: {qid} has {len(dict[qid].keys())} labels with {min_label_count} documents each")
+
+    # Flatten the dictionary
+    doc_ids = []
+    for qid in dict:
+        for label in dict[qid]:
+            doc_ids += dict[qid][label]
+
+    return set(doc_ids)
+
+
+# Chunk source dataset and save to file
+dataset = ir_datasets.load(DOCUMENT_DATASET_SOURCE_NAME_PYTHON_API)
+
+qid_doc_counts = get_docs_to_chunk(dataset)
+
+chunker = PassageChunker(dataset, qid_doc_counts)
+chunker.dynamic_document_segmentation(PASSAGE_DATASET_SOURCE_PATH, batch_size=2000)

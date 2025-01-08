@@ -7,7 +7,7 @@
         "ALL_QRELS": true,
 
         "CHATNOIR_RETRIEVAL": false,
-        "CHATNOIR_INDICES": "msmarco-document",
+        "CHATNOIR_INDICES": "clueweb22/b",
 
         "PASSAGE_ID_SEPARATOR": "___",
         "KEY_SEPARATOR": "---",
@@ -24,9 +24,9 @@
     "NOTE_1": "dataset which is used to transfer from it to the new dataset",
 
         "TYPE_SOURCE": "document",
-        "DOCUMENT_DATASET_SOURCE_NAME": "argsme/2020-04-01/touche-2021-task-1",
-        "DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER": "irds:argsme/2020-04-01/touche-2021-task-1",
-        "DOCUMENT_DATASET_SOURCE_NAME_PYTHON_API": "argsme/2020-04-01/touche-2021-task-1",
+        "DOCUMENT_DATASET_SOURCE_NAME": "argsme/2020-04-01/touche-2020-task-1",
+        "DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER": "irds:argsme/2020-04-01/touche-2020-task-1",
+        "DOCUMENT_DATASET_SOURCE_NAME_PYTHON_API": "argsme/2020-04-01/touche-2020-task-1",
         "DOCUMENT_DATASET_SOURCE_INDEX_PATH": "document-indices",
 
         "PASSAGE_DATASET_SOURCE_PATH": "passages.jsonl.gz",
@@ -43,9 +43,9 @@
     "NOTE_2": "dataset which is used to transfer into it from the old dataset",
 
         "TYPE_TARGET": "document",
-        "DOCUMENT_DATASET_TARGET_NAME": "argsme/2020-04-01/touche-2021-task-1",
-        "DOCUMENT_DATASET_TARGET_NAME_PYTERRIER": "irds:argsme/2020-04-01/touche-2021-task-1",
-        "DOCUMENT_DATASET_TARGET_NAME_PYTHON_API": "argsme/2020-04-01/touche-2021-task-1",
+        "DOCUMENT_DATASET_TARGET_NAME": "argsme/2020-04-01/touche-2020-task-1",
+        "DOCUMENT_DATASET_TARGET_NAME_PYTERRIER": "irds:argsme/2020-04-01/touche-2020-task-1",
+        "DOCUMENT_DATASET_TARGET_NAME_PYTHON_API": "argsme/2020-04-01/touche-2020-task-1",
         "DOCUMENT_DATASET_TARGET_INDEX_PATH": "document-indices",
 
         "PASSAGE_DATASET_TARGET_PATH": "passages.jsonl.gz",
