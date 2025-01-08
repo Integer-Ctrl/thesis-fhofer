@@ -50,7 +50,13 @@ text2 = (
     'contraceptives or STD\'s. '
 )
 
-chatnoir = ChatNoirRetrieve(index=CHATNOIR_INDICES, num_results=2000, retrieval_system="bm25")
-# results = chatnoir.search("python library").loc[:, ['qid', 'docno']].head(20)
-results = chatnoir.search(text2).loc[:, ['qid', 'docno']].head(20)
-print(results)
+chatnoir = ChatNoirRetrieve(index=CHATNOIR_INDICES,
+                            features=Feature.CONTENTS,
+                            num_results=2000,
+                            retrieval_system="bm25")
+# results = chatnoir.search('What about us').loc[:, ['qid', 'docno']].head(20)
+# print(results)
+
+documentID = '9QQJQYBpWz-l-1PbkkEXjA'
+warcID = 'b8117996-4581-43eb-b33a-348c5aa48a0a'
+trecID = 'clueweb22-en0012-00-01587'

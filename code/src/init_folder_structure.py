@@ -22,7 +22,7 @@ def build_paths(config):
 
     DATA_PATH = config["DATA_PATH"]
     SOURCE_PATH = os.path.join(DATA_PATH, config["DOCUMENT_DATASET_SOURCE_NAME"])
-    TARGET_PATH = os.path.join(DATA_PATH, config["DOCUMENT_DATASET_TARGET_NAME"])
+    TARGET_PATH = os.path.join(SOURCE_PATH, config["DOCUMENT_DATASET_TARGET_NAME"])
 
     paths = {
         # Dataset used to transfer from

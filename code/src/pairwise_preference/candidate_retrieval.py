@@ -41,8 +41,9 @@ DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER = config['DOCUMENT_DATASET_SOURCE_NAME_PY
 DOCUMENT_DATASET_TARGET_NAME_PYTHON_API = config['DOCUMENT_DATASET_TARGET_NAME_PYTHON_API']
 DOCUMENT_DATASET_SOURCE_NAME_PYTHON_API = config['DOCUMENT_DATASET_SOURCE_NAME_PYTHON_API']
 
-TARGET_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_TARGET_NAME)
 SOURCE_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_SOURCE_NAME)
+TARGET_PATH = os.path.join(SOURCE_PATH, config["DOCUMENT_DATASET_TARGET_NAME"])
+
 
 if TYPE_TARGET == 'document':
     DATASET_NEW_INDEX_PATH = os.path.join(TARGET_PATH, config['DOCUMENT_DATASET_TARGET_INDEX_PATH'])
@@ -208,7 +209,7 @@ qid_docnos_nearest_neighbor_retrieval = {}
 
 
 def nearest_neighbor_retrieval():
-    dataset = pt.get_dataset(DOCUMENT_DATASET_TARGET_NAME_PYTERRIER)
+    dataset = pt.get_dataset(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
 
     # Retrieve for each relevant passage for its corresponding qid the top 20 docnos
     if CHATNOIR_RETRIEVAL:
@@ -329,7 +330,7 @@ def compute_recall_precision(qid_docnos_cache, filename=None):
     num_retrieved_documents_per_query = {}
     num_retrieved_relevant_documents_per_query = {}
 
-    dataset = pt.get_dataset(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
+    dataset = pt.get_dataset(DOCUMENT_DATASET_TARGET_NAME_PYTERRIER)
     qrels = dataset.get_qrels(variant='relevance')
     for index, row in qrels.iterrows():
         if row['label'] > 0:
@@ -483,34 +484,34 @@ if __name__ == '__main__':
         recall_precision_file.write('')
 
     # Recall and Precision for each approach
-    docnos_naive = naive_retrieval()
+    # docnos_naive = naive_retrieval()
     docnos_nearest_neighbor = nearest_neighbor_retrieval()
-    docnos_union = union_retrieval()
+    # docnos_union = union_retrieval()
 
     # # Print the number of documents (docnos) for each approach
-    print(f'Naive: {sum([len(docnos) for docnos in docnos_naive.values()])} documents (docnos)')
+    # print(f'Naive: {sum([len(docnos) for docnos in docnos_naive.values()])} documents (docnos)')
     print(f'Nearest Neighbor: {sum([len(docnos) for docnos in docnos_nearest_neighbor.values()])} documents (docnos)')
-    print(f'Union: {sum([len(docnos) for docnos in docnos_union.values()])} documents (docnos)')
+    # print(f'Union: {sum([len(docnos) for docnos in docnos_union.values()])} documents (docnos)')
 
-    recall_naive, precision_naive = compute_recall_precision(docnos_naive, filename='recall_precision_naive.pdf')
+    # recall_naive, precision_naive = compute_recall_precision(docnos_naive, filename='recall_precision_naive.pdf')
     recall_nearest_neighbor, precision_nearest_neighbor = compute_recall_precision(
         docnos_nearest_neighbor, filename='recall_precision_nearest_neighbor.pdf')
-    recall_union, precision_union = compute_recall_precision(docnos_union, filename='recall_precision_union.pdf')
+    # recall_union, precision_union = compute_recall_precision(docnos_union, filename='recall_precision_union.pdf')
 
-    print(f'Naive: Recall={recall_naive}, Precision={precision_naive}')
+    # print(f'Naive: Recall={recall_naive}, Precision={precision_naive}')
     print(f'Nearest Neighbor: Recall={recall_nearest_neighbor}, Precision={precision_nearest_neighbor}')
-    print(f'Union: Recall={recall_union}, Precision={precision_union}')
+    # print(f'Union: Recall={recall_union}, Precision={precision_union}')
 
     # Write results to file
     naive_file_name = os.path.join(CANDIDATES_PATH, 'naive.jsonl.gz')
     nearest_neighbor_file_name = os.path.join(CANDIDATES_PATH, 'nearest_neighbor.jsonl.gz')
     union_file_name = os.path.join(CANDIDATES_PATH, 'union.jsonl.gz')
 
-    write_candidates(naive_file_name, docnos_naive,
-                     recall_naive, precision_naive)
+    # write_candidates(naive_file_name, docnos_naive,
+    #                  recall_naive, precision_naive)
 
     write_candidates(nearest_neighbor_file_name, docnos_nearest_neighbor,
                      recall_nearest_neighbor, precision_nearest_neighbor)
 
-    write_candidates(union_file_name, docnos_union,
-                     recall_union, precision_union)
+    # write_candidates(union_file_name, docnos_union,
+    #                  recall_union, precision_union)

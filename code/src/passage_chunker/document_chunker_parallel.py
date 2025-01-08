@@ -29,7 +29,7 @@ DOCUMENT_DATASET_TARGET_NAME = config['DOCUMENT_DATASET_TARGET_NAME']
 DOCUMENT_DATASET_TARGET_NAME_PYTHON_API = config['DOCUMENT_DATASET_TARGET_NAME_PYTHON_API']
 
 SOURCE_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_SOURCE_NAME)
-TARGET_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_TARGET_NAME)
+TARGET_PATH = os.path.join(SOURCE_PATH, config["DOCUMENT_DATASET_TARGET_NAME"])
 
 PASSAGE_DATASET_SOURCE_PATH = os.path.join(SOURCE_PATH, config['PASSAGE_DATASET_SOURCE_PATH'])
 PASSAGE_DATASET_TARGET_PATH = os.path.join(TARGET_PATH, config['PASSAGE_DATASET_TARGET_PATH'])
@@ -195,66 +195,23 @@ NUM_WORKERS = 16
 
 time_start = time.time()
 
-# If source and target datasets are the same, chunk only once and all documents
-if DOCUMENT_DATASET_SOURCE_NAME == DOCUMENT_DATASET_TARGET_NAME:
-    print("Source and target datasets are the same.")
-
-    # Check if the dataset is already chunked
-    if os.path.exists(PASSAGE_DATASET_SOURCE_PATH):
-        print(f"Dataset {DOCUMENT_DATASET_SOURCE_NAME} is already chunked and saved")
-
-    else:
-        if TYPE_SOURCE == 'document':
-            print(f"Chunking {DOCUMENT_DATASET_SOURCE_NAME} dataset")
-            dataset = ir_datasets.load(DOCUMENT_DATASET_SOURCE_NAME_PYTHON_API)
-            results = parallel_process_documents(dataset, NUM_WORKERS, only_judged_docs=False, batch_size=BATCH_SIZE)
-
-            with gzip.open(PASSAGE_DATASET_SOURCE_PATH, 'wt', encoding='UTF-8') as file:
-                for result in results:
-                    file.write((json.dumps(result) + '\n'))
-
-        if TYPE_SOURCE == 'passage':
-            print(f"Dataset {DOCUMENT_DATASET_SOURCE_NAME} is already chunked and now saved")
-            dataset = ir_datasets.load(DOCUMENT_DATASET_SOURCE_NAME_PYTHON_API)
-            save_passages_local(dataset, PASSAGE_DATASET_SOURCE_PATH)
-
-# Different source and target datasets
+# Check if the source dataset is already chunked
+if os.path.exists(PASSAGE_DATASET_SOURCE_PATH):
+    print(f"Dataset {DOCUMENT_DATASET_SOURCE_NAME} is already chunked and saved")
 else:
-    # Check if the source dataset is already chunked
-    if os.path.exists(PASSAGE_DATASET_SOURCE_PATH):
-        print(f"Dataset {DOCUMENT_DATASET_SOURCE_NAME} is already chunked and saved")
-    else:
-        if TYPE_SOURCE == 'document':
-            print(f"Chunking {DOCUMENT_DATASET_SOURCE_NAME} dataset")
-            dataset = ir_datasets.load(DOCUMENT_DATASET_SOURCE_NAME_PYTHON_API)
-            results = parallel_process_documents(dataset, NUM_WORKERS, only_judged_docs=True, batch_size=BATCH_SIZE)
+    if TYPE_SOURCE == 'document':
+        print(f"Chunking {DOCUMENT_DATASET_SOURCE_NAME} dataset")
+        dataset = ir_datasets.load(DOCUMENT_DATASET_SOURCE_NAME_PYTHON_API)
+        results = parallel_process_documents(dataset, NUM_WORKERS, only_judged_docs=True, batch_size=BATCH_SIZE)
 
-            with gzip.open(PASSAGE_DATASET_SOURCE_PATH, 'wt', encoding='UTF-8') as file:
-                for result in results:
-                    file.write((json.dumps(result) + '\n'))
+        with gzip.open(PASSAGE_DATASET_SOURCE_PATH, 'wt', encoding='UTF-8') as file:
+            for result in results:
+                file.write((json.dumps(result) + '\n'))
 
-        if TYPE_SOURCE == 'passage':
-            print(f"Dataset {DOCUMENT_DATASET_SOURCE_NAME} is already chunked and now saved")
-            dataset = ir_datasets.load(DOCUMENT_DATASET_SOURCE_NAME_PYTHON_API)
-            save_passages_local(dataset, PASSAGE_DATASET_SOURCE_PATH)
-
-    # Check if the target dataset is already chunked
-    if os.path.exists(PASSAGE_DATASET_TARGET_PATH):
-        print(f"Dataset {DOCUMENT_DATASET_TARGET_NAME} is already chunked and saved")
-    else:
-        if TYPE_TARGET == 'document':
-            print(f"Chunking {DOCUMENT_DATASET_TARGET_NAME} dataset")
-            dataset = ir_datasets.load(DOCUMENT_DATASET_TARGET_NAME_PYTHON_API)
-            results = parallel_process_documents(dataset, NUM_WORKERS, only_judged_docs=False, batch_size=BATCH_SIZE)
-
-            with gzip.open(PASSAGE_DATASET_TARGET_PATH, 'wt', encoding='UTF-8') as file:
-                for result in results:
-                    file.write((json.dumps(result) + '\n'))
-
-        if TYPE_TARGET == 'passage':
-            print(f"Dataset {DOCUMENT_DATASET_TARGET_NAME} is already chunked and now saved")
-            dataset = ir_datasets.load(DOCUMENT_DATASET_TARGET_NAME_PYTHON_API)
-            save_passages_local(dataset, PASSAGE_DATASET_TARGET_PATH)
+    if TYPE_SOURCE == 'passage':
+        print(f"Dataset {DOCUMENT_DATASET_SOURCE_NAME} is already chunked and now saved")
+        dataset = ir_datasets.load(DOCUMENT_DATASET_SOURCE_NAME_PYTHON_API)
+        save_passages_local(dataset, PASSAGE_DATASET_SOURCE_PATH)
 
 time_end = time.time()
 print(f"Processed and saved documents in {(time_end - time_start) / 60} minutes")

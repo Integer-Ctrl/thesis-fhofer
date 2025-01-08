@@ -18,7 +18,8 @@ def load_config(filename=pwd + "/../config.json"):
 config = load_config()
 
 DOCUMENT_DATASET_TARGET_NAME = config['DOCUMENT_DATASET_TARGET_NAME']
-TARGET_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_TARGET_NAME)
+SOURCE_PATH = os.path.join(config['DATA_PATH'], config["DOCUMENT_DATASET_SOURCE_NAME"])
+TARGET_PATH = os.path.join(SOURCE_PATH, config["DOCUMENT_DATASET_TARGET_NAME"])
 DUOPROMPT_CACHE_PATH = os.path.join(TARGET_PATH, config['DUOPROMPT_CACHE_PATH'])
 
 with gzip.open(DUOPROMPT_CACHE_PATH, 'wt') as fin:
