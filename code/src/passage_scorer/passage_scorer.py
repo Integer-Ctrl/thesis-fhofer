@@ -190,6 +190,10 @@ def process_qid(qid):
                                                                                        qrels_for_query_wod)
 
                 label = int(qrels.loc[(qrels['qid'] == qid) & (qrels['docno'] == docno)]['label'].iloc[0])
+                # All labels smaller equal 0 are considered as 0 (non-relevant)
+                if label < 0:
+                    label = 0
+
                 scores = {'qid': qid, 'docno': passage['docno'], 'label': label}
                 for retriever in PT_RETRIEVERS:
                     scores['p10_' + retriever] = p10[retriever]
