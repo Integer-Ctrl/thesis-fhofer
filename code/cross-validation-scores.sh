@@ -19,10 +19,10 @@ echo "Python virtual environment loaded."
 
 # Step 1: Run cross-validation for evaluation
 echo "Running cross_validation.py..."
-python3 -u src/passages_to_document/cross_validation.py
+python3 -u src/passage_scorer/evaluation/cross_validation.py
 echo "Cross-validation completed."
 
 # Step 2: Run cross-validation-scores for evaluation
 echo "Running cross_validation_scores.py..."
-python3 -u src/passages_to_document/cross_validation_scores.py
+python3 -u src/passage_scorer/evaluation/cross_validation_scores.py
 echo "Cross-validation scores computed."

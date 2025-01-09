@@ -25,11 +25,11 @@ echo "Python virtual environment loaded."
 
 # Step 1: Compute rank correlation for passage-to-document conversion
 echo "Running rank_correlation_pq.py..."
-python3 -u src/passages_to_document/rank_correlation_pq.py ${SLURM_ARRAY_TASK_ID} ${SLURM_ARRAY_TASK_MAX}
+python3 -u src/passage_scorer/evaluation/rank_correlation_pq.py ${SLURM_ARRAY_TASK_ID} ${SLURM_ARRAY_TASK_MAX}
 echo "Rank correlation computed."
 
 # Move logs to the folder if it exists
-if [ -d "logs/rank_correlation/${SLURM_ARRAY_JOB_ID}" ]; then
+if [ -d "logs/rank_correlation/scores_${SLURM_ARRAY_JOB_ID}" ]; then
     mv logs/rank_correlation/scores_${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}.out logs/rank_correlation/scores_${SLURM_ARRAY_JOB_ID}
     mv logs/rank_correlation/scores_${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}.err logs/rank_correlation/scores_${SLURM_ARRAY_JOB_ID}
 fi

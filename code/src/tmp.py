@@ -6,6 +6,9 @@ import gzip
 from tqdm import tqdm
 from collections import Counter
 import glob
+from ir_datasets_clueweb22 import register
+
+register()
 
 DATASET_NAME = 'irds:argsme/2020-04-01/touche-2021-task-1'  # PyTerrier dataset name
 PASSAGE_PATH = 'data/' + DATASET_NAME.replace('irds:', '') + '/passage-dataset/passages.jsonl.gz'
@@ -261,4 +264,23 @@ def count_scores_per_qid():
     print(f"Qids: {len(scores)}")
 
 
-count_scores_per_qid()
+dataset = ir_datasets.load('clueweb12/trec-web-2013')
+print(dataset.docs_count())
+for doc in dataset.docs_iter():
+    print(doc)
+    print(doc['docno'])
+    break
+
+docstore = dataset.docs_store()
+print(docstore.get('clueweb12-0000tw-05-12114'))
+
+for qry in dataset.queries_iter():
+    print(qry)
+    break
+
+for qrel in dataset.qrels_iter():
+    print(qrel)
+    break
+
+tmp_list = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u']
+print(tmp_list[4:10] + tmp_list[14:20])

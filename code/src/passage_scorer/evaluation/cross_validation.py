@@ -9,7 +9,7 @@ import os
 pwd = os.path.dirname(os.path.abspath(__file__))
 
 
-def load_config(filename=pwd + "/../config.json"):
+def load_config(filename=pwd + "/../../config.json"):
     with open(filename, "r") as f:
         config = json.load(f)
     return config
@@ -44,7 +44,6 @@ def get_key(list):
     return KEY_SEPARATOR.join(list)
 
 
-print(PT_RETRIEVERS)
 correlation_scores_eva_ret = {}
 files = 0
 entries_in_files = 0
@@ -107,7 +106,9 @@ for pt_retriever in PT_RETRIEVERS:
                 score = 0
                 for qid in train_qids:
                     score += scores[qid]
-                if (score / len(train_qids)) > max_score:
+
+                score = score / len(train_qids)
+                if score > max_score:
                     max_score = score
                     max_key2 = key2
 
@@ -117,7 +118,6 @@ for pt_retriever in PT_RETRIEVERS:
                 score += correlation_scores_eva_ret[key1][max_key2][qid]
 
             score = score / len(test_qids)
-
             total_score += score
 
         total_score = total_score / NUMBER_OF_CROSS_VALIDATION_FOLDS

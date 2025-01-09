@@ -9,7 +9,7 @@ import os
 pwd = os.path.dirname(os.path.abspath(__file__))
 
 
-def load_config(filename=pwd + "/../config.json"):
+def load_config(filename=pwd + "/../../config.json"):
     with open(filename, "r") as f:
         config = json.load(f)
     return config
@@ -45,10 +45,14 @@ def get_key(list):
     return KEY_SEPARATOR.join(list)
 
 
-correlation_scores_eva_metric = {}
+correlation_scores_eva_ret_metric = {}
+files = 0
+entries_in_files = 0
 for file_path in glob.glob(FILE_PATTERN):
     with gzip.open(file_path, 'rt', encoding='UTF-8') as file:
+        files += 1
         for line in file:
+            entries_in_files += 1
             line = json.loads(line)
             agr_met = line['aggregation_method']
             tra_met = line['transformation_method']
@@ -63,9 +67,16 @@ for file_path in glob.glob(FILE_PATTERN):
             key2 = get_key([agr_met, tra_met])
 
             # Correlation scores for each evaluation method and retriever
-            if key1 not in correlation_scores_eva_metric:
-                correlation_scores_eva_metric[key1] = {}
-            correlation_scores_eva_metric[key1][key2] = correlation_per_query
+            if key1 not in correlation_scores_eva_ret_metric:
+                correlation_scores_eva_ret_metric[key1] = {}
+            if key2 in correlation_scores_eva_ret_metric[key1]:
+                print('Dublicate:', key1, key2)
+                exit()
+            correlation_scores_eva_ret_metric[key1][key2] = correlation_per_query
+
+
+print(f"Files: {files}, Entries: {entries_in_files}")
+print(f"Correlation scores: {len(correlation_scores_eva_ret_metric)}")
 
 
 # 2. get all qids
@@ -91,7 +102,7 @@ for pt_retriever in PT_RETRIEVERS:
                 max_score = -float('inf')
                 max_key2 = None
 
-                for key2, scores in correlation_scores_eva_metric[key1].items():
+                for key2, scores in correlation_scores_eva_ret_metric[key1].items():
                     test_qids = qids[i * fold_size:(i + 1) * fold_size]
                     train_qids = qids[:i * fold_size] + qids[(i + 1) * fold_size:]
 
@@ -99,17 +110,18 @@ for pt_retriever in PT_RETRIEVERS:
                     score = 0
                     for qid in train_qids:
                         score += scores[qid]
-                    if (score / len(train_qids)) > max_score:
+
+                    score = score / len(train_qids)
+                    if score > max_score:
                         max_score = score
                         max_key2 = key2
 
                 # Get avarage score for best key in test set
                 score = 0
                 for qid in test_qids:
-                    score += correlation_scores_eva_metric[key1][max_key2][qid]
+                    score += correlation_scores_eva_ret_metric[key1][max_key2][qid]
 
                 score = score / len(test_qids)
-
                 total_score += score
 
             total_score = total_score / NUMBER_OF_CROSS_VALIDATION_FOLDS

@@ -8,6 +8,7 @@
 
         "CHATNOIR_RETRIEVAL": false,
         "CHATNOIR_INDICES": "clueweb22/b",
+        "CHATNOIR_API_KEY": "",
 
         "PASSAGE_ID_SEPARATOR": "___",
         "KEY_SEPARATOR": "---",

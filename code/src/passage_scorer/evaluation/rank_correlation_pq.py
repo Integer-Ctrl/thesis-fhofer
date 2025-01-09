@@ -16,7 +16,7 @@ import sys
 pwd = os.path.dirname(os.path.abspath(__file__))
 
 
-def load_config(filename=pwd + "/../config.json"):
+def load_config(filename=pwd + "/../../config.json"):
     with open(filename, "r") as f:
         config = json.load(f)
     return config
@@ -25,7 +25,6 @@ def load_config(filename=pwd + "/../config.json"):
 # Get the configuration settings
 config = load_config()
 
-ALL_QRELS = config['ALL_QRELS']
 DOCUMENT_DATASET_SOURCE_NAME = config['DOCUMENT_DATASET_SOURCE_NAME']
 DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER = config['DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER']
 NUMBER_OF_CROSS_VALIDATION_FOLDS = config['NUMBER_OF_CROSS_VALIDATION_FOLDS']
@@ -60,19 +59,8 @@ if len(sys.argv) < 3:
 JOB_ID = int(sys.argv[1])
 NUM_JOBS = int(sys.argv[2])
 
-# Read qrels and cache relevant qrels
-dataset = pt.get_dataset(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
-qrels = dataset.get_qrels(variant='relevance')
-qrels_cache = {}
-for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
-    if row['qid'] not in qrels_cache:
-        qrels_cache[row['qid']] = qrels.loc[
-            (qrels['qid'] == row['qid'])
-        ]
-
-
 # Read passsage scores and cache them
-docno_qid_passages_scores_cache = {}
+qid_docno_passages_scores_cache = {}
 for file_path in glob(FILE_PATTERN):
     # Extract the file name
     file_name = os.path.basename(file_path)
@@ -84,24 +72,24 @@ for file_path in glob(FILE_PATTERN):
             line = json.loads(line)
             docno, passageno = line['docno'].split(PASSAGE_ID_SEPARATOR)
             qid = line['qid']
-            if docno not in docno_qid_passages_scores_cache:
-                docno_qid_passages_scores_cache[docno] = {}
-            if qid not in docno_qid_passages_scores_cache[docno]:
-                docno_qid_passages_scores_cache[docno][qid] = []
-            docno_qid_passages_scores_cache[docno][qid] += [line]
+            if qid not in qid_docno_passages_scores_cache:
+                qid_docno_passages_scores_cache[qid] = {}
+            if docno not in qid_docno_passages_scores_cache[qid]:
+                qid_docno_passages_scores_cache[qid][docno] = []
+            qid_docno_passages_scores_cache[qid][docno] += [line]
 
 
 # Function to get dictonary of aggregated score for a document using passage scores
 # Return a list of dictionaries with aggregated scores for each document {docno, qid, metric: score}
-def get_docno_qid_aggregated_scores(docno_qid_passages_scores_cache, aggregation_method='mean'):
+def get_qid_docno_aggregated_scores(qid_docno_passages_scores, aggregation_method='mean'):
     # All metrics that are available in the passage scores
 
     aggregated_scores = []
 
-    for docno, qid_passages_scores in docno_qid_passages_scores_cache.items():
-        for qid, passages_scores in qid_passages_scores.items():
+    for qid, docno_passages_scores in qid_docno_passages_scores.items():
+        for docno, passages_scores in docno_passages_scores.items():
 
-            aggregated_doc_scores = {'docno': docno, 'qid': qid}
+            aggregated_doc_scores = {'docno': docno, 'qid': qid, 'label': passages_scores[0]['label']}
             for metric in METRICS:
                 scores = [passage[metric] for passage in passages_scores]
 
@@ -118,10 +106,10 @@ def get_docno_qid_aggregated_scores(docno_qid_passages_scores_cache, aggregation
 
 
 # Function to get transformed scores
-def get_docno_qid_transformed_scores(docno_qid_aggregated_scores, transformation_method='id', bins=[0.3, 0.7]):
+def get_qid_docno_transformed_scores(qid_docno_aggregated_scores, transformation_method='id', bins=[0.3, 0.7]):
 
-    docno_qid_aggregated_scores_transformed = copy.deepcopy(docno_qid_aggregated_scores)
-    for entry in docno_qid_aggregated_scores_transformed:
+    qid_docno_aggregated_scores_transformed = copy.deepcopy(qid_docno_aggregated_scores)
+    for entry in qid_docno_aggregated_scores_transformed:
         for metric in METRICS:
             if transformation_method == 'id':
                 pass
@@ -130,11 +118,11 @@ def get_docno_qid_transformed_scores(docno_qid_aggregated_scores, transformation
             elif transformation_method == 'binned':
                 entry[metric] = float(np.digitize(entry[metric], bins))
 
-    return docno_qid_aggregated_scores_transformed
+    return qid_docno_aggregated_scores_transformed
 
 
 # Function to get evaluated score based on the specified metric and evaluation method (pearson, spearman, kendall)
-def get_evaluated_score(docno_qid_transformed_scores, qrels_cache, qid,
+def get_evaluated_score(qid_docno_transformed_scores, qid,
                         metric='ndcg10_bm25', evaluation_method='pearson'):
 
     # Lists to store the matched scores for correlation calculation
@@ -142,25 +130,10 @@ def get_evaluated_score(docno_qid_transformed_scores, qrels_cache, qid,
     relevance_labels = []
 
     # Filter scores for the given query ID (qid)
-    filtered_scores = [entry for entry in docno_qid_transformed_scores if entry['qid'] == qid]
+    filtered_scores = [entry for entry in qid_docno_transformed_scores if entry['qid'] == qid]
 
-    # Check if the qid is in qrels_cache
-    if qid in qrels_cache:
-        qrels_doc = qrels_cache[qid]
-
-        # Match scores with relevance labels
-        for entry in filtered_scores:
-            docno = entry['docno']
-            # Find the matching row in qrels for this docno
-            qrels_match = qrels_doc[qrels_doc['docno'] == docno]
-
-            # If there is a match, append scores to lists
-            if not qrels_match.empty:
-                relevance_score = qrels_match['label'].values[0]
-                transformed_scores.append(entry[metric])
-                relevance_labels.append(float(relevance_score))
-    else:
-        print('QID not in qrels_cache:', qid)
+    transformed_scores = [entry[metric] for entry in filtered_scores]
+    relevance_labels = [entry['label'] for entry in filtered_scores]
 
     # Ensure we have pairs to evaluate correlation
     if len(transformed_scores) > 1:
@@ -191,13 +164,6 @@ def get_evaluated_score(docno_qid_transformed_scores, qrels_cache, qid,
         return correlation
 
 
-# def check_scores_smaller_zero(scores, location=''):
-#     for entry in scores:
-#         for metric in METRICS:
-#             if entry[metric] < 0:
-#                 print(location, metric, entry[metric])
-
-
 if __name__ == '__main__':
 
     start_time = time.time()
@@ -221,20 +187,20 @@ if __name__ == '__main__':
         aggregation_method, transformation_method, evaluation_method = combination
         print(f"Job {JOB_ID} processing {aggregation_method}, {transformation_method}, {evaluation_method}")
 
-        docno_qid_aggregated_scores = get_docno_qid_aggregated_scores(
-            docno_qid_passages_scores_cache, aggregation_method)
+        qid_docno_aggregated_scores = get_qid_docno_aggregated_scores(
+            qid_docno_passages_scores_cache, aggregation_method)
 
-        docno_qid_transformed_scores = get_docno_qid_transformed_scores(
-            docno_qid_aggregated_scores, transformation_method)
+        qid_docno_transformed_scores = get_qid_docno_transformed_scores(
+            qid_docno_aggregated_scores, transformation_method)
 
         for metric in METRICS:
             # Iterate over all unique QIDs
-            all_qids = set(entry['qid'] for entry in docno_qid_transformed_scores)
+            all_qids = set(entry['qid'] for entry in qid_docno_transformed_scores)
             query_correlations = {}
 
             for qid in all_qids:
-                correlation = get_evaluated_score(docno_qid_transformed_scores,
-                                                  qrels_cache, qid, metric, evaluation_method)
+                correlation = get_evaluated_score(qid_docno_transformed_scores,
+                                                  qid, metric, evaluation_method)
                 query_correlations[qid] = correlation
 
             # Save correlation scores for the current settings for each query
