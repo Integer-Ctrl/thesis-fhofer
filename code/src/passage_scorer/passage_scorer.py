@@ -136,12 +136,12 @@ def get_infered_run(retriever, passage_text, system_name, docno):
 
 
 # Get all qrels for a query and remove original document if specified
-def get_qrels_for_query(qid, include_original_document):
+def get_qrels_for_query(qid, docno, include_original_document):
     qrels_for_query = TrecQrel()
     qrels_for_query.qrels_data = qrels_cache[qid]
     # Remove original document if specified
     if not include_original_document:
-        qrels_for_query.qrels_data = qrels_for_query.qrels_data[qrels_for_query.qrels_data['docid'] != qid]
+        qrels_for_query.qrels_data = qrels_for_query.qrels_data[qrels_for_query.qrels_data['docid'] != docno]
     return qrels_for_query
 
 
@@ -157,48 +157,53 @@ def evaluate_run(run, qrels_for_query):
 
 def process_qid(qid):
 
+    scored_docs_count = 0
     results = []
     relevant_results = []
 
     print(f"Processing QID {qid} in process with Job: {JOB_ID}")
     for docno in qrels_cache[qid]['docid']:
-        for passage in passages_cache[docno]:
-            # wod = without original document
-            qrels_for_query = get_qrels_for_query(qid, include_original_document=True)
-            qrels_for_query_wod = get_qrels_for_query(qid, include_original_document=False)
+        # Check if docno should be scored
+        if docno in passages_cache:
+            scored_docs_count += 1
+            for passage in passages_cache[docno]:
+                # wod = without original document
+                qrels_for_query = get_qrels_for_query(qid, docno, include_original_document=True)
+                qrels_for_query_wod = get_qrels_for_query(qid, docno, include_original_document=False)
 
-            # Infer runs for all retrievers
-            runs = {}
-            runs_wod = {}
-            reciprocal_ranks = {}
+                # Infer runs for all retrievers
+                runs = {}
+                runs_wod = {}
+                reciprocal_ranks = {}
 
-            for retriever in PT_RETRIEVERS:
-                runs[retriever], runs_wod[retriever], reciprocal_ranks[retriever] = get_infered_run(
-                    retrievers[retriever], passage['text'], retriever, docno)
+                for retriever in PT_RETRIEVERS:
+                    runs[retriever], runs_wod[retriever], reciprocal_ranks[retriever] = get_infered_run(
+                        retrievers[retriever], passage['text'], retriever, docno)
 
-            # Evaluate passage scores
-            p10 = {}
-            ndcg10 = {}
+                # Evaluate passage scores
+                p10 = {}
+                ndcg10 = {}
 
-            for retriever in PT_RETRIEVERS:
-                p10[retriever], ndcg10[retriever] = evaluate_run(runs[retriever], qrels_for_query)
-                p10[retriever + '_wod'], ndcg10[retriever + '_wod'] = evaluate_run(runs_wod[retriever],
-                                                                                   qrels_for_query_wod)
+                for retriever in PT_RETRIEVERS:
+                    p10[retriever], ndcg10[retriever] = evaluate_run(runs[retriever], qrels_for_query)
+                    p10[retriever + '_wod'], ndcg10[retriever + '_wod'] = evaluate_run(runs_wod[retriever],
+                                                                                       qrels_for_query_wod)
 
-            scores = {'qid': qid, 'docno': passage['docno']}
-            for retriever in PT_RETRIEVERS:
-                scores['p10_' + retriever] = p10[retriever]
-                scores['p10_wod_' + retriever] = p10[retriever + '_wod']
-                scores['ndcg10_' + retriever] = ndcg10[retriever]
-                scores['ndcg10_wod_' + retriever] = ndcg10[retriever + '_wod']
-                scores['reciprocal_rank_docno_' + retriever] = reciprocal_ranks[retriever]
+                label = int(qrels.loc[(qrels['qid'] == qid) & (qrels['docno'] == docno)]['label'].iloc[0])
+                scores = {'qid': qid, 'docno': passage['docno'], 'label': label}
+                for retriever in PT_RETRIEVERS:
+                    scores['p10_' + retriever] = p10[retriever]
+                    scores['p10_wod_' + retriever] = p10[retriever + '_wod']
+                    scores['ndcg10_' + retriever] = ndcg10[retriever]
+                    scores['ndcg10_wod_' + retriever] = ndcg10[retriever + '_wod']
+                    scores['reciprocal_rank_docno_' + retriever] = reciprocal_ranks[retriever]
 
-            results.append(scores)
+                results.append(scores)
 
-            if qrels.loc[(qrels['qid'] == qid) & (qrels['docno'] == docno)]['label'].iloc[0] > 0:
-                relevant_results.append(scores)
+                if qrels.loc[(qrels['qid'] == qid) & (qrels['docno'] == docno)]['label'].iloc[0] > 0:
+                    relevant_results.append(scores)
 
-    return results, relevant_results
+    return results, relevant_results, scored_docs_count
 
 
 if __name__ == '__main__':
@@ -213,10 +218,10 @@ if __name__ == '__main__':
             print(f"Scores for QID {QID} already exist. Exiting.")
             continue
 
-        results, relevant_results = process_qid(QID)
+        results, relevant_results, docs_count = process_qid(QID)
 
         end_time = time.time()
-        print(f"Job {JOB_ID} finished processing QID {QID} in {(end_time - start_time) / 60} minutes.")
+        print(f"Job {JOB_ID} processed {docs_count} docs for QID {QID} in {(end_time - start_time) / 60} minutes.")
 
         with gzip.open(relevant_path, 'wt', encoding='UTF-8') as relevant_qrels_file:
             for scores in relevant_results:
