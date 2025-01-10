@@ -1,26 +1,31 @@
 \chapter{Methodology}\label{methodology}
 
-In this Chapter, I present the individual steps of the pipeline used to process the datasets. I begin by introducing all the datasets on which the transfer process was performed and evaluated. Subsequently, I discuss each step of the processing pipeline in detail. The goal is to automatically infer \texttt{qrels}for the target dataset through pairwise preferences based on the existing \texttt{qrels} of the source dataset.
-
-The first step in the processing pipeline involves segmenting a selection of documents in the source dataset, that contain at least one \texttt{qrel}, into passages. Relevant information within a document, if present, is typically confined to specific parts and not in the whole document. To improve the results in the pairwise preferences later, the goal is on filtering out only those passages that are highly relevant to a query.
-
+In this Chapter, I present the individual steps of the pipeline used to process the datasets. I begin by introducing all the datasets on which the transfer process was performed and evaluated. Subsequently, I discuss each step of the processing pipeline in detail. The goal is to automatically infer \texttt{qrels} for the target dataset through pairwise preferences based on the existing \texttt{qrels} of the source dataset.
+\\\\
+The first step in the processing pipeline involves segmenting a selection of documents in the source dataset into passages. Relevant information within a document, if present, is typically confined to specific parts and not in the whole document. To improve the results in the pairwise preferences later, the goal is on filtering out only those passages that are highly relevant to a query.
+\\\\
 The second step identifies the passages of a document that are most relevant to the query of its \texttt{qrel}. For each \texttt{qrel} in the source dataset, i.e., the \texttt{(query, document, label)} triples, all passages of the document are treated as individual queries and submitted as requests against the source dataset. Based on the responses to these requests, various metrics are calculated to measure the proportion of relevant documents retrieved in the document ranking. Passages containing a large amount of relevant information for the query of the \texttt{qrel} retrieve more relevant documents and achieve better metrics than those contributing little or no information to the query.
 
-In the third step, the quality of the assigned passage scores is evaluated using different rank correlation methods. Based on the evaluation results, the metric with the highest rank correlation is used to select candidates for the pairwise preferences. In this selection phase, documents, referred to as candidates, are identified in the target dataset for which \texttt{qrels} will be determined. A candidate, similar to a \texttt{qrel}, consists of a query $q$, a candidate $c$, and a set of known, relevant passages for $q$ from the source dataset. Since the relevant texts used later for pairwise preference are passages rather than documents, each candidate $c$ is also divided into passages $c=(c_1, c_2, ..., c_n)$.
+\pagebreak
 
-In the final step, the pairwise preferences are inferred. All candidates, i.e., triples consisting of \texttt{(query text, relevant passage text, unknown passage text)}, are fed into a pairwise ranking model to determine whether the unknown passage is as relevant as the relevant passage concerning the query text. From the results of the pairwise preferences, labels for the respective unknown passages are generated through the aggregation of all pairwise preferences with the $k$ top relevant passages. A label for an entire document in the target Dataset is then created by aggregating the labels of all its passages.
+In the third step, the quality of the assigned passage scores is evaluated using different rank correlation methods. Based on the evaluation results, the metric with the highest rank correlation is used to select candidates for the pairwise preferences. In this selection phase, documents, referred to as candidates, are identified in the target dataset for which \texttt{qrels} will be determined. A candidate, similar to a \texttt{qrel}, consists of a query $q$, a candidate $c$, a set of known, relevant passages, and a set of known, non relevant passages for $q$ from the source dataset. Since the relevant and non relevant passages are later used for the pairwise preference, each candidate $c$ from the target dataset is also divided into passages $c=(c_1, c_2, ..., c_n)$.
+\\\\
+In the final step, the pairwise preferences are inferred. All candidates, i.e., triples consisting of \texttt{(query text, non/relevant passage text, unknown passage text)}, are fed into a pairwise ranking model to determine whether the unknown passage is as relevant as the known passage concerning the query text. From the results of the pairwise preferences, labels for the respective unknown passages are generated through the aggregation of all pairwise preferences with the known passages. A label for an entire document in the target dataset is then created by aggregating the labels of all its passages.
+
+\pagebreak
 
 \section{Datasets}\label{datasets}
 
 \begin{table}[h!]
     \centering
+    \footnotesize
     \caption{List of source datasets and their associated retrieval tasks from which existing \texttt{qrels} where transferd into the target dataset \texttt{ClueWeb22/b}.}
     \label{table:datasets}
     \begin{tabular}{crcrrr}
         \toprule
         \multicolumn{2}{c}{\textbf{Corpus}} & \multicolumn{4}{c}{\textbf{ Associated Retrieval Tasks}} \\
         \cmidrule(lr){1-2} \cmidrule(lr){3-6}
-        Name & Documents  & Name & Queries & Qrels & Labels \\
+        Name & documents  & Name & Queries &\texttt{qrels} & Labels \\
         \toprule
         
         Args.me & 0.4~m & Touché 2020 Task 1 & 49 & 2,298 & 3 \\
@@ -50,25 +55,33 @@ In the final step, the pairwise preferences are inferred. All candidates, i.e., 
     \end{tabular}
 \end{table}
 
-To simplify data handling, I used \texttt{ir\_datasets}~\citep{macavaney:2021}, a Python package that provides numerous datasets and their associated retrieval tasks. The advantage of \texttt{ir\_datasets} is that it provides a standardized interface for accessing data. Using various iterators, the package manages access to corpora, queries, and \texttt{qrels}, enabling the processing pipeline to handle different datasets in a uniform way. The datasets used in this research are listed in Table~\ref{table:datasets}. The source datasets were selected because they are widely used in the field of information retrieval and already contain relevance judgments. These relevance judgments from the source datasets are later transferd to the target dataset, \texttt{ClueWeb22/b}. The target dataset, \texttt{ClueWeb22/b}, was chosen because it is currently the newest ClueWeb corpus in the \texttt{Lemur Project}\footnote{https://lemurproject.org}. It is significantly large, containing over 1.0~billion documents. Due to its size, the ratio of \texttt{qrels} to documents is relatively low. Therefore, the goal is to leverage the existing \texttt{qrels} from the source datasets and their associated retrieval tasks to generate new \texttt{qrels} for ClueWeb22/b, thereby enriching the corpus with additional relevance judgments. 
+To simplify data handling, I used \texttt{ir\_datasets}~\citep{macavaney:2021}, a Python package that provides numerous datasets and their associated retrieval tasks. The advantage of \texttt{ir\_datasets} is that it provides a standardized interface for accessing data. Using various iterators, the package manages access to corpora, queries, and \texttt{qrels}, enabling the processing pipeline to handle different datasets in a uniform way. The datasets and retrieval tasks used in this research are listed in Table~\ref{table:datasets}. The source datasets were selected because they are widely used in the field of information retrieval and because each dataset comes up with associated retrieval tasks in \texttt{ir\_datasets}. The retrieval tasks, providing \texttt{qrels} for the source datasets, are later transferd to the target dataset, \texttt{ClueWeb22/b}. The target dataset, \texttt{ClueWeb22/b}, was chosen because it is currently the newest ClueWeb corpus in the \texttt{Lemur Project}\footnote{https://lemurproject.org}. The corpus is significantly large, containing over 1.0~billion documents. Due to its size, the ratio of \texttt{qrels} to documents is relatively low. Therefore, the goal is to leverage the existing \texttt{qrels} from the source datasets and their associated retrieval tasks to generate new \texttt{qrels} for \texttt{ClueWeb22/b}, thereby enriching the corpus with additional relevance judgments. 
 
-\section{Documents Segmentation}\label{document-segmentation}
+\section{Document Segmentation}\label{document-segmentation}
 
+After selecting the datasets and their associated retrieval tasks, including the queries and \texttt{qrels}, the first step in the processing pipeline is the segmentation of documents from the source datasets into passages. This step was done because the relevance of a document is often confined to specific sections rather than the entire text. By segmenting documents into passages, the pipeline can focus solely on the relevant passages, disregarding non-relevant parts of a document in the subsequent processing.
 
+\subsection{Document Selection}\label{selection-documents}
 
-The first step in the research process was to convert the documents in the datasets to passages. This was done to reduce the size of the documents and to make the relevance judgements more fine-grained.
+Instead of segmenting the entire source dataset, only a selection of documents is needed. The workflow begins by selecting only already judged documents from the source dataset. A document is considered judged if it contains at least one relevance assessment in the \texttt{qrels} of the associated retrieval task. Only these documents are suitable for relevance transfer, as their relevance has already been determined. Documents without relevance judgments are excluded, as they provide no usable information for the transfer procedure.
+\\\\
+As shown in Table~\ref{table:datasets}, the number of possible relevance label values varies across retrieval tasks. Some tasks use binary labels, such as \textit{"not relevant"} (label 0) and \textit{“relevant”} (label 1). Others employ a Likert scale, distinguishing between levels such as \textit{“relevant”} and \textit{“highly relevant”}. Tasks with additional gradations for non relevant \texttt{qrels}, such as \textit{"not relevant"} (label 0) and \textit{"negatively relevant”} (label -1), were standardized during processing. Labels smaller than 0 were mapped to \textit{"not relevant"} (label 0). This standardization was applied because the metrics used in this study, e.g., \texttt{precision@10}, do not differentiate between different levels of not relevant.
+\\\\
+So far, all documents with at least one relevance assessment for any query of the retrieval task are identified. For each query and each possible label value in the retrieval task, all documents matching the query-label combination are determined. These documents are then assigned to the corresponding query-label pairs. Large retrieval tasks, such as Robust04 with over 300,000~\texttt{qrels}, contain many documents for each query-label pair. Therefore, the number of documents per query-label pair is limited. The pairs are used to identify for each query the label with the fewest docuemtns. The number of documents for each query-label pair is then set to the determined minimum, up to a maximum of 50 documents. 
+\\\\
+This limit reduces processing effort while ensuring that only a representative subset of judged documents is used for relevance transfer. The reason for limiting the number of documents per label for each query to the minimum frequency per query-label combination is to standardize the number of representative documents per label for each query. This avoids that the relevance transfer is biased towards a specific label in the transfer process.
 
-\begin{itemize}
-    \item Why was this step necessary?
-    \item How were the documents split into passages?
-    \item Usage of \href{https://github.com/grill-lab/trec-cast-tools/tree/master/corpus_processing/passage_chunkers}{trec-cast-tools}
-    \item Passage length
-    \item Number of passages per document
-\end{itemize}
+\subsection{Segmentation of documents}
+
+Once the documents are selected, they are segmented into passages to facilitate further processing. For this purpose, the GitHub repository grill-lab/trec-cast-tools\footnote{https://github.com/grill-lab/trec-cast-tools} was utilized. This repository provides a suite of scripts specifically designed for processing TREC CAst tracks. Among its features is a wrapper class for document segmentation that leverages the capabilities of the \texttt{spaCy}\footnote{https://spacy.io} library, a powerful tool for Natural Language Processing (NLP) in Python.
+\\\\
+The segmentation workflow employs \texttt{spaCy's} SentenceRecognizer\footnote{https://spacy.io/api/sentencerecognizer} component, which divides text into sentences. First, the wrapper class uses the SentenceRecognizer pipeline to split the documents into sentences. Then, the returned sentences from \texttt{spaCy} are concatenated into passages, each limited to a maximum size of 250 words. As a result, each document is transformed into a series of uniquely identifiable passages. These identifiers consist of the original document ID combined with an additional passage ID, ensuring traceability throughout the processing pipeline.
+\\\\
+The documents from the source dataset, selected in the first step, are now available as uniquely passages. In the next stage of the processing pipeline, these individual passages are classified. In cases where a document is judged as relevant to a query, the relevant information is often dispersed throughout the text. To address this, the processing pipeline identifies the passages with a high density of relevant information. This step is essential for optimizing the results of the pairwise preferences in the final stage. It ensures that the most relevant and non-relevant passages are accurately identified for each query.
 
 \section{Passage Scoring}\label{passage-scoring}
 
-The next step was to infer relevance scores for the passages. This was done by using the relevance judgements, qrels, of the documents in the original datasets. For each qrel in the dataset with a label of 1 or 2, the corresponding passages of the document were used as a query to retrieve the documents of the dataset. 
+The next step was to infer relevance scores for the passages. This was done by using the relevance judgements,\texttt{qrels}, of the documents in the original datasets. For each qrel in the dataset with a label of 1 or 2, the corresponding passages of the document were used as a query to retrieve the documents of the dataset. 
 
 \begin{itemize}
     \item Why was this step done?
@@ -79,16 +92,8 @@ The next step was to infer relevance scores for the passages. This was done by u
     \item What metrics were used to evaluate the retrieval performance?
 \end{itemize}
 
-\section{Rank Correlation}\label{rank-correlation-scores}
 
-The relevance scores of the passages were then used to assign relevance labels to the passages. To do this, I used to open source tool \href{https://github.com/seanmacavaney/autoqrels}{autoqrels}. The tool can be used to automatically assign relevance labels to passages based on the relevance scores of the passages.
-
-\begin{itemize}
-    \item Why was this step done?
-    \item How were the relevance labels assigned?
-    \item Usage of \href{https://github.com/seanmacavaney/autoqrels}{autoqrels}
-    \item What is a relevance label?
-\end{itemize}
+\section{Candidate Retrieval}\label{candidate-retrieval}
 
 
 \section{Pairwise Preferences}\label{pairwise-transfering-relevance-labels-across-datasets}

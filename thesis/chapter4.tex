@@ -26,7 +26,18 @@ There are a variety of methods for calculating IAA, each with its strengths and 
     \end{itemize}
 \end{itemize}
 
-\section{Rank Correlation}\label{rank-correlation}  
+\section{Rank Correlation Passage Scores}\label{rank-correlation-passage-scores}
+
+The relevance scores of the passages were then used to assign relevance labels to the passages. To do this, I used to open source tool \href{https://github.com/seanmacavaney/autoqrels}{autoqrels}. The tool can be used to automatically assign relevance labels to passages based on the relevance scores of the passages.
+
+\begin{itemize}
+    \item Why was this step done?
+    \item How were the relevance labels assigned?
+    \item Usage of \href{https://github.com/seanmacavaney/autoqrels}{autoqrels}
+    \item What is a relevance label?
+\end{itemize}
+
+\section{Rank Correlation}\label{rank-correlation}
 
 To assess the relationship between the relevance labels and the calculated scores, a correlation analysis was conducted. Relevance labels represent an ordinal scale with values of 0, 1, and 2, denoting increasing levels of relevance, while calculated scores range from -1 to 1, representing the model's prediction for each document's relevance with respect to the query. Given the distinct nature of these data types, it was necessary to select a correlation measure that could accommodate both ordinal and continuous data without assuming a linear relationship.
 
