@@ -153,9 +153,8 @@ def evaluate_run(run, qrels_for_query):
     return p10_score, ndcg10_score
 
 
-# Write passage scores to file
-
-def process_qid(qid):
+# Process a single QID
+def process_qid(qid, docs_to_score):
 
     scored_docs_count = 0
     results = []
@@ -163,55 +162,97 @@ def process_qid(qid):
 
     print(f"Processing QID {qid} in process with Job: {JOB_ID}")
     for docno in qrels_cache[qid]['docid']:
-        # Check if docno should be scored
-        if docno in passages_cache:
-            scored_docs_count += 1
-            for passage in passages_cache[docno]:
-                # wod = without original document
-                qrels_for_query = get_qrels_for_query(qid, docno, include_original_document=True)
-                qrels_for_query_wod = get_qrels_for_query(qid, docno, include_original_document=False)
+        label = int(qrels.loc[(qrels['qid'] == qid) & (qrels['docno'] == docno)]['label'].iloc[0])
+        # All labels smaller equal 0 are considered as 0 (non-relevant)
+        if label < 0:
+            label = 0
+        # Check if docno should be scored for this qid
+        if docno in docs_to_score[qid][str(label)]:
+            # Check if docno should be scored
+            if docno in passages_cache:  # Should never be false if docno is in docs_to_score
+                scored_docs_count += 1
+                for passage in passages_cache[docno]:
+                    # wod = without original document
+                    qrels_for_query = get_qrels_for_query(qid, docno, include_original_document=True)
+                    qrels_for_query_wod = get_qrels_for_query(qid, docno, include_original_document=False)
 
-                # Infer runs for all retrievers
-                runs = {}
-                runs_wod = {}
-                reciprocal_ranks = {}
+                    # Infer runs for all retrievers
+                    runs = {}
+                    runs_wod = {}
+                    reciprocal_ranks = {}
 
-                for retriever in PT_RETRIEVERS:
-                    runs[retriever], runs_wod[retriever], reciprocal_ranks[retriever] = get_infered_run(
-                        retrievers[retriever], passage['text'], retriever, docno)
+                    for retriever in PT_RETRIEVERS:
+                        runs[retriever], runs_wod[retriever], reciprocal_ranks[retriever] = get_infered_run(
+                            retrievers[retriever], passage['text'], retriever, docno)
 
-                # Evaluate passage scores
-                p10 = {}
-                ndcg10 = {}
+                    # Evaluate passage scores
+                    p10 = {}
+                    ndcg10 = {}
 
-                for retriever in PT_RETRIEVERS:
-                    p10[retriever], ndcg10[retriever] = evaluate_run(runs[retriever], qrels_for_query)
-                    p10[retriever + '_wod'], ndcg10[retriever + '_wod'] = evaluate_run(runs_wod[retriever],
-                                                                                       qrels_for_query_wod)
+                    for retriever in PT_RETRIEVERS:
+                        p10[retriever], ndcg10[retriever] = evaluate_run(runs[retriever], qrels_for_query)
+                        p10[retriever + '_wod'], ndcg10[retriever + '_wod'] = evaluate_run(runs_wod[retriever],
+                                                                                           qrels_for_query_wod)
 
-                label = int(qrels.loc[(qrels['qid'] == qid) & (qrels['docno'] == docno)]['label'].iloc[0])
-                # All labels smaller equal 0 are considered as 0 (non-relevant)
-                if label < 0:
-                    label = 0
+                    scores = {'qid': qid, 'docno': passage['docno'], 'label': label}
+                    for retriever in PT_RETRIEVERS:
+                        scores['p10_' + retriever] = p10[retriever]
+                        scores['p10_wod_' + retriever] = p10[retriever + '_wod']
+                        scores['ndcg10_' + retriever] = ndcg10[retriever]
+                        scores['ndcg10_wod_' + retriever] = ndcg10[retriever + '_wod']
+                        scores['reciprocal_rank_docno_' + retriever] = reciprocal_ranks[retriever]
 
-                scores = {'qid': qid, 'docno': passage['docno'], 'label': label}
-                for retriever in PT_RETRIEVERS:
-                    scores['p10_' + retriever] = p10[retriever]
-                    scores['p10_wod_' + retriever] = p10[retriever + '_wod']
-                    scores['ndcg10_' + retriever] = ndcg10[retriever]
-                    scores['ndcg10_wod_' + retriever] = ndcg10[retriever + '_wod']
-                    scores['reciprocal_rank_docno_' + retriever] = reciprocal_ranks[retriever]
+                    results.append(scores)
 
-                results.append(scores)
-
-                if qrels.loc[(qrels['qid'] == qid) & (qrels['docno'] == docno)]['label'].iloc[0] > 0:
-                    relevant_results.append(scores)
+                    if qrels.loc[(qrels['qid'] == qid) & (qrels['docno'] == docno)]['label'].iloc[0] > 0:
+                        relevant_results.append(scores)
 
     return results, relevant_results, scored_docs_count
 
 
+# Get list of doc ids that should be chunked
+# For each QID, chunk 50 non relevant documents with a label <= 0
+# For each QID, chunk 50 relevant documents for each label > 0
+# If there are less than 50 documents for a label, chunk for each label as much as the smallest label count
+def get_docs_to_chunk(dataset):
+    dict = {}
+
+    for qrel in dataset.irds_ref().qrels_iter():
+        qid = qrel.query_id
+        doc_id = qrel.doc_id
+        label = qrel.relevance
+
+        if qid not in dict:
+            dict[qid] = {}
+
+        if label <= 0:
+            if '0' not in dict[qid]:
+                dict[qid]['0'] = []
+            dict[qid]['0'] += [doc_id]
+
+        if label > 0:
+            lable_str = str(label)
+            if lable_str not in dict[qid]:
+                dict[qid][lable_str] = []
+            dict[qid][lable_str] += [doc_id]
+
+    # Round to smallest label count or 50
+    for qid in dict:
+        min_label_count = min([[len(count)] for count in dict[qid].values()])
+        min_label_count = min(min_label_count[0], 50)
+
+        for label in dict[qid]:
+            dict[qid][label] = dict[qid][label][:min_label_count]
+
+    return dict
+
+
 if __name__ == '__main__':
     start_time = time.time()
+
+    # Avoids chunking docs for qid_x that have not been selected in document_chunker_serial.py
+    # Elsewise, if another qid_y got an document assigned that has a qrel with qid_x, the document would be scored
+    docs_to_score = get_docs_to_chunk(dataset)
 
     for QID in QIDS:
         relevant_path = os.path.join(PASSAGE_DATASET_SOURCE_SCORE_REL_PATH, f"qid_{QID}.jsonl.gz")
@@ -222,7 +263,7 @@ if __name__ == '__main__':
             print(f"Scores for QID {QID} already exist. Exiting.")
             continue
 
-        results, relevant_results, docs_count = process_qid(QID)
+        results, relevant_results, docs_count = process_qid(QID, docs_to_score)
 
         end_time = time.time()
         print(f"Job {JOB_ID} processed {docs_count} docs for QID {QID} in {(end_time - start_time) / 60} minutes.")

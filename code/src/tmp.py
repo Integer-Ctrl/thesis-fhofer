@@ -5,7 +5,7 @@ import ir_datasets
 import gzip
 from tqdm import tqdm
 from collections import Counter
-import glob
+from glob import glob
 from ir_datasets_clueweb22 import register
 
 register()
@@ -264,23 +264,39 @@ def count_scores_per_qid():
     print(f"Qids: {len(scores)}")
 
 
-dataset = ir_datasets.load('clueweb12/trec-web-2013')
-print(dataset.docs_count())
-for doc in dataset.docs_iter():
-    print(doc)
-    print(doc['docno'])
+def test_clueweb_access():
+    dataset = ir_datasets.load("clueweb12/trec-web-2013")
+    docstore = dataset.docs_store()
+    print(docstore.get('clueweb12-0000tw-05-12114').default_text())
+
+
+def check_labels():
+    DOCUMENT_DATASET_SOURCE_NAME = config['DOCUMENT_DATASET_SOURCE_NAME']
+    SOURCE_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_SOURCE_NAME)
+    PASSAGE_DATASET_SOURCE_SCORE_REL_PATH = os.path.join(SOURCE_PATH, config['PASSAGE_DATASET_SOURCE_SCORE_REL_PATH'])
+    PASSAGE_DATASET_SOURCE_SCORE_AQ_PATH = os.path.join(SOURCE_PATH, config['PASSAGE_DATASET_SOURCE_SCORE_AQ_PATH'])
+    FILE_PATTERN_REL = os.path.join(PASSAGE_DATASET_SOURCE_SCORE_REL_PATH, "qid_*.jsonl.gz")
+    FILE_PATTERN_AQ = os.path.join(PASSAGE_DATASET_SOURCE_SCORE_AQ_PATH, "qid_*.jsonl.gz")
+
+    for file_path in glob(FILE_PATTERN_REL):
+        with gzip.open(file_path, 'rt', encoding='UTF-8') as file:
+            for line in file:
+                line = json.loads(line)
+                if line['label'] < 0:
+                    print(line)
+
+    for file_path in glob(FILE_PATTERN_AQ):
+        with gzip.open(file_path, 'rt', encoding='UTF-8') as file:
+            for line in file:
+                line = json.loads(line)
+                if line['label'] < 0:
+                    print(line)
+
+
+# check_labels()
+
+dataset = ir_datasets.load("clueweb12/trec-web-2013")
+for query in dataset.queries_iter():
+    print(query.description if hasattr(query, 'description') else False)
+    print(query.narrative if hasattr(query, 'narrative') else False)
     break
-
-docstore = dataset.docs_store()
-print(docstore.get('clueweb12-0000tw-05-12114'))
-
-for qry in dataset.queries_iter():
-    print(qry)
-    break
-
-for qrel in dataset.qrels_iter():
-    print(qrel)
-    break
-
-tmp_list = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u']
-print(tmp_list[4:10] + tmp_list[14:20])

@@ -147,7 +147,7 @@ def get_docs_to_chunk(dataset):
 # Chunk source dataset and save to file
 dataset = ir_datasets.load(DOCUMENT_DATASET_SOURCE_NAME_PYTHON_API)
 
-qid_doc_counts = get_docs_to_chunk(dataset)
+qid_docids = get_docs_to_chunk(dataset)
 
-chunker = PassageChunker(dataset, qid_doc_counts)
+chunker = PassageChunker(dataset, qid_docids)
 chunker.dynamic_document_segmentation(PASSAGE_DATASET_SOURCE_PATH, batch_size=2000)
