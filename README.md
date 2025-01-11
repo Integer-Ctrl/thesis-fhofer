@@ -67,8 +67,8 @@ If you are using slurm you can just submit `sbatch code/passage-scorer.sh` to yo
 ### Evaluation of Passage Scoring (parallel/serial)
 In order to evaluate the quality of the assigned passage scores run the following scripts: 
 1. `code/passage_scorer/evaluation/rank_correlation_pq.py JOB_ID NUM_JOBS` (parallel)
-2. `code/passage_scorer/evaluation/cross_validation.py`
-3. `code/passage_scorer/evaluation/cross_validation_scores.py`
+2. `code/passage_scorer/evaluation/cross_validation.py` (serial)
+3. `code/passage_scorer/evaluation/cross_validation_scores.py` (serial)
 
 If you are using slurm you can just submit the following jobs to your job manager: 
 1. `sbatch code/cross-validation-scores.sh`
@@ -92,10 +92,10 @@ If you are using slurm you can just submit `sbatch code/candidate-retrieval.sh` 
    echo "Python virtual environment loaded."
    ```
 
-# Pairwise Preferences
+### Pairwise Preferences
 tbd
 
-# Evaluation of Pairwise Preferences
+### Evaluation of Pairwise Preferences
 tbd
 
 ## Authors and acknowledgment
