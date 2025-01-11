@@ -386,11 +386,12 @@ def compute_recall_precision(qid_docnos_cache, filename=None):
     return recall, precision
 
 
-#############################################
-# GET BEST PASSAGES FOR PAIRWISE PREFERENCE #
-#############################################
+###################################################
+# GET PASSAGES FOR PAIRWISE PREFERENCE CANDIDATES #
+###################################################
 
 # Get type of metric with highest rank correlation
+best_scoring_metric_retriever = None
 with gzip.open(CROSS_VALIDATION_SCORES_PATH, 'rt', encoding='UTF-8') as file:
     for line in file:  # already decending sorted
         data = json.loads(line)  # return only best scoring method
@@ -419,27 +420,43 @@ for file_path in glob(FILE_PATTERN):
             passages_score_cache[qid][docno] = data[best_scoring_metric_retriever]
 
 # Get for all queries the best and worst passages in dictionary format query_id: [docno] without duplicates docno
-queries_best_passages_cache = {}
-queries_worst_passages_cache = {}
+queries_best_passages_cache = {}  # multiple passages of one document possible
+queries_worst_passages_cache = {}  # multiple passages of one document possible
+queries_best_passages_opd_cache = {}  # opd = one per documnet, maximum of one passage per document
+queries_worst_passages_opd_cache = {}  # opd = one per documnet, maximum of one passage per document
+
 for qid, passageno_scores in passages_score_cache.items():
-    # Step 1: Parse docnos and sort by score
-    docnos_best_passagenos = {}
+    # Parse docnos and sort by score
+    docnos_best_passagenos_opd = {}
+    docnos_worst_passagenos_opd = {}
     for passageno, score in passageno_scores.items():
         # Extract docno by removing the suffix ___x
         docno, _ = passageno.split(PASSAGE_ID_SEPARATOR)
-        # Keep the highest-scoring passageno for each docno
-        if docno not in docnos_best_passagenos or score > docnos_best_passagenos[docno][1]:
-            docnos_best_passagenos[docno] = (passageno, score)
 
-    # Step 2: Extract highest-scored passagenos and sort them in descending order
+        # Keep the highest-scoring passageno for each docno for opd approach
+        if docno not in docnos_best_passagenos_opd or score > docnos_best_passagenos_opd[docno][1]:
+            docnos_best_passagenos_opd[docno] = (passageno, score)
+
+        # Keep the lowest-scoring passageno for each docno for opd approach
+        if docno not in docnos_worst_passagenos_opd or score < docnos_worst_passagenos_opd[docno][1]:
+            docnos_worst_passagenos_opd[docno] = (passageno, score)
+
+    # Sort by score descending
+    queries_best_passages_cache[qid] = [item[0]
+                                        for item in sorted(passageno_scores.items(), key=lambda x: x[1], reverse=True)]
+
+    # Sort by score ascending
+    queries_worst_passages_cache[qid] = [item[0]
+                                         for item in sorted(passageno_scores.items(), key=lambda x: x[1])]
+    # opd: Extract highest-scored passagenos and sort them in descending order
     best_passagenos = [item[0]
-                       for item in sorted(docnos_best_passagenos.values(), key=lambda x: x[1], reverse=True)]
-    queries_best_passages_cache[qid] = best_passagenos
+                       for item in sorted(docnos_best_passagenos_opd.values(), key=lambda x: x[1], reverse=True)]
+    queries_best_passages_opd_cache[qid] = best_passagenos
 
-    # Step 3: Extract lowest-scored passagenos and sort them in ascending order
+    # opd: Extract lowest-scored passagenos and sort them in ascending order
     worst_passagenos = [item[0]
-                        for item in sorted(docnos_best_passagenos.values(), key=lambda x: x[1])]
-    queries_worst_passages_cache[qid] = worst_passagenos
+                        for item in sorted(docnos_best_passagenos_opd.values(), key=lambda x: x[1])]
+    queries_worst_passages_opd_cache[qid] = worst_passagenos
 
 
 #########################
@@ -448,6 +465,57 @@ for qid, passageno_scores in passages_score_cache.items():
 
 def write_candidates(candidates_file, candidates, recall, precision):
     dataset = pt.get_dataset(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
+    candidates_file_opd = candidates_file.replace('.jsonl.gz', '_opd.jsonl.gz')
+    # opd: add 15 known relevant and 5 known non-relevant passages for each query
+    # maximum of one passage per document as known relevant or non-relevant passage
+    with gzip.open(candidates_file_opd, 'wt', encoding='UTF-8') as file:
+        for query in dataset.irds_ref().queries_iter():
+            qid = query.query_id
+            query_text = query.default_text()
+            query_description = query.description if hasattr(query, 'description') else False
+            query_narrative = query.narrative if hasattr(query, 'narrative') else False
+
+            for target_docno in candidates[qid]:  # TODO: iterare over passages of docno
+                for target_passageno in target_docno_passagenos[target_docno]:
+                    # Add 15 known relevant passages
+                    for known_relevant_passageno in queries_best_passages_opd_cache[qid][:15]:
+                        known_relevant_docno, _ = known_relevant_passageno.split(PASSAGE_ID_SEPARATOR)
+
+                        file.write(json.dumps({
+                            "qid": qid,
+                            "query_text": query_text,
+                            "query_description": query_description,
+                            "query_narrative": query_narrative,
+                            "source_dataset_id": DOCUMENT_DATASET_SOURCE_NAME,
+                            "target_dataset_id": DOCUMENT_DATASET_TARGET_NAME,
+                            "known_relevant_passage": {"docno": known_relevant_passageno,
+                                                       "text": source_passages_text_cache[known_relevant_docno]
+                                                       [known_relevant_passageno]},
+                            "known_non_relevant_passage": False,
+                            "passage_to_judge": {"docno": target_passageno,
+                                                 "text": target_passages_text_cache[target_docno][target_passageno]}
+                        }) + '\n')
+                    # 5 known non-relevant passages
+                    for known_non_relevant_passageno in queries_worst_passages_opd_cache[qid][:5]:
+                        known_non_relevant_docno, _ = known_non_relevant_passageno.split(PASSAGE_ID_SEPARATOR)
+
+                        file.write(json.dumps({
+                            "qid": qid,
+                            "query_text": query_text,
+                            "query_description": query_description,
+                            "query_narrative": query_narrative,
+                            "source_dataset_id": DOCUMENT_DATASET_SOURCE_NAME,
+                            "target_dataset_id": DOCUMENT_DATASET_TARGET_NAME,
+                            "known_relevant_passage": False,
+                            "known_non_relevant_passage": {"docno": known_non_relevant_passageno,
+                                                           "text": source_passages_text_cache[known_non_relevant_docno]
+                                                           [known_non_relevant_passageno]},
+                            "passage_to_judge": {"docno": target_passageno,
+                                                 "text": target_passages_text_cache[target_docno][target_passageno]}
+                        }) + '\n')
+
+    # Add 15 known relevant and 5 known non-relevant passages for each query
+    # The top 15 (5) passages are allowed to be from the same source document
     with gzip.open(candidates_file, 'wt', encoding='UTF-8') as file:
         for query in dataset.irds_ref().queries_iter():
             qid = query.query_id
@@ -457,6 +525,7 @@ def write_candidates(candidates_file, candidates, recall, precision):
 
             for target_docno in candidates[qid]:  # TODO: iterare over passages of docno
                 for target_passageno in target_docno_passagenos[target_docno]:
+                    # Add 15 known relevant passages
                     for known_relevant_passageno in queries_best_passages_cache[qid][:15]:
                         known_relevant_docno, _ = known_relevant_passageno.split(PASSAGE_ID_SEPARATOR)
 
@@ -474,7 +543,7 @@ def write_candidates(candidates_file, candidates, recall, precision):
                             "passage_to_judge": {"docno": target_passageno,
                                                  "text": target_passages_text_cache[target_docno][target_passageno]}
                         }) + '\n')
-
+                    # 5 known non-relevant passages
                     for known_non_relevant_passageno in queries_worst_passages_cache[qid][:5]:
                         known_non_relevant_docno, _ = known_non_relevant_passageno.split(PASSAGE_ID_SEPARATOR)
 
