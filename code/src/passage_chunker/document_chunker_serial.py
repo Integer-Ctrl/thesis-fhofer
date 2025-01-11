@@ -30,11 +30,10 @@ PASSAGE_DATASET_SOURCE_PATH = os.path.join(SOURCE_PATH, config['PASSAGE_DATASET_
 # Class to chunk documents into passages
 class PassageChunker:
 
-    def __init__(self, ir_dataset, docs_to_chunk):
+    def __init__(self, ir_dataset):
         self.dataset = ir_dataset
-        self.docs_to_chunk = docs_to_chunk
 
-    def dynamic_document_segmentation(self, path, batch_size=1000):
+    def dynamic_document_segmentation(self, path, docs_to_chunk, batch_size=1000):
         # Initialize the passage chunker
         chunker = SpacyPassageChunker()
 
@@ -48,7 +47,7 @@ class PassageChunker:
 
             for doc in tqdm(self.dataset.docs_iter(), desc='Chunking and saving documents', unit='doc'):
                 # Skip documents that should not be chunked
-                if doc.doc_id not in self.docs_to_chunk:
+                if doc.doc_id not in docs_to_chunk:
                     continue
 
                 # Skip documents that have already been processed
@@ -149,5 +148,5 @@ dataset = ir_datasets.load(DOCUMENT_DATASET_SOURCE_NAME_PYTHON_API)
 
 qid_docids = get_docs_to_chunk(dataset)
 
-chunker = PassageChunker(dataset, qid_docids)
-chunker.dynamic_document_segmentation(PASSAGE_DATASET_SOURCE_PATH, batch_size=2000)
+chunker = PassageChunker(dataset)
+chunker.dynamic_document_segmentation(PASSAGE_DATASET_SOURCE_PATH, qid_docids, batch_size=2000)

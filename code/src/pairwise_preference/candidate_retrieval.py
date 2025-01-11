@@ -6,9 +6,11 @@ import os
 import matplotlib.pyplot as plt
 import ir_datasets
 import pyterrier as pt
-from chatnoir_pyterrier import ChatNoirRetrieve, Feature
+from chatnoir_pyterrier import ChatNoirRetrieve
 import re
 from glob import glob
+import pandas as pd
+from spacy_passage_chunker import SpacyPassageChunker
 
 
 # Load the configuration settings
@@ -28,11 +30,12 @@ ALL_QRELS = config['ALL_QRELS']
 PER_QUERY = config['PER_QUERY']
 
 TYPE_SOURCE = config['TYPE_SOURCE']
-TYPE_TARGET = config['TYPE_TARGET']  # retrieve documents or passages from new dataset
+TYPE_TARGET = config['TYPE_TARGET']  # retrieve documents or passages from target dataset
 
 # Either retrrieve with local index or with ChatNoir API
 CHATNOIR_RETRIEVAL = config['CHATNOIR_RETRIEVAL']
 CHATNOIR_INDICES = config['CHATNOIR_INDICES']
+CHATNOIR_API_KEY = config['CHATNOIR_API_KEY']
 
 DOCUMENT_DATASET_TARGET_NAME = config['DOCUMENT_DATASET_TARGET_NAME']
 DOCUMENT_DATASET_SOURCE_NAME = config['DOCUMENT_DATASET_SOURCE_NAME']
@@ -44,11 +47,7 @@ DOCUMENT_DATASET_SOURCE_NAME_PYTHON_API = config['DOCUMENT_DATASET_SOURCE_NAME_P
 SOURCE_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_SOURCE_NAME)
 TARGET_PATH = os.path.join(SOURCE_PATH, config["DOCUMENT_DATASET_TARGET_NAME"])
 
-
-if TYPE_TARGET == 'document':
-    DATASET_NEW_INDEX_PATH = os.path.join(TARGET_PATH, config['DOCUMENT_DATASET_TARGET_INDEX_PATH'])
-if TYPE_TARGET == 'passage':
-    DATASET_NEW_INDEX_PATH = os.path.join(TARGET_PATH, config['PASSAGE_DATASET_TARGET_INDEX_PATH'])
+DOCUMENT_DATASET_SOURCE_INDEX_PATH = os.path.join(SOURCE_PATH, config['DOCUMENT_DATASET_SOURCE_INDEX_PATH'])
 PASSAGE_DATASET_TARGET_PATH = os.path.join(SOURCE_PATH, config['PASSAGE_DATASET_TARGET_PATH'])
 
 PASSAGE_DATASET_SOURCE_PATH = os.path.join(SOURCE_PATH, config['PASSAGE_DATASET_SOURCE_PATH'])
@@ -82,54 +81,73 @@ def pt_tokenize(text):
     return ' '.join(tokeniser.getTokens(text))
 
 
-# Load passages of the new dataset
+# Access the target dataset for candidate creation
 target_docno_passagenos = {}
 target_passages_text_cache = {}
 
-with gzip.open(PASSAGE_DATASET_TARGET_PATH, 'rt', encoding='UTF-8') as file:
-    for line in file:
-        line = json.loads(line)
-        docno, passageno = line['docno'].split(PASSAGE_ID_SEPARATOR)
-        if docno not in target_passages_text_cache:
-            target_docno_passagenos[docno] = []
-            target_passages_text_cache[docno] = {}
-        target_docno_passagenos[docno] += [line['docno']]
-        target_passages_text_cache[docno][line['docno']] = line['text']
 
+class PassageChunker:
 
-##########
-# ORACLE #
-##########
+    def __init__(self):
+        self.dataset = ir_datasets.load(DOCUMENT_DATASET_TARGET_NAME_PYTHON_API)
+        self.docstore = self.dataset.docs_store()
+        self.chunker = SpacyPassageChunker()
 
-# All already judged documents (those that are in the qrels)
-# INFO: only possible for old dataset
-# Iterating over passage scores because already chunked in passages
-def oracle_retrieval():
-    qid_docnos = {}
+    def chunk_batch(self, batch):
+        # Chunk the batch of documents
+        chunked_batch = self.chunker.process_batch(batch)
 
-    dataset = pt.get_dataset(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
-    qrels = dataset.get_qrels(variant='relevance')
-    for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
-        if row['qid'] not in qid_docnos:
-            qid_docnos[row['qid']] = []
-        qid_docnos[row['qid']] += [row['docno']]
+        for chunked_doc in chunked_batch:
+            # Add to dictionaries
+            if chunked_doc['docno'] not in target_docno_passagenos:
+                target_docno_passagenos[chunked_doc['docno']] = []
+                target_passages_text_cache[chunked_doc['docno']] = {}
 
-    return qid_docnos
+            for passage in chunked_doc['contents']:
+                passage_id = chunked_doc['docno'] + PASSAGE_ID_SEPARATOR + str(passage['id'])
+                target_docno_passagenos[chunked_doc['docno']] += [passage_id]
+                target_passages_text_cache[chunked_doc['docno']][passage_id] = passage['body']
+
+    def chunk_target_documents(self, docs_to_chunk, batch_size=1000):
+
+        BATCH_SIZE = batch_size
+        batch = []
+        known_doc_ids = set()
+
+        for docid in tqdm(docs_to_chunk, desc='Chunking', unit='doc'):
+            doc = self.docstore.get(docid)
+            # Skip documents that should not be chunked
+            if doc.doc_id not in docs_to_chunk:
+                continue
+
+            # Skip documents that have already been processed
+            if doc.doc_id in known_doc_ids:
+                continue
+            known_doc_ids.add(doc.doc_id)
+
+            # Format the document
+            formatted_doc = {
+                'docno': doc.doc_id,
+                'contents': doc.default_text()
+            }
+
+            # Add the document to the current batch
+            batch.append(formatted_doc)
+
+            # If the batch reaches the specified batch size, process and save it
+            if len(batch) >= BATCH_SIZE:
+                self.chunk_batch(batch)
+                # Reset the batch after saving
+                batch = []
+
+        # Process and save any remaining documents in the batch
+        if batch:
+            self.chunk_batch(batch)
 
 
 ######################
 # APPROACH 1 - NAIVE #
 ######################
-
-
-# HELPER for APPROACH 1
-# Document yield function for indexing without duplicates
-def yield_docs(dataset):
-    known_docnos = set()
-    for i in dataset.irds_ref().docs_iter():
-        if i.doc_id not in known_docnos:
-            known_docnos.add(i.doc_id)
-            yield {'docno': i.doc_id, 'text': i.default_text()}
 
 
 # For each query, retrieve top 2000 documents with bm25
@@ -141,32 +159,38 @@ def naive_retrieval():
     dataset = pt.get_dataset(DOCUMENT_DATASET_TARGET_NAME_PYTERRIER)
 
     # Retrieve top 2000 documents for each query
+    # 1000 documents via the query text and 1000 documents via the query description
     if CHATNOIR_RETRIEVAL:
-        chatnoir = ChatNoirRetrieve(index=CHATNOIR_INDICES, num_results=2000, retrieval_system="bm25")
+        chatnoir = ChatNoirRetrieve(api_key=CHATNOIR_API_KEY,
+                                    index=CHATNOIR_INDICES,
+                                    retrieval_system="bm25",
+                                    num_results=1000)
     else:
-        # Index datasetl
-        if not os.path.exists(DATASET_NEW_INDEX_PATH):
-            indexer = pt.IterDictIndexer(DATASET_NEW_INDEX_PATH)
-            index_ref = indexer.index(yield_docs(dataset),
-                                      meta={'docno': 50, 'text': 20000})
-        else:
-            index_ref = pt.IndexRef.of(DATASET_NEW_INDEX_PATH + '/data.properties')
-
+        index_ref = pt.IndexRef.of(DOCUMENT_DATASET_SOURCE_INDEX_PATH + '/data.properties')
         dataset_index = pt.IndexFactory.of(index_ref)
 
-        bm25 = pt.terrier.Retriever(dataset_index, wmodel='BM25', num_results=2000)
+        bm25 = pt.terrier.Retriever(dataset_index, wmodel='BM25', num_results=1000)
 
     for query in tqdm(dataset.irds_ref().queries_iter(),
                       desc='Retrieving naive top documents',
                       unit='query'):
         qid = query.query_id
         query_text = query.default_text()
-        if CHATNOIR_RETRIEVAL:
-            query_results = chatnoir.search(query_text).loc[:, ['qid', 'docno']].head(2000)
-        else:
-            query_results = bm25.search(pt_tokenize(query_text), ).loc[:, ['qid', 'docno']].head(2000)
+        query_description = query.description if hasattr(query, 'description') else False
 
-        qid_docnos_naive_retrieval[qid] = query_results['docno'].tolist()
+        if CHATNOIR_RETRIEVAL:
+            query_results = chatnoir.search(query_text).loc[:, ['qid', 'docno']].head(1000)
+            if query_description:
+                additional_results = chatnoir.search(query_description).loc[:, ['qid', 'docno']].head(1000)
+                query_results = pd.concat([query_results, additional_results], ignore_index=True)
+        else:
+            query_results = bm25.search(pt_tokenize(query_text), ).loc[:, ['qid', 'docno']].head(1000)
+            if query_description:
+                additional_results = bm25.search(pt_tokenize(query_description)).loc[:, ['qid', 'docno']].head(1000)
+                query_results = pd.concat([query_results, additional_results], ignore_index=True)
+
+        # Remove duplicates
+        qid_docnos_naive_retrieval[qid] = list(set(query_results['docno'].tolist()))
 
     return qid_docnos_naive_retrieval
 
@@ -195,15 +219,18 @@ with gzip.open(PASSAGE_DATASET_SOURCE_PATH, 'rt', encoding='UTF-8') as file:
 
 dataset = pt.get_dataset(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
 qrels = dataset.get_qrels(variant='relevance')
-for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
+for index, row in qrels.iterrows():
     if row['label'] > 0:
-        if row['qid'] not in queries_relevant_passagenos:
-            queries_relevant_passagenos[row['qid']] = []
+        # Check if docno was choosen and exists in the source_docno_passagenos
+        if row['docno'] in source_docno_passagenos:
+            if row['qid'] not in queries_relevant_passagenos:
+                queries_relevant_passagenos[row['qid']] = []
 
-        passagenos = source_docno_passagenos[row['docno']]
-        queries_relevant_passagenos[row['qid']] += passagenos
+            passagenos = source_docno_passagenos[row['docno']]
+            queries_relevant_passagenos[row['qid']] += passagenos
 
-# For each relevant passages for each query, retrieve top 20 documents with bm25
+
+# For each selected (passage chunker) relevant passages for each query, retrieve top 20 documents with bm25
 # Cache of reults to reduce computation time in APPROACH 3
 qid_docnos_nearest_neighbor_retrieval = {}
 
@@ -212,17 +239,13 @@ def nearest_neighbor_retrieval():
     dataset = pt.get_dataset(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
 
     # Retrieve for each relevant passage for its corresponding qid the top 20 docnos
-    if CHATNOIR_RETRIEVAL:
-        chatnoir = ChatNoirRetrieve(index=CHATNOIR_INDICES, num_results=20, retrieval_system="bm25")
-    else:
-        # Index dataset
-        if not os.path.exists(DATASET_NEW_INDEX_PATH):
-            indexer = pt.IterDictIndexer(DATASET_NEW_INDEX_PATH)
-            index_ref = indexer.index(yield_docs(dataset),
-                                      meta={'docno': 50, 'text': 20000})
-        else:
-            index_ref = pt.IndexRef.of(DATASET_NEW_INDEX_PATH + '/data.properties')
-
+    if CHATNOIR_RETRIEVAL:  # Case if target is ClueWeb22/b
+        chatnoir = ChatNoirRetrieve(api_key=CHATNOIR_API_KEY,
+                                    index=CHATNOIR_INDICES,
+                                    retrieval_system="bm25",
+                                    num_results=20)
+    else:  # Case if target is source dataset
+        index_ref = pt.IndexRef.of(DOCUMENT_DATASET_SOURCE_INDEX_PATH + '/data.properties')
         dataset_index = pt.IndexFactory.of(index_ref)
 
         bm25 = pt.terrier.Retriever(dataset_index, wmodel='BM25', num_results=20)
@@ -367,17 +390,7 @@ def compute_recall_precision(qid_docnos_cache, filename=None):
 # GET BEST PASSAGES FOR PAIRWISE PREFERENCE #
 #############################################
 
-# # 1. get all passages in dictionary format docno: {passageno: text}
-# passages_text_cache = {}
-# with gzip.open(PASSAGE_DATASET_SOURCE_PATH, 'rt', encoding='UTF-8') as file:
-#     for line in tqdm(file, desc='Caching passages', unit='passage'):
-#         line = json.loads(line)
-#         docno, _ = line['docno'].split(PASSAGE_ID_SEPARATOR)
-#         if docno not in passages_text_cache:
-#             passages_text_cache[docno] = []
-#         passages_text_cache[docno] += [line]
-
-# 2. get type of metric with highest rank correlation
+# Get type of metric with highest rank correlation
 with gzip.open(CROSS_VALIDATION_SCORES_PATH, 'rt', encoding='UTF-8') as file:
     for line in file:  # already decending sorted
         data = json.loads(line)  # return only best scoring method
@@ -386,7 +399,7 @@ with gzip.open(CROSS_VALIDATION_SCORES_PATH, 'rt', encoding='UTF-8') as file:
         best_scoring_metric_retriever = best_scoring_metric + '_' + best_scoring_retriever
         break
 
-# 3. get all passage scores in dictionary format qid: {docno: score} # just score of the best scoring method
+# Get all passage scores in dictionary format qid: {docno: score} # just score of the best scoring method
 passages_score_cache = {}
 for file_path in glob(FILE_PATTERN):
     # Extract the file name
@@ -405,26 +418,9 @@ for file_path in glob(FILE_PATTERN):
                 passages_score_cache[qid] = {}
             passages_score_cache[qid][docno] = data[best_scoring_metric_retriever]
 
-# # 4. get all qrels in dictinary format qid: {docno: relevance} # all relevance scores
-# qrels_cache = {}
-# dataset = pt.get_dataset(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
-# qrels = dataset.get_qrels(variant='relevance')
-# for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
-#     qrels_cache = {}
-#     if row['qid'] not in qrels_cache:
-#         qrels_cache = {}
-#         qrels_cache[row['qid']] = {}
-#         qrels_cache = {}
-#     qrels_cache[row['qid']][row['docno']] = row['label']
-
-# # 5. get all queries in dictionary format query_id: text
-# queries_cache = {}
-# dataset = ir_datasets.load(DOCUMENT_DATASET_SOURCE_NAME_PYTHON_API)
-# for query in dataset.queries_iter():
-#     queries_cache[query.query_id] = query.default_text()
-
-# 6. get for all queries the best passages in dictionary format query_id: [docno] without duplicates docno
+# Get for all queries the best and worst passages in dictionary format query_id: [docno] without duplicates docno
 queries_best_passages_cache = {}
+queries_worst_passages_cache = {}
 for qid, passageno_scores in passages_score_cache.items():
     # Step 1: Parse docnos and sort by score
     docnos_best_passagenos = {}
@@ -438,9 +434,12 @@ for qid, passageno_scores in passages_score_cache.items():
     # Step 2: Extract highest-scored passagenos and sort them in descending order
     best_passagenos = [item[0]
                        for item in sorted(docnos_best_passagenos.values(), key=lambda x: x[1], reverse=True)]
-
-    # Add to result
     queries_best_passages_cache[qid] = best_passagenos
+
+    # Step 3: Extract lowest-scored passagenos and sort them in ascending order
+    worst_passagenos = [item[0]
+                        for item in sorted(docnos_best_passagenos.values(), key=lambda x: x[1])]
+    queries_worst_passages_cache[qid] = worst_passagenos
 
 
 #########################
@@ -448,24 +447,48 @@ for qid, passageno_scores in passages_score_cache.items():
 #########################
 
 def write_candidates(candidates_file, candidates, recall, precision):
+    dataset = pt.get_dataset(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
     with gzip.open(candidates_file, 'wt', encoding='UTF-8') as file:
         for query in dataset.irds_ref().queries_iter():
             qid = query.query_id
-            qid_text = query.default_text()
+            query_text = query.default_text()
+            query_description = query.description if hasattr(query, 'description') else False
+            query_narrative = query.narrative if hasattr(query, 'narrative') else False
 
             for target_docno in candidates[qid]:  # TODO: iterare over passages of docno
                 for target_passageno in target_docno_passagenos[target_docno]:
-                    for known_relevant_passageno in queries_best_passages_cache[qid][:20]:
+                    for known_relevant_passageno in queries_best_passages_cache[qid][:15]:
                         known_relevant_docno, _ = known_relevant_passageno.split(PASSAGE_ID_SEPARATOR)
 
                         file.write(json.dumps({
                             "qid": qid,
-                            "query": qid_text,
+                            "query_text": query_text,
+                            "query_description": query_description,
+                            "query_narrative": query_narrative,
                             "source_dataset_id": DOCUMENT_DATASET_SOURCE_NAME,
                             "target_dataset_id": DOCUMENT_DATASET_TARGET_NAME,
                             "known_relevant_passage": {"docno": known_relevant_passageno,
                                                        "text": source_passages_text_cache[known_relevant_docno]
                                                        [known_relevant_passageno]},
+                            "known_non_relevant_passage": False,
+                            "passage_to_judge": {"docno": target_passageno,
+                                                 "text": target_passages_text_cache[target_docno][target_passageno]}
+                        }) + '\n')
+
+                    for known_non_relevant_passageno in queries_worst_passages_cache[qid][:5]:
+                        known_non_relevant_docno, _ = known_non_relevant_passageno.split(PASSAGE_ID_SEPARATOR)
+
+                        file.write(json.dumps({
+                            "qid": qid,
+                            "query_text": query_text,
+                            "query_description": query_description,
+                            "query_narrative": query_narrative,
+                            "source_dataset_id": DOCUMENT_DATASET_SOURCE_NAME,
+                            "target_dataset_id": DOCUMENT_DATASET_TARGET_NAME,
+                            "known_relevant_passage": False,
+                            "known_non_relevant_passage": {"docno": known_non_relevant_passageno,
+                                                           "text": source_passages_text_cache[known_non_relevant_docno]
+                                                           [known_non_relevant_passageno]},
                             "passage_to_judge": {"docno": target_passageno,
                                                  "text": target_passages_text_cache[target_docno][target_passageno]}
                         }) + '\n')
@@ -484,34 +507,39 @@ if __name__ == '__main__':
         recall_precision_file.write('')
 
     # Recall and Precision for each approach
-    # docnos_naive = naive_retrieval()
+    docnos_naive = naive_retrieval()
     docnos_nearest_neighbor = nearest_neighbor_retrieval()
-    # docnos_union = union_retrieval()
+    docnos_union = union_retrieval()
 
-    # # Print the number of documents (docnos) for each approach
-    # print(f'Naive: {sum([len(docnos) for docnos in docnos_naive.values()])} documents (docnos)')
+    target_qid_docids = [docid for docids in docnos_union.values() for docid in docids]
+
+    chunker = PassageChunker()
+    chunker.chunk_target_documents(target_qid_docids, batch_size=2000)
+
+    # Print the number of documents (docnos) for each approach
+    print(f'Naive: {sum([len(docnos) for docnos in docnos_naive.values()])} documents (docnos)')
     print(f'Nearest Neighbor: {sum([len(docnos) for docnos in docnos_nearest_neighbor.values()])} documents (docnos)')
-    # print(f'Union: {sum([len(docnos) for docnos in docnos_union.values()])} documents (docnos)')
+    print(f'Union: {sum([len(docnos) for docnos in docnos_union.values()])} documents (docnos)')
 
-    # recall_naive, precision_naive = compute_recall_precision(docnos_naive, filename='recall_precision_naive.pdf')
+    recall_naive, precision_naive = compute_recall_precision(docnos_naive, filename='recall_precision_naive.pdf')
     recall_nearest_neighbor, precision_nearest_neighbor = compute_recall_precision(
         docnos_nearest_neighbor, filename='recall_precision_nearest_neighbor.pdf')
-    # recall_union, precision_union = compute_recall_precision(docnos_union, filename='recall_precision_union.pdf')
+    recall_union, precision_union = compute_recall_precision(docnos_union, filename='recall_precision_union.pdf')
 
-    # print(f'Naive: Recall={recall_naive}, Precision={precision_naive}')
+    print(f'Naive: Recall={recall_naive}, Precision={precision_naive}')
     print(f'Nearest Neighbor: Recall={recall_nearest_neighbor}, Precision={precision_nearest_neighbor}')
-    # print(f'Union: Recall={recall_union}, Precision={precision_union}')
+    print(f'Union: Recall={recall_union}, Precision={precision_union}')
 
     # Write results to file
     naive_file_name = os.path.join(CANDIDATES_PATH, 'naive.jsonl.gz')
     nearest_neighbor_file_name = os.path.join(CANDIDATES_PATH, 'nearest_neighbor.jsonl.gz')
     union_file_name = os.path.join(CANDIDATES_PATH, 'union.jsonl.gz')
 
-    # write_candidates(naive_file_name, docnos_naive,
-    #                  recall_naive, precision_naive)
+    write_candidates(naive_file_name, docnos_naive,
+                     recall_naive, precision_naive)
 
     write_candidates(nearest_neighbor_file_name, docnos_nearest_neighbor,
                      recall_nearest_neighbor, precision_nearest_neighbor)
 
-    # write_candidates(union_file_name, docnos_union,
-    #                  recall_union, precision_union)
+    write_candidates(union_file_name, docnos_union,
+                     recall_union, precision_union)
