@@ -20,9 +20,4 @@ echo "Python virtual environment loaded."
 # Run pairwise preference with duoprompt on candidates
 echo "Running pairwise_preference_duoprompt.py..."
 python3 -u src/pairwise_preference/pairwise_preference_duoprompt.py
-echo "Candidate retrieval completed."
-
-# # Run pairwise preference with duoT5 on candidates
-# echo "Running pairwise_preference_duoT5.py..."
-# python3 -u src/pairwise_preference/pairwise_preference_duoT5.py
-# echo "Candidate retrieval completed."
+echo "Pairwise preferences completed."

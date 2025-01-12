@@ -43,8 +43,11 @@ If you want to use chatnoir for the target dataset pleases provide following con
 - CHATNOIR_API_KEY
 
 ### Dataset Segmentation (serial)
-To preprocess the documents of the source dataset run `code/passage_chunker/passage_chunker_serial.py`. \
-If you are using slurm you can just submit `sbatch code/passage-chunker.sh` to your job manager.
+To preprocess the documents of the source dataset run the following scripts:
+1. `code/src/init_folderstructure.py`
+2. `code/src/passage_chunker/passage_chunker_serial.py`. \
+3. `code/src/build_index/build_index.py`
+If you are using slurm you can just submit `sbatch code/src/passage-chunker.sh` to your job manager.
 - **WARNING**: Configure the loading of the _venv_ before submitting `passage-chunker.sh`:
    ```
    # Load Python virtual environment
@@ -54,8 +57,8 @@ If you are using slurm you can just submit `sbatch code/passage-chunker.sh` to y
    ```
 
 ### Passage Scoring (parallel)
-To assign scores to the segmented passages run `code/passage_scorer/passage_scorer.py JOB_ID NUM_JOBS`
-If you are using slurm you can just submit `sbatch code/passage-scorer.sh` to your job manager.
+To assign scores to the segmented passages run `code/src/passage_scorer/passage_scorer.py JOB_ID NUM_JOBS`
+If you are using slurm you can just submit `sbatch code/src/passage-scorer.sh` to your job manager.
 - **WARNING**: Configure the loading of the _venv_ before submitting `passage-scorer.sh`:
    ```
    # Load Python virtual environment
@@ -66,13 +69,13 @@ If you are using slurm you can just submit `sbatch code/passage-scorer.sh` to yo
 
 ### Evaluation of Passage Scoring (parallel/serial)
 In order to evaluate the quality of the assigned passage scores run the following scripts: 
-1. `code/passage_scorer/evaluation/rank_correlation_pq.py JOB_ID NUM_JOBS` (parallel)
-2. `code/passage_scorer/evaluation/cross_validation.py` (serial)
-3. `code/passage_scorer/evaluation/cross_validation_scores.py` (serial)
+1. `code/src/passage_scorer/evaluation/rank_correlation_pq.py JOB_ID NUM_JOBS` (parallel)
+2. `code/src/passage_scorer/evaluation/cross_validation.py` (serial)
+3. `code/src/passage_scorer/evaluation/cross_validation_scores.py` (serial)
 
 If you are using slurm you can just submit the following jobs to your job manager: 
-1. `sbatch code/cross-validation-scores.sh`
-2. `sbatch code/rank-correlation-scores.sh`
+1. `sbatch code/src/cross-validation-scores.sh`
+2. `sbatch code/src/rank-correlation-scores.sh`
 - **WARNING**: Configure the loading of the _venv_ before submitting `cross-validation-scores.sh` and `rank-correlation-scores.sh`:
    ```
    # Load Python virtual environment
@@ -82,8 +85,8 @@ If you are using slurm you can just submit the following jobs to your job manage
    ```
 
 ### Candidate Retrieval (serial)
-To select candidates for each query of the retrieval task from the source dataset, run `code/pairwise_preference/candidate_retrieval.py`.
-If you are using slurm you can just submit `sbatch code/candidate-retrieval.sh` to your job manager.
+To select candidates for each query of the retrieval task from the source dataset, run `code/src/pairwise_preference/candidate_retrieval.py`.
+If you are using slurm you can just submit `sbatch code/src/candidate-retrieval.sh` to your job manager.
 - **WARNING**: Configure the loading of the _venv_ before submitting `candidate-retrieval.sh`:
    ```
    # Load Python virtual environment
