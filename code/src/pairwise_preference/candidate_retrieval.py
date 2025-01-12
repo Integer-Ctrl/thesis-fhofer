@@ -471,8 +471,8 @@ def write_candidates(candidates_file, candidates, recall, precision):
         for query in dataset.irds_ref().queries_iter():
             qid = query.query_id
             query_text = query.default_text()
-            query_description = query.description if hasattr(query, 'description') else False
-            query_narrative = query.narrative if hasattr(query, 'narrative') else False
+            query_description = query.description if hasattr(query, 'description') else ""
+            query_narrative = query.narrative if hasattr(query, 'narrative') else ""
 
             for target_docno in candidates[qid]:  # TODO: iterare over passages of docno
                 for target_passageno in target_docno_passagenos[target_docno]:
@@ -490,7 +490,7 @@ def write_candidates(candidates_file, candidates, recall, precision):
                             "known_relevant_passage": {"docno": known_relevant_passageno,
                                                        "text": source_passages_text_cache[known_relevant_docno]
                                                        [known_relevant_passageno]},
-                            "known_non_relevant_passage": False,
+                            "known_non_relevant_passage": "",  # False
                             "passage_to_judge": {"docno": target_passageno,
                                                  "text": target_passages_text_cache[target_docno][target_passageno]}
                         }) + '\n')
@@ -505,7 +505,7 @@ def write_candidates(candidates_file, candidates, recall, precision):
                             "query_narrative": query_narrative,
                             "source_dataset_id": DOCUMENT_DATASET_SOURCE_NAME,
                             "target_dataset_id": DOCUMENT_DATASET_TARGET_NAME,
-                            "known_relevant_passage": False,
+                            "known_relevant_passage": "",  # False
                             "known_non_relevant_passage": {"docno": known_non_relevant_passageno,
                                                            "text": source_passages_text_cache[known_non_relevant_docno]
                                                            [known_non_relevant_passageno]},
@@ -519,8 +519,8 @@ def write_candidates(candidates_file, candidates, recall, precision):
         for query in dataset.irds_ref().queries_iter():
             qid = query.query_id
             query_text = query.default_text()
-            query_description = query.description if hasattr(query, 'description') else False
-            query_narrative = query.narrative if hasattr(query, 'narrative') else False
+            query_description = query.description if hasattr(query, 'description') else ""
+            query_narrative = query.narrative if hasattr(query, 'narrative') else ""
 
             for target_docno in candidates[qid]:  # TODO: iterare over passages of docno
                 for target_passageno in target_docno_passagenos[target_docno]:
@@ -538,7 +538,7 @@ def write_candidates(candidates_file, candidates, recall, precision):
                             "known_relevant_passage": {"docno": known_relevant_passageno,
                                                        "text": source_passages_text_cache[known_relevant_docno]
                                                        [known_relevant_passageno]},
-                            "known_non_relevant_passage": False,
+                            "known_non_relevant_passage": "",  # False
                             "passage_to_judge": {"docno": target_passageno,
                                                  "text": target_passages_text_cache[target_docno][target_passageno]}
                         }) + '\n')
@@ -553,7 +553,7 @@ def write_candidates(candidates_file, candidates, recall, precision):
                             "query_narrative": query_narrative,
                             "source_dataset_id": DOCUMENT_DATASET_SOURCE_NAME,
                             "target_dataset_id": DOCUMENT_DATASET_TARGET_NAME,
-                            "known_relevant_passage": False,
+                            "known_relevant_passage": "",  # False
                             "known_non_relevant_passage": {"docno": known_non_relevant_passageno,
                                                            "text": source_passages_text_cache[known_non_relevant_docno]
                                                            [known_non_relevant_passageno]},
