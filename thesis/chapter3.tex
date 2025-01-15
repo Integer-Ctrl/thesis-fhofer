@@ -70,7 +70,7 @@ To simplify data handling, I used \texttt{ir\_datasets}~\citep{macavaney:2021}, 
 After selecting the datasets and their associated retrieval tasks, including the queries and \texttt{qrels}, the first step in the processing pipeline is the segmentation of documents from the source datasets into passages. This step was done because the relevance of a document is often confined to specific sections rather than the entire text. By segmenting documents into passages, the pipeline can focus solely on the relevant passages, disregarding non-relevant parts of a document in the subsequent processing.
 
 % Document Selection
-\subsection{Document Selection}\label{selection-documents}
+\subsection{Document Selection}\label{document-selection}
 
 Instead of segmenting the entire source dataset, only a selection of documents is needed. The workflow begins by selecting only already judged documents from the source dataset. A document is considered judged if it contains at least one relevance assessment in the \texttt{qrels} of the associated retrieval task. Only these documents are suitable for relevance transfer, as their relevance has already been determined. Documents without relevance judgments are excluded, as they provide no usable information for the transfer procedure.
 \\\\
@@ -113,8 +113,39 @@ In this pipeline stage, the individual passages of the selected documents belong
 % ====================
 % Candidate Retreiaval
 % ====================
-\section{Candidate Retrieval}\label{candidate-retrieval}
+\section{Candidate Selection}\label{candidate-selection}
 
+This section outlines the methods used to select candidates for the pairwise preference inference. A candidate consists of a passage from the source dataset, a passage from the target dataset, and a query from a retrieval task, i.e. \texttt{(source passage, target passage, query)}. The goal is to score each candidate using pairwise preferences to infer new relevance assessments for a set of target documents. The process begins with selecting document with retrieval from the target dataset.
+
+% Document Retrieval from Target Dataset
+\subsection{Document Retrieval from Target Dataset}\label{document-retrieval-from-target-dataset}
+
+For each query in a retrieval task of a source dataset, a set of documents from the target dataset is retrieved. The aim is to identify documents most likely to be relevant to the query. For that, all strategies employ \texttt{BM25} model for retrieval due to its simplicity and efficiency \textcolor{red}{REF\_PAPER}. Since this step only requires a preliminary selection of potentially relevant documents, \texttt{BM25} is sufficient for this task. A fine-grained relevance classification is performed later through the pairwise preferences. Chapter~\ref{evaluation}~[\nameref{candidate-selection}] evaluates these strategies to assess their effectiveness in identifying relevant documents.
+\\\\
+\textbf{Naive Approach}
+The first approach, termed \texttt{naive}, involves submitting each query from the retrieval task to the target dataset corpus to generate a ranking of potentially relevant documents. From this ranking, the top 1000 documents are initially assigned as candidates. Unfortunately, some search queries include ambiguities, leaving room for interpretation regarding the intended information. For example, the query \textit{``Apple``} could refer to either the technology brand or the fruit. To address such ambiguities, the query description of each query is included in the retrieval process. A query description is a brief text that provides additional context, clarifying the search intent and specifying the query's focus. The query description is treated as an independent query and also submitted to the corpus, retrieving an additional top 1000 documents based on the BM25 ranking. After filtering out duplicates between the two sets, up to 2000 unique documents per query are selected for further processing.
+\\\\
+\textbf{Nearest Neighbor Approach}
+The second approach, \texttt{nearest neighbor}, builds on the relevant documents identified in the initial pipeline step descripted in Chapter~\ref{methodology}~[\nameref{document-selection}]. The passages of all selected documents of a query are now used as independent queries to retrieve documents from the target dataset. From the resulting rankings, the top 20 documents are added to the candidate set for the corresponding query. This process is repeated for all passages of all relevant documents. As a result, each passage can contribute up to 20 unique documents to the candidate set.
+\\\\
+\textbf{Union Approach}
+The third approach, called \texttt{union}, combines the \texttt{naive} and \texttt{nearest neighbor} approaches into a single candidate set for each query. This combination is intended to enhance the \texttt{Recall} of the number of retrieved relevant docuements by including a broader set of potentially relevant documents. However, the increased number of documents may reduce \texttt{Precision} by including more irrelevant entries, thereby increasing the workload for pairwise preference evaluations in later stages. The \texttt{Recall} and \texttt{Precision} of the approaches are evaluated in Chapter~\ref{evaluation}~[\nameref{candidate-selection}].
+
+% Postprocessing of Selected Target Documents
+\subsection{Postprocessing of Selected Target Documents}\label{postprocessing-of-selected-target-documents}
+As described in Section~\nameref{segmentation-with-spacy}, selected documents from the source dataset are segmented into passages for later processing. Since pairwise preferences will be applied at passage level, documents from both the source and target datasets have to be divided into passages. This is done using the same process as outlined before. First, \texttt{spaCy} is employed for segmenting the chosen target documents into sentences, and then passages are formed by concatenating sentences.
+
+% Composing Final Candidates
+\subsection{Composing Final Candidates}
+As mentioned before, a candidate comprises a passage from the source dataset, a passage from the target dataset, and a query provided by a retrieval task. The queries are provided by the retrieval task which is used to facilitate the transfer of its existing \texttt{qrels}. The documents from the target dataset, along with their associated passages, are identified as just described. To conduct pairwise preference comparisons, passages from the source dataset need to be selected. The objective is to compare each selected passage from the target dataset for a given query against 15 relevant and 5 non-relevant passages from the source dataset corresponding to the same query. To determine the relevant and non-relevant passages, the computed scores of the previous pipeline stage, Section~\nameref{passage-scoring}, are used. The selection is made using two different strategies referred to as \texttt{simple selection} and \texttt{diversified selection}.
+\\\\
+\textbf{Simple Selection}
+During the \nameref{passage-scoring} stage, each selected passage from the source dataset is evaluated and assigned scores based on the \texttt{precision@10} and \texttt{nDCG@10} metrics. These scores are now used to generate a ranking for each query. Following this strategy, the 15 highest-scoring passages and the 5 lowest-scoring passages for each query are selected.
+\\\\
+\textbf{Diversified Selection}
+It is possible that the top- and lowest-rated passages are predominantly drawn from a small subset of documents. While such passages may satisfy the selection criteria of the \texttt{simple selection}, this concentration could lead to unintended side effects by limiting variation in the pairwise preferences. To mitigate potential bias because of reduced document diversity, this approach restricts the selection to a maximum of one passage per document. Specifically, it selects the top 15 and bottom 5 passages for each query, ensuring that each passage is sourced from a distinct document. This strategy enhances diversity in pairwise preference comparisons by incorporating a wider range of source documents.
+\\\\
+For each query, 20 selected passages from either the \texttt{simple} or \texttt{diversified selection} approach are carried forward to the final pipeline stage. These candidates will go through pairwise preference evaluations to infer new relevance assessments for the selected target dataset documents.
 
 % ====================
 % Pairwise Preferences
