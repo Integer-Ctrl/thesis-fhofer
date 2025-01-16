@@ -25,13 +25,15 @@ def load_config(filename=pwd + "/../../config.json"):
 # Get the configuration settings
 config = load_config()
 
-TARGET_PATH = os.path.join(config['DATA_PATH'], config['DOCUMENT_DATASET_TARGET_NAME'])
+SOURCE_PATH = os.path.join(config['DATA_PATH'], config['DOCUMENT_DATASET_SOURCE_NAME'])
+TARGET_PATH = os.path.join(SOURCE_PATH, config['DOCUMENT_DATASET_TARGET_NAME'])
 
 DOCUMENT_DATASET_TARGET_NAME = config['DOCUMENT_DATASET_TARGET_NAME']
 DOCUMENT_DATASET_TARGET_NAME_PYTERRIER = config['DOCUMENT_DATASET_TARGET_NAME_PYTERRIER']
 DOCUMENT_DATASET_TARGET_NAME_PYTHON_API = config['DOCUMENT_DATASET_TARGET_NAME_PYTHON_API']
 
-DUOPROMPT_CACHE_PATH = os.path.join(TARGET_PATH, config['DUOPROMPT_CACHE_PATH'])
+PAIRWISE_PREFERENCES_PATH = os.path.join(TARGET_PATH, config['DUOPROMPT_PATH'], 'nearest_neighbor.jsonl.gz')
+
 LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH = os.path.join(TARGET_PATH, config['LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH'])
 
 PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
@@ -60,7 +62,7 @@ for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
 # Read pairwise preference scores {qid: docno: passage_id: scores[]}
 # Which known relevant passages are used for pairwise preferences is not important here
 qid_docno_passage_scores = {}
-with gzip.open(DUOPROMPT_CACHE_PATH, 'rt', encoding='UTF-8') as file:
+with gzip.open(PAIRWISE_PREFERENCES_PATH, 'rt', encoding='UTF-8') as file:
     for line in file:
         line = json.loads(line)
 
@@ -73,7 +75,15 @@ with gzip.open(DUOPROMPT_CACHE_PATH, 'rt', encoding='UTF-8') as file:
             qid_docno_passage_scores[qid][docno] = {}
         if passageno not in qid_docno_passage_scores[qid][docno]:
             qid_docno_passage_scores[qid][docno][passageno] = []
-        qid_docno_passage_scores[qid][docno][passageno] += [line['score']]
+
+        # Known relevant passage vs. known non relevant passage
+        if line['known_relevant_passage_id']:
+            qid_docno_passage_scores[qid][docno][passageno] += [line['score']]
+        elif line['known_non_relevant_passage_id']:
+            qid_docno_passage_scores[qid][docno][passageno] += [line['score']]
+        else:
+            print(f"Unknown passage type: {line}")
+            exit()
 
 
 # Function to get dictonary of aggregated score for a passage or document
