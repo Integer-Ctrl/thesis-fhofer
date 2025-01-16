@@ -8,14 +8,14 @@
 #SBATCH --nodes=1                                     # Number of nodes
 #SBATCH --cpus-per-task=2                             # Number of CPU cores per task
 #SBATCH --time=48:00:00                               # Time limit (48 hours)
-#SBATCH --output=logs/rank_correlation/labels_%A_%a.out      # Standard output log
-#SBATCH --error=logs/rank_correlation/labels_%A_%a.err       # Standard error log
+#SBATCH --output=logs/rank_correlation/duoprompt_%A_%a.out      # Standard output log
+#SBATCH --error=logs/rank_correlation/duoprompt_%A_%a.err       # Standard error log
 
 echo ${SLURM_ARRAY_JOB_ID}
 
 # Save logs, only first job responsible for creating the folder
 if [ "${SLURM_ARRAY_TASK_ID}" -eq 1 ]; then
-    mkdir -p logs/rank_correlation/labels_${SLURM_ARRAY_JOB_ID}
+    mkdir -p logs/rank_correlation/duoprompt_${SLURM_ARRAY_JOB_ID}
 fi
 
 # Load Python virtual environment
@@ -29,7 +29,7 @@ python3 -u src/pairwise_preference/evaluation/rank_correlation_pq.py ${SLURM_ARR
 echo "Rank correlation computed."
 
 # Move logs to the folder if it exists
-if [ -d "logs/rank_correlation/labels_${SLURM_ARRAY_JOB_ID}" ]; then
-    mv logs/rank_correlation/labels_${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}.out logs/rank_correlation/labels_${SLURM_ARRAY_JOB_ID}
-    mv logs/rank_correlation/labels_${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}.err logs/rank_correlation/labels_${SLURM_ARRAY_JOB_ID}
+if [ -d "logs/rank_correlation/duoprompt_${SLURM_ARRAY_JOB_ID}" ]; then
+    mv logs/rank_correlation/duoprompt_${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}.out logs/rank_correlation/duoprompt_${SLURM_ARRAY_JOB_ID}
+    mv logs/rank_correlation/duoprompt_${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}.err logs/rank_correlation/duoprompt_${SLURM_ARRAY_JOB_ID}
 fi
