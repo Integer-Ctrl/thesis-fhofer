@@ -61,6 +61,6 @@
         "DUOPROMPT_PATH": "duoprompt/",
         "DUOPROMPT_CACHE_NAME": "duoprompt.jsonl.cache.gz",
 
-        "DUOT5_PATH": "duot5/",
-        "DUOT5_CACHE_NAME": "duot5.jsonl.cache.gz"
+        "MONOPROMPT_PATH": "monoprompt/",
+        "MONOPROMPT_CACHE_NAME": "monoprompt.jsonl.cache.gz"
 }
