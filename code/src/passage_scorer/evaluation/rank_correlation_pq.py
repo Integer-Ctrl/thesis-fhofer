@@ -81,7 +81,7 @@ for file_path in glob(FILE_PATTERN):
 
 # Function to get dictonary of aggregated score for a document using passage scores
 # Return a list of dictionaries with aggregated scores for each document {docno, qid, metric: score}
-def get_qid_docno_aggregated_scores(qid_docno_passages_scores, aggregation_method='mean'):
+def get_qid_docno_aggregated_scores(qid_docno_passages_scores, aggregation_method):
     # All metrics that are available in the passage scores
 
     aggregated_scores = []
@@ -99,6 +99,8 @@ def get_qid_docno_aggregated_scores(qid_docno_passages_scores, aggregation_metho
                     aggregated_doc_scores[metric] = float(np.max(scores))
                 elif aggregation_method == 'min':
                     aggregated_doc_scores[metric] = float(np.min(scores))
+                elif aggregation_method == 'sum':
+                    aggregated_doc_scores[metric] = float(np.sum(scores))
 
             aggregated_scores.append(aggregated_doc_scores)
 
@@ -106,7 +108,7 @@ def get_qid_docno_aggregated_scores(qid_docno_passages_scores, aggregation_metho
 
 
 # Function to get transformed scores
-def get_qid_docno_transformed_scores(qid_docno_aggregated_scores, transformation_method='id', bins=[0.3, 0.7]):
+def get_qid_docno_transformed_scores(qid_docno_aggregated_scores, transformation_method, bins=[0.3, 0.7]):
 
     qid_docno_aggregated_scores_transformed = copy.deepcopy(qid_docno_aggregated_scores)
     for entry in qid_docno_aggregated_scores_transformed:
@@ -115,8 +117,12 @@ def get_qid_docno_transformed_scores(qid_docno_aggregated_scores, transformation
                 pass
             elif transformation_method == 'log' and entry[metric] > 0:
                 entry[metric] = float(np.log(entry[metric]))
-            elif transformation_method == 'binned':
-                entry[metric] = float(np.digitize(entry[metric], bins))
+            elif transformation_method == 'exp':
+                entry[metric] = float(np.exp(entry[metric]))
+            elif transformation_method == 'sqrt' and entry[metric] > 0:
+                entry[metric] = float(np.sqrt(entry[metric]))
+            # elif transformation_method == 'binned':
+            #     entry[metric] = float(np.digitize(entry[metric], bins))
 
     return qid_docno_aggregated_scores_transformed
 

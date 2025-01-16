@@ -32,8 +32,7 @@ DOCUMENT_DATASET_TARGET_NAME = config['DOCUMENT_DATASET_TARGET_NAME']
 DOCUMENT_DATASET_TARGET_NAME_PYTERRIER = config['DOCUMENT_DATASET_TARGET_NAME_PYTERRIER']
 DOCUMENT_DATASET_TARGET_NAME_PYTHON_API = config['DOCUMENT_DATASET_TARGET_NAME_PYTHON_API']
 
-PAIRWISE_PREFERENCES_PATH = os.path.join(TARGET_PATH, config['DUOPROMPT_PATH'], 'nearest_neighbor.jsonl.gz')
-
+PAIRWISE_PREFERENCES_PATTERN = os.path.join(TARGET_PATH, config['DUOPROMPT_PATH'], '*.jsonl.gz')  # glob pattern
 LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH = os.path.join(TARGET_PATH, config['LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH'])
 
 PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
@@ -59,36 +58,41 @@ for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
             (qrels['qid'] == row['qid'])
         ]
 
+
 # Read pairwise preference scores {qid: docno: passage_id: scores[]}
 # Which known relevant passages are used for pairwise preferences is not important here
-qid_docno_passage_scores = {}
-with gzip.open(PAIRWISE_PREFERENCES_PATH, 'rt', encoding='UTF-8') as file:
-    for line in file:
-        line = json.loads(line)
+def read_pairwise_preferences(path):
+    qid_docno_passage_scores = {}
 
-        qid = line['qid']
-        docno, passageno = line['passage_to_judge_id'].split(PASSAGE_ID_SEPARATOR)
+    with gzip.open(path, 'rt', encoding='UTF-8') as file:
+        for line in file:
+            line = json.loads(line)
 
-        if qid not in qid_docno_passage_scores:
-            qid_docno_passage_scores[qid] = {}
-        if docno not in qid_docno_passage_scores[qid]:
-            qid_docno_passage_scores[qid][docno] = {}
-        if passageno not in qid_docno_passage_scores[qid][docno]:
-            qid_docno_passage_scores[qid][docno][passageno] = []
+            qid = line['qid']
+            docno, passageno = line['passage_to_judge_id'].split(PASSAGE_ID_SEPARATOR)
 
-        # Known relevant passage vs. known non relevant passage
-        if line['known_relevant_passage_id']:
-            qid_docno_passage_scores[qid][docno][passageno] += [line['score']]
-        elif line['known_non_relevant_passage_id']:
-            qid_docno_passage_scores[qid][docno][passageno] += [line['score']]
-        else:
-            print(f"Unknown passage type: {line}")
-            exit()
+            if qid not in qid_docno_passage_scores:
+                qid_docno_passage_scores[qid] = {}
+            if docno not in qid_docno_passage_scores[qid]:
+                qid_docno_passage_scores[qid][docno] = {}
+            if passageno not in qid_docno_passage_scores[qid][docno]:
+                qid_docno_passage_scores[qid][docno][passageno] = []
+
+            # Known relevant passage vs. known non relevant passage
+            if line['known_relevant_passage_id']:
+                qid_docno_passage_scores[qid][docno][passageno] += [line['score']]
+            elif line['known_non_relevant_passage_id']:
+                qid_docno_passage_scores[qid][docno][passageno] += [line['score']]
+            else:
+                print(f"Unknown passage type: {line}")
+                exit()
+
+    return qid_docno_passage_scores
 
 
 # Function to get dictonary of aggregated score for a passage or document
 # Return a list of dictionaries with aggregated scores for each document {docno, qid, metric: score}
-def get_aggregated_scores_passages(qid_docno_passage_scores, aggregation_method='mean'):
+def get_aggregated_scores_passages(qid_docno_passage_scores, aggregation_method):
 
     # Agregate scores for each passage
     qid_docno_passage_score = {}
@@ -108,11 +112,13 @@ def get_aggregated_scores_passages(qid_docno_passage_scores, aggregation_method=
                     qid_docno_passage_score[qid][docno][passage] = float(np.max(scores))
                 elif aggregation_method == 'min':
                     qid_docno_passage_score[qid][docno][passage] = float(np.min(scores))
+                elif aggregation_method == 'sum':
+                    qid_docno_passage_score[qid][docno][passage] = float(np.sum(scores))
 
     return qid_docno_passage_score
 
 
-def get_transformed_scores_passages(qid_docno_passage_score, transformation_method='id', bins=[0.3, 0.7]):
+def get_transformed_scores_passages(qid_docno_passage_score, transformation_method, bins=[0.3, 0.7]):
 
     qid_docno_passage_score_transformed = copy.deepcopy(qid_docno_passage_score)
     for qid, docno_passage_scores in qid_docno_passage_score_transformed.items():
@@ -120,15 +126,19 @@ def get_transformed_scores_passages(qid_docno_passage_score, transformation_meth
             for passage, score in passage_scores.items():
                 if transformation_method == 'id':
                     pass
-                elif transformation_method == 'log' and score != 0:
+                elif transformation_method == 'log' and score > 0:
                     qid_docno_passage_score_transformed[qid][docno][passage] = float(np.log(score))
-                elif transformation_method == 'binned':
-                    qid_docno_passage_score_transformed[qid][docno][passage] = float(np.digitize(score, bins))
+                elif transformation_method == 'exp':
+                    qid_docno_passage_score_transformed[qid][docno][passage] = float(np.exp(score))
+                elif transformation_method == 'sqrt' and score > 0:
+                    qid_docno_passage_score_transformed[qid][docno][passage] = float(np.sqrt(score))
+                # elif transformation_method == 'binned':
+                #     qid_docno_passage_score_transformed[qid][docno][passage] = float(np.digitize(score, bins))
 
     return qid_docno_passage_score_transformed
 
 
-def get_aggregated_scores_documents(qid_docno_passage_score, aggregation_method='mean'):
+def get_aggregated_scores_documents(qid_docno_passage_score, aggregation_method):
 
     qid_docno_score = {}
 
@@ -144,11 +154,13 @@ def get_aggregated_scores_documents(qid_docno_passage_score, aggregation_method=
                 qid_docno_score[qid][docno] = float(np.max(list(passage_scores.values())))
             elif aggregation_method == 'min':
                 qid_docno_score[qid][docno] = float(np.min(list(passage_scores.values())))
+            elif aggregation_method == 'sum':
+                qid_docno_score[qid][docno] = float(np.sum(list(passage_scores.values())))
 
     return qid_docno_score
 
 
-def get_transformed_scores_documents(qid_docno_score, transformation_method='id', bins=[0.3, 0.7]):
+def get_transformed_scores_documents(qid_docno_score, transformation_method, bins=[0.3, 0.7]):
 
     qid_docno_score_transformed = copy.deepcopy(qid_docno_score)
     for qid, docno_score in qid_docno_score_transformed.items():
@@ -157,8 +169,12 @@ def get_transformed_scores_documents(qid_docno_score, transformation_method='id'
                 pass
             elif transformation_method == 'log' and score > 0:
                 qid_docno_score_transformed[qid][docno] = float(np.log(score))
-            elif transformation_method == 'binned':
-                qid_docno_score_transformed[qid][docno] = float(np.digitize(score, bins))
+            elif transformation_method == 'exp':
+                qid_docno_score_transformed[qid][docno] = float(np.exp(score))
+            elif transformation_method == 'sqrt' and score > 0:
+                qid_docno_score_transformed[qid][docno] = float(np.sqrt(score))
+            # elif transformation_method == 'binned':
+            #     qid_docno_score_transformed[qid][docno] = float(np.digitize(score, bins))
 
     return qid_docno_score_transformed
 
@@ -243,33 +259,44 @@ if __name__ == '__main__':
 
     COMBINATIONS = combinations[start_index:end_index]
 
-    correlation_scores = []
-    for combination in COMBINATIONS:
-        agr_met_passage, tra_met_passage, agr_met_doc, tra_met_doc, eval_met = combination
-        print(f"Job {JOB_ID} processing {agr_met_passage}, {tra_met_passage}, {agr_met_doc}, {tra_met_doc}, {eval_met}")
+    for pairwise_preferences_path in glob(PAIRWISE_PREFERENCES_PATTERN):
+        # Extract the file name
+        file_name = os.path.basename(pairwise_preferences_path)
+        base_name = file_name.split('.')[0]
+        write_path = os.path.join(LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH, base_name)
+        if not os.path.exists(write_path):
+            os.makedirs(write_path)
 
-        # Get the aggregated and transformed scores for passages
-        aggregated_scores_passages = get_aggregated_scores_passages(qid_docno_passage_scores, agr_met_passage)
-        transformed_scores_passages = get_transformed_scores_passages(aggregated_scores_passages, tra_met_passage)
+        print(f"Processing candidates: {file_name}")
+        qid_docno_passage_scores = read_pairwise_preferences(pairwise_preferences_path)
 
-        # Get the aggregated and transformed scores for documents
-        aggregated_scores_documents = get_aggregated_scores_documents(transformed_scores_passages, agr_met_doc)
-        transformed_scores_documents = get_transformed_scores_documents(aggregated_scores_documents, tra_met_doc)
+        correlation_scores = []
+        for combination in COMBINATIONS:
+            agr_met_passage, tra_met_passage, agr_met_doc, tra_met_doc, eval_met = combination
+            print(f"Job {JOB_ID} processing {agr_met_passage}-{tra_met_passage}-{agr_met_doc}-{tra_met_doc}-{eval_met}")
 
-        # Get the correlation scores
-        correlations_per_query = get_evaluated_score(transformed_scores_documents, qrels_cache, eval_met)
-        correlation_scores += [{'aggregation_method_passage': agr_met_passage,
-                                'transformation_method_passage': tra_met_passage,
-                                'aggregation_method_document': agr_met_doc,
-                                'transformation_method_document': tra_met_doc,
-                                'evaluation_method': eval_met,
-                                'correlation_scores': correlations_per_query}]
+            # Get the aggregated and transformed scores for passages
+            aggregated_scores_passages = get_aggregated_scores_passages(qid_docno_passage_scores, agr_met_passage)
+            transformed_scores_passages = get_transformed_scores_passages(aggregated_scores_passages, tra_met_passage)
 
-    # Save the correlation scores to an indexed file
-    rank_correlation_job_path = os.path.join(LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH, f'job_{JOB_ID}.jsonl.gz')
-    with gzip.open(rank_correlation_job_path, 'wt', encoding='UTF-8') as file:
-        for evaluation_entry in correlation_scores:
-            file.write(json.dumps(evaluation_entry) + '\n')
+            # Get the aggregated and transformed scores for documents
+            aggregated_scores_documents = get_aggregated_scores_documents(transformed_scores_passages, agr_met_doc)
+            transformed_scores_documents = get_transformed_scores_documents(aggregated_scores_documents, tra_met_doc)
 
-    end_time = time.time()
-    print(f"Job {JOB_ID} finished rank correlation per query in {(end_time - start_time) / 60} minutes.")
+            # Get the correlation scores
+            correlations_per_query = get_evaluated_score(transformed_scores_documents, qrels_cache, eval_met)
+            correlation_scores += [{'aggregation_method_passage': agr_met_passage,
+                                    'transformation_method_passage': tra_met_passage,
+                                    'aggregation_method_document': agr_met_doc,
+                                    'transformation_method_document': tra_met_doc,
+                                    'evaluation_method': eval_met,
+                                    'correlation_scores': correlations_per_query}]
+
+        # Save the correlation scores to an indexed file
+        rank_correlation_job_path = os.path.join(write_path, f'job_{JOB_ID}.jsonl.gz')
+        with gzip.open(rank_correlation_job_path, 'wt', encoding='UTF-8') as file:
+            for evaluation_entry in correlation_scores:
+                file.write(json.dumps(evaluation_entry) + '\n')
+
+        end_time = time.time()
+        print(f"Job {JOB_ID} finished {file_name} rank correlation per query in {(end_time - start_time) / 60} minutes.")

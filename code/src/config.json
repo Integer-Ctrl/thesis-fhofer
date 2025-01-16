@@ -25,9 +25,9 @@
     "NOTE_1": "dataset which is used to transfer from it to the new dataset",
 
         "TYPE_SOURCE": "document",
-        "DOCUMENT_DATASET_SOURCE_NAME": "disks45/nocr/trec-robust-2004",
-        "DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER": "irds:disks45/nocr/trec-robust-2004",
-        "DOCUMENT_DATASET_SOURCE_NAME_PYTHON_API": "disks45/nocr/trec-robust-2004",
+        "DOCUMENT_DATASET_SOURCE_NAME": "argsme/2020-04-01/touche-2020-task-1",
+        "DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER": "irds:argsme/2020-04-01/touche-2020-task-1",
+        "DOCUMENT_DATASET_SOURCE_NAME_PYTHON_API": "argsme/2020-04-01/touche-2020-task-1",
         "DOCUMENT_DATASET_SOURCE_INDEX_PATH": "document-indices",
 
         "PASSAGE_DATASET_SOURCE_PATH": "passages.jsonl.gz",
@@ -44,23 +44,23 @@
     "NOTE_2": "dataset which is used to transfer into it from the old dataset",
 
         "TYPE_TARGET": "document",
-        "DOCUMENT_DATASET_TARGET_NAME": "disks45/nocr/trec-robust-2004",
-        "DOCUMENT_DATASET_TARGET_NAME_PYTERRIER": "irds:disks45/nocr/trec-robust-2004",
-        "DOCUMENT_DATASET_TARGET_NAME_PYTHON_API": "disks45/nocr/trec-robust-2004",
+        "DOCUMENT_DATASET_TARGET_NAME": "argsme/2020-04-01/touche-2020-task-1",
+        "DOCUMENT_DATASET_TARGET_NAME_PYTERRIER": "irds:argsme/2020-04-01/touche-2020-task-1",
+        "DOCUMENT_DATASET_TARGET_NAME_PYTHON_API": "argsme/2020-04-01/touche-2020-task-1",
         "DOCUMENT_DATASET_TARGET_INDEX_PATH": "document-indices",
 
         "PASSAGE_DATASET_TARGET_PATH": "passages.jsonl.gz",
         "PASSAGE_DATASET_TARGET_INDEX_PATH": "passage-indices",
 
         "LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH": "label-rank-correlation-scores-pq-aq/",
-        "LABEL_CROSS_VALIDATION_PATH": "label-cross-validation.jsonl.gz",
+        "LABEL_CROSS_VALIDATION_PATH": "label-cross-validation",
 
         "CANDIDATES_LOCAL_PATH": "candidates/",
         "CANDIDATE_CHATNOIR_PATH": "candidates-chatnoir/",
 
         "DUOPROMPT_PATH": "duoprompt/",
-        "DUOPROMPT_CACHE_NAME": "duoprompt.jsonl.gz",
+        "DUOPROMPT_CACHE_NAME": "duoprompt.jsonl.cache.gz",
 
         "DUOT5_PATH": "duot5/",
-        "DUOT5_CACHE_NAME": "duot5.jsonl.gz"
+        "DUOT5_CACHE_NAME": "duot5.jsonl.cache.gz"
 }

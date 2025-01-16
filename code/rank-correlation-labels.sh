@@ -29,7 +29,7 @@ python3 -u src/pairwise_preference/evaluation/rank_correlation_pq.py ${SLURM_ARR
 echo "Rank correlation computed."
 
 # Move logs to the folder if it exists
-if [ -d "logs/rank_correlation/${SLURM_ARRAY_JOB_ID}" ]; then
+if [ -d "logs/rank_correlation/labels_${SLURM_ARRAY_JOB_ID}" ]; then
     mv logs/rank_correlation/labels_${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}.out logs/rank_correlation/labels_${SLURM_ARRAY_JOB_ID}
     mv logs/rank_correlation/labels_${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}.err logs/rank_correlation/labels_${SLURM_ARRAY_JOB_ID}
 fi
