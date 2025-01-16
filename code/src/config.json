@@ -16,8 +16,8 @@
         "NUMBER_OF_CROSS_VALIDATION_FOLDS": 5,
 
         "PT_RETRIEVERS": ["BM25", "DFR_BM25", "DFIZ", "DLH", "DPH", "DirichletLM", "Hiemstra_LM", "LGD", "PL2", "TF_IDF"],
-        "AGGREGATION_METHODS": ["mean", "max", "min"],
-        "TRANSFORMATION_METHODS": ["id", "log", "binned"],
+        "AGGREGATION_METHODS": ["mean", "max", "min", "sum"],
+        "TRANSFORMATION_METHODS": ["id", "log", "exp", "sqrt"],
         "EVALUATION_METHODS": ["pearson", "spearman", "kendall", "pearson-greedy", "spearman-greedy", "kendall-greedy"],
         "METRICS": ["p10", "p10_wod", "ndcg10", "ndcg10_wod", "reciprocal_rank_docno"],
 
@@ -25,9 +25,9 @@
     "NOTE_1": "dataset which is used to transfer from it to the new dataset",
 
         "TYPE_SOURCE": "document",
-        "DOCUMENT_DATASET_SOURCE_NAME": "argsme/2020-04-01/touche-2020-task-1",
-        "DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER": "irds:argsme/2020-04-01/touche-2020-task-1",
-        "DOCUMENT_DATASET_SOURCE_NAME_PYTHON_API": "argsme/2020-04-01/touche-2020-task-1",
+        "DOCUMENT_DATASET_SOURCE_NAME": "disks45/nocr/trec-robust-2004",
+        "DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER": "irds:disks45/nocr/trec-robust-2004",
+        "DOCUMENT_DATASET_SOURCE_NAME_PYTHON_API": "disks45/nocr/trec-robust-2004",
         "DOCUMENT_DATASET_SOURCE_INDEX_PATH": "document-indices",
 
         "PASSAGE_DATASET_SOURCE_PATH": "passages.jsonl.gz",
@@ -44,9 +44,9 @@
     "NOTE_2": "dataset which is used to transfer into it from the old dataset",
 
         "TYPE_TARGET": "document",
-        "DOCUMENT_DATASET_TARGET_NAME": "argsme/2020-04-01/touche-2020-task-1",
-        "DOCUMENT_DATASET_TARGET_NAME_PYTERRIER": "irds:argsme/2020-04-01/touche-2020-task-1",
-        "DOCUMENT_DATASET_TARGET_NAME_PYTHON_API": "argsme/2020-04-01/touche-2020-task-1",
+        "DOCUMENT_DATASET_TARGET_NAME": "disks45/nocr/trec-robust-2004",
+        "DOCUMENT_DATASET_TARGET_NAME_PYTERRIER": "irds:disks45/nocr/trec-robust-2004",
+        "DOCUMENT_DATASET_TARGET_NAME_PYTHON_API": "disks45/nocr/trec-robust-2004",
         "DOCUMENT_DATASET_TARGET_INDEX_PATH": "document-indices",
 
         "PASSAGE_DATASET_TARGET_PATH": "passages.jsonl.gz",
