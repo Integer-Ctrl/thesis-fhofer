@@ -53,7 +53,7 @@
         "PASSAGE_DATASET_TARGET_INDEX_PATH": "passage-indices",
 
         "LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH": "rank-correlation-scores-pq-aq/",
-        "LABEL_CROSS_VALIDATION_PATH": "cross-validation.jsonl.gz",
+        "LABEL_CROSS_VALIDATION_PATH": "cross-validation/",
 
         "CANDIDATES_LOCAL_PATH": "candidates/",
         "CANDIDATE_CHATNOIR_PATH": "candidates-chatnoir/",

@@ -33,11 +33,20 @@ echo "Candidate retrieval job submitted with ID: ${job5_id}"
 # Step 6: Run pairwise preference
 job6_id=$(sbatch --dependency=afterok:${job5_id} pairwise-preference.sh | awk '{print $4}')
 
-# Step 7: Run rank correlation (labels) per query
-job7_id=$(sbatch --dependency=afterok:${job6_id} rank-correlation-labels.sh | awk '{print $4}')
+# Step 7: Run rank correlation (duoprompt) per query
+job7_id=$(sbatch --dependency=afterok:${job6_id} rank-correlation-duoprompt.sh | awk '{print $4}')
 
-# Step 8: Run cross-validation-labels
-job8_id=$(sbatch --dependency=afterok:${job7_id} cross-validation-labels.sh | awk '{print $4}')
+# Step 8: Run cross-validation-duoprompt
+job8_id=$(sbatch --dependency=afterok:${job7_id} cross-validation-duoprompt.sh | awk '{print $4}')
+
+# Step 9: Run pointwise preference
+job9_id=$(sbatch --dependency=afterok:${job8_id} pointwise-preference.sh | awk '{print $4}')
+
+# Step 10: Run rank correlation (monoprompt) per query
+job10_id=$(sbatch --dependency=afterok:${job9_id} rank-correlation-monoprompt.sh | awk '{print $4}')
+
+# Step 11: Run cross-validation-monoprompt
+job11_id=$(sbatch --dependency=afterok:${job10_id} cross-validation-monoprompt.sh | awk '{print $4}')
 
 echo "Main job completed at $(date)"
 

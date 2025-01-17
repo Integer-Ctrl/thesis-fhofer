@@ -33,7 +33,7 @@ if CHATNOIR_RETRIEVAL:
     CANDIDATES_PATH = os.path.join(TARGET_PATH, config['CANDIDATE_CHATNOIR_PATH'])
 else:
     CANDIDATES_PATH = os.path.join(TARGET_PATH, config['CANDIDATES_LOCAL_PATH'])
-FILE_PATTERN = os.path.join(CANDIDATES_PATH, "*.jsonl.gz")
+CANDIDATES_FILE_PATTERN = os.path.join(CANDIDATES_PATH, "*.jsonl.gz")
 
 MONOPROMPT_PATH = os.path.join(TARGET_PATH, config['MONOPROMPT_PATH'])
 MONOPROMPT_CACHE = os.path.join(MONOPROMPT_PATH, config['MONOPROMPT_CACHE_NAME'])
@@ -59,7 +59,7 @@ if os.path.exists(MONOPROMPT_CACHE):
             candidates_cache[key] = line['score']
 
 
-def process_candidates(candidates_path, pairwise_preferences_path):
+def process_candidates(candidates_path, pointwise_preferences_path):
 
     # Load the dataset and the MonoPrompt model
     dataset = ir_datasets.load(DOCUMENT_DATASET_TARGET_NAME_PYTHON_API)
@@ -79,8 +79,12 @@ def process_candidates(candidates_path, pairwise_preferences_path):
             candidate = json.loads(line)
             qid = candidate['qid']
 
-            if qid not in candidates_cache:
+            if qid not in grouped_candidates:
                 grouped_candidates[qid] = []
+
+            # filter out multiple preferences (pairwise has 15 relevant and 5 non-relevant)
+            if candidate['passage_to_judge']['docno'] in [x['passage_to_judge']['docno'] for x in grouped_candidates[qid]]:
+                continue
             grouped_candidates[qid].append(candidate)
 
     # Check if candidates are in cache already and if not infer them
@@ -146,34 +150,34 @@ def process_candidates(candidates_path, pairwise_preferences_path):
     print(f"Used cached scores: {used_cached_count}")
     print(f"Infered scores: {infered_count}")
 
-    # Create the pairwise preferences file for the candidates
-    with gzip.open(pairwise_preferences_path, 'wt') as file:
+    # Create the pointwise preferences file for the candidates
+    with gzip.open(pointwise_preferences_path, 'wt') as file:
         # Write all candidates with known relevant passage to the file
         for qid, candidates in grouped_candidates.items():
-            qid, known_passage_id = key.split(KEY_SEPARATOR)
             for candidate in candidates:
 
-                key = get_key([candidate['qid'],
-                               candidate['passage_to_judge']['docno']])
+                passage_to_judge_id = candidate['passage_to_judge']['docno']
+                key = get_key([qid,
+                               passage_to_judge_id])
 
-                file.write(json.dumps({"qid": candidate['qid'],
-                                       "passage_to_judge_id": candidate['passage_to_judge']['docno'],
+                file.write(json.dumps({"qid": qid,
+                                       "passage_to_judge_id": passage_to_judge_id,
                                        "score": candidates_cache[key]}) + '\n')
 
 
 if __name__ == '__main__':
 
-    for candidates_path in glob(FILE_PATTERN):
+    for candidates_path in glob(CANDIDATES_FILE_PATTERN):
 
         # Extract the file name
         file_name = os.path.basename(candidates_path)
-        pairwise_preferences_path = os.path.join(MONOPROMPT_PATH, file_name)
+        pointwise_preferences_path = os.path.join(MONOPROMPT_PATH, file_name)
 
-        if os.path.exists(pairwise_preferences_path):
-            print(f"Already processed {pairwise_preferences_path}")
+        if os.path.exists(pointwise_preferences_path):
+            print(f"Already processed {pointwise_preferences_path}")
             continue
 
         start_time = time.time()
         print(f"Processing {candidates_path}")
-        process_candidates(candidates_path, pairwise_preferences_path)
+        process_candidates(candidates_path, pointwise_preferences_path)
         print(f"Processed {file_name} in {(time.time() - start_time) / 60} minutes")
