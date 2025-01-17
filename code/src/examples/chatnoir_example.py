@@ -14,7 +14,7 @@ def load_config(filename=pwd + "/../config.json"):
 
 # Get the configuration settings
 config = load_config()
-CHATNOIR_INDICES = config['CHATNOIR_INDICES']
+CHATNOIR_TARGET_INDICES = config['CHATNOIR_TARGET_INDICES']
 
 text1 = ' "Well, this is a debate about sexual education, and since that point seemed to be irrelevant to the \
       topic at hand, I didn\'t see much point in commenting."*facepalm*"What are you referring to as \'standard\' \
@@ -50,7 +50,7 @@ text2 = (
     'contraceptives or STD\'s. '
 )
 
-chatnoir = ChatNoirRetrieve(index=CHATNOIR_INDICES,
+chatnoir = ChatNoirRetrieve(index=CHATNOIR_TARGET_INDICES,
                             features=Feature.CONTENTS,
                             num_results=2000,
                             retrieval_system="bm25")

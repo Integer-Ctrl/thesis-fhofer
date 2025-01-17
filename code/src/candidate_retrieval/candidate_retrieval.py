@@ -34,7 +34,7 @@ TYPE_TARGET = config['TYPE_TARGET']  # retrieve documents or passages from targe
 
 # Either retrrieve with local index or with ChatNoir API
 CHATNOIR_RETRIEVAL = config['CHATNOIR_RETRIEVAL']
-CHATNOIR_INDICES = config['CHATNOIR_INDICES']
+CHATNOIR_TARGET_INDICES = config['CHATNOIR_TARGET_INDICES']
 CHATNOIR_API_KEY = config['CHATNOIR_API_KEY']
 
 DOCUMENT_DATASET_TARGET_NAME = config['DOCUMENT_DATASET_TARGET_NAME']
@@ -115,9 +115,11 @@ class PassageChunker:
         known_doc_ids = set()
         chunked_docs_count = 0
 
-        for docid in docs_to_chunk:
-            print(f"Chunking documents: {chunked_docs_count}")
-            doc = self.docstore.get(docid)
+        docs_dict = self.docstore.get_many(docs_to_chunk)
+        print(f"Loaded {len(docs_dict)} documents from {len(docs_to_chunk)} docs to chunk")
+
+        print(f"Chunking documents: {chunked_docs_count}")
+        for docid, doc in docs_dict.items():
             # Skip documents that should not be chunked
             if doc.doc_id not in docs_to_chunk:
                 continue
@@ -139,6 +141,7 @@ class PassageChunker:
             # If the batch reaches the specified batch size, process and save it
             if len(batch) >= BATCH_SIZE:
                 chunked_docs_count += len(batch)
+                print(f"Chunking documents: {chunked_docs_count}")
                 self.chunk_batch(batch)
                 # Reset the batch after saving
                 batch = []
@@ -168,7 +171,7 @@ def naive_retrieval():
     # 1000 documents via the query text and 1000 documents via the query description
     if CHATNOIR_RETRIEVAL:
         chatnoir = ChatNoirRetrieve(api_key=CHATNOIR_API_KEY,
-                                    index=CHATNOIR_INDICES,
+                                    index=CHATNOIR_TARGET_INDICES,
                                     retrieval_system="bm25",
                                     num_results=1000)
     else:
@@ -247,7 +250,7 @@ def nearest_neighbor_retrieval():
     # Retrieve for each relevant passage for its corresponding qid the top 20 docnos
     if CHATNOIR_RETRIEVAL:  # Case if target is ClueWeb22/b
         chatnoir = ChatNoirRetrieve(api_key=CHATNOIR_API_KEY,
-                                    index=CHATNOIR_INDICES,
+                                    index=CHATNOIR_TARGET_INDICES,
                                     retrieval_system="bm25",
                                     num_results=20)
     else:  # Case if target is source dataset

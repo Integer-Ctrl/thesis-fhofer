@@ -32,6 +32,7 @@ class PassageChunker:
 
     def __init__(self, ir_dataset):
         self.dataset = ir_dataset
+        self.docstore = self.dataset.docs_store()
 
     def dynamic_document_segmentation(self, path, docs_to_chunk, batch_size=1000):
         # Initialize the passage chunker
@@ -39,13 +40,18 @@ class PassageChunker:
 
         BATCH_SIZE = batch_size
         batch = []
-        doc_count = 0
         known_doc_ids = set()
+        chunked_docs_count = 0
+
+        docs_dict = self.docstore.get_many(docs_to_chunk)
+        print(f"Loaded {len(docs_dict)} documents from {len(docs_to_chunk)} docs to chunk")
 
         # Open the output file in append mode
         with gzip.open(path, 'wt', encoding='UTF-8') as file:
 
-            for doc in tqdm(self.dataset.docs_iter(), desc='Chunking and saving documents', unit='doc'):
+            print(f"Chunking documents: {chunked_docs_count}")
+            for docid, doc in docs_dict.items():
+
                 # Skip documents that should not be chunked
                 if doc.doc_id not in docs_to_chunk:
                     continue
@@ -67,6 +73,8 @@ class PassageChunker:
                 # If the batch reaches the specified batch size, process and save it
                 if len(batch) >= BATCH_SIZE:
                     # Chunk the batch of documents
+                    chunked_docs_count += len(batch)
+                    print(f"Chunking documents: {chunked_docs_count}")
                     chunked_batch = chunker.process_batch(batch)
 
                     for chunked_doc in chunked_batch:
@@ -79,11 +87,9 @@ class PassageChunker:
                     # Reset the batch after saving
                     batch = []
 
-                    # Keep track of how many documents are processed
-                    doc_count += BATCH_SIZE
-
             # Process and save any remaining documents in the batch
             if batch:
+                chunked_docs_count += len(batch)
                 chunked_batch = chunker.process_batch(batch)
 
                 for chunked_doc in chunked_batch:
@@ -93,9 +99,7 @@ class PassageChunker:
                         file.write(
                             (json.dumps({"docno": passage_id, "text": passage['body']}) + '\n'))
 
-                doc_count += len(batch)
-
-        print(f"Processed and saved {doc_count} documents to {PASSAGE_DATASET_SOURCE_PATH}")
+        print(f"Processed and saved {chunked_docs_count} documents to {PASSAGE_DATASET_SOURCE_PATH}")
 
 
 # Get list of doc ids that should be chunked
@@ -149,4 +153,4 @@ dataset = ir_datasets.load(DOCUMENT_DATASET_SOURCE_NAME_PYTHON_API)
 qid_docids = get_docs_to_chunk(dataset)
 
 chunker = PassageChunker(dataset)
-chunker.dynamic_document_segmentation(PASSAGE_DATASET_SOURCE_PATH, qid_docids, batch_size=2000)
+chunker.dynamic_document_segmentation(PASSAGE_DATASET_SOURCE_PATH, qid_docids, batch_size=200)

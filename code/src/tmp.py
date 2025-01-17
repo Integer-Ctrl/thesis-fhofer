@@ -293,10 +293,4 @@ def check_labels():
                     print(line)
 
 
-# check_labels()
-
-dataset = ir_datasets.load("clueweb12/trec-web-2013")
-for query in dataset.queries_iter():
-    print(query.description if hasattr(query, 'description') else False)
-    print(query.narrative if hasattr(query, 'narrative') else False)
-    break
+test_clueweb_access()
