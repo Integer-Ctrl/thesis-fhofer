@@ -23,6 +23,8 @@ def build_paths(config):
     DATA_PATH = config["DATA_PATH"]
     SOURCE_PATH = os.path.join(DATA_PATH, config["DOCUMENT_DATASET_SOURCE_NAME"])
     TARGET_PATH = os.path.join(SOURCE_PATH, config["DOCUMENT_DATASET_TARGET_NAME"])
+    DUOPROMPT_PATH = os.path.join(TARGET_PATH, config["DUOPROMPT_PATH"])
+    MONOPROMPT_PATH = os.path.join(TARGET_PATH, config["MONOPROMPT_PATH"])
 
     paths = {
         # Dataset used to transfer from
@@ -47,11 +49,14 @@ def build_paths(config):
 
         "CANDIDATES_LOCAL_PATH": os.path.join(TARGET_PATH, config["CANDIDATES_LOCAL_PATH"]),
         "CANDIDATE_CHATNOIR_PATH": os.path.join(TARGET_PATH, config["CANDIDATE_CHATNOIR_PATH"]),
-        "LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH": os.path.join(
-            TARGET_PATH, config["LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH"]),
 
-        "DUOPROMPT_PATH": os.path.join(TARGET_PATH, config["DUOPROMPT_PATH"]),
-        "MONOPROMPT_PATH": os.path.join(TARGET_PATH, config["MONOPROMPT_PATH"]),
+        "DUOPROMPT_PATH": DUOPROMPT_PATH,
+        "MONOPROMPT_PATH": MONOPROMPT_PATH,
+
+        "DUOPROMPT_LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH": os.path.join(
+            DUOPROMPT_PATH, config["LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH"]),
+        "MONOPROMPT_LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH": os.path.join(
+            MONOPROMPT_PATH, config["LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH"]),
     }
     return paths
 
