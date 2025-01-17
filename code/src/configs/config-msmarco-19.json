@@ -7,7 +7,7 @@
         "ALL_QRELS": true,
 
         "CHATNOIR_RETRIEVAL": true,
-        "CHATNOIR_INDICES": "msmarco-document",
+        "CHATNOIR_TARGET_INDICES": "msmarco-document",
 
         "PASSAGE_ID_SEPARATOR": "___",
         "KEY_SEPARATOR": "---",

@@ -7,7 +7,8 @@
         "ALL_QRELS": true,
 
         "CHATNOIR_RETRIEVAL": false,
-        "CHATNOIR_INDICES": "clueweb22/b",
+        "CHATNOIR_SOURCE_INDICES": "",
+        "CHATNOIR_TARGET_INDICES": "clueweb22/b",
 
         "PASSAGE_ID_SEPARATOR": "___",
         "KEY_SEPARATOR": "---",
