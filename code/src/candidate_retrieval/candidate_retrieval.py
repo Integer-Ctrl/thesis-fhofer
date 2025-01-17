@@ -62,8 +62,9 @@ if CHATNOIR_RETRIEVAL:
 else:
     CANDIDATES_PATH = os.path.join(TARGET_PATH, config['CANDIDATES_LOCAL_PATH'])
 
-RECALL_PRECISION_PATH = os.path.join(TARGET_PATH, 'recall_precision.txt')
-CROSS_VALIDATION_SCORES_PATH = os.path.join(SOURCE_PATH, config['CROSS_VALIDATION_SCORES_PATH'])
+RECALL_PRECISION_PATH = os.path.join(CANDIDATES_PATH, 'recall_precision.txt')
+
+PASSAGE_SCORES_CROSS_VALIDATION_SCORES_PATH = os.path.join(SOURCE_PATH, config['CROSS_VALIDATION_SCORES_PATH'])
 
 PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
 KEY_SEPARATOR = config['KEY_SEPARATOR']
@@ -345,7 +346,7 @@ def plot_precision_recall(recalls, precisions, filename=None):
         plt.tight_layout()
 
     # Save plot
-        path = os.path.join(TARGET_PATH, filename)
+        path = os.path.join(CANDIDATES_PATH, filename)
         plt.savefig(path, format='pdf')
         print(f"Plot saved to {filename}")
 
@@ -425,7 +426,7 @@ def compute_recall_precision(qid_docnos_cache, filename=None):
 
 # Get type of metric with highest rank correlation
 best_scoring_metric_retriever = None
-with gzip.open(CROSS_VALIDATION_SCORES_PATH, 'rt', encoding='UTF-8') as file:
+with gzip.open(PASSAGE_SCORES_CROSS_VALIDATION_SCORES_PATH, 'rt', encoding='UTF-8') as file:
     for line in file:  # already decending sorted
         data = json.loads(line)  # return only best scoring method
         best_scoring_metric = data['eval_method___retriever___metric'].split(KEY_SEPARATOR)[-1]
@@ -629,7 +630,7 @@ if __name__ == '__main__':
         docnos_naive, filename='recall_precision_naive.pdf')
 
     rel_rec_near_neigb, rel_prec_near_neigb, jud_rec_near_neigb, jud_prec_near_neigb = compute_recall_precision(
-        docnos_nearest_neighbor, filename='recall_precision_near_neigb.pdf')
+        docnos_nearest_neighbor, filename='recall_precision_nearest_neigbor.pdf')
 
     rel_rec_union, rel_prec_union, jud_rec_union, jud_prec_union = compute_recall_precision(
         docnos_union, filename='recall_precision_union.pdf')

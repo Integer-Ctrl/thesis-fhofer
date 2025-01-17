@@ -17,5 +17,5 @@ echo "Python virtual environment loaded."
 
 # Step 1: Run canidate-retrieval for pairwise candidates
 echo "Running candidate_retrieval.py..."
-python3 -u src/pairwise_preference/candidate_retrieval.py
+python3 -u src/candidate_retrieval/candidate_retrieval.py
 echo "Candidate retrieval completed."
