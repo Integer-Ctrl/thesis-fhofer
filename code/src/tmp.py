@@ -267,7 +267,7 @@ def count_scores_per_qid():
 def test_clueweb_access():
     dataset = ir_datasets.load("clueweb12/trec-web-2013")
     docstore = dataset.docs_store()
-    print(docstore.get('clueweb12-0000tw-05-12114').default_text())
+    print(docstore.get('clueweb12-0006wb-88-26772').default_text())
 
 
 def check_labels():

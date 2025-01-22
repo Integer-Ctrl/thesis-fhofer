@@ -82,8 +82,9 @@ print(f"Correlation scores: {len(correlation_scores_eva_ret_metric)}")
 # 2. get all qids
 qids = []
 dataset = pt.get_dataset(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
-for query in dataset.irds_ref().queries_iter():
-    qids.append(query.query_id)
+for qrel in dataset.irds_ref().qrels_iter():
+    qids.append(qrel.query_id)
+qids = list(set(qids))
 
 # 3. N-fold cross validation for each retrieval method and evaluation method pair
 cross_validation_scores = {}  # key should be evaluation method and retriever

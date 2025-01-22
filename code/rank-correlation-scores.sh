@@ -3,7 +3,7 @@
 #SBATCH --partition=gammaweb                          # Partition name
 #SBATCH --exclude=gammaweb10                          # Exclude gammaweb10 node
 #SBATCH --mem=16G                                     # Memory request (128GB)
-#SBATCH --array=1-11                                  # Array job with 100 tasks
+#SBATCH --array=1-10                                  # Array job with 100 tasks
 #SBATCH --ntasks=1                                    # Number of tasks (1 job/task)
 #SBATCH --nodes=1                                     # Number of nodes
 #SBATCH --cpus-per-task=2                             # Number of CPU cores per task

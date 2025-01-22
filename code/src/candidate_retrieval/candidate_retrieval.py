@@ -172,7 +172,7 @@ def naive_retrieval():
     if CHATNOIR_RETRIEVAL:
         chatnoir = ChatNoirRetrieve(api_key=CHATNOIR_API_KEY,
                                     index=CHATNOIR_TARGET_INDICES,
-                                    retrieval_system="bm25",
+                                    search_method="bm25",
                                     num_results=1000)
     else:
         index_ref = pt.IndexRef.of(DOCUMENT_DATASET_SOURCE_INDEX_PATH + '/data.properties')
@@ -251,7 +251,7 @@ def nearest_neighbor_retrieval():
     if CHATNOIR_RETRIEVAL:  # Case if target is ClueWeb22/b
         chatnoir = ChatNoirRetrieve(api_key=CHATNOIR_API_KEY,
                                     index=CHATNOIR_TARGET_INDICES,
-                                    retrieval_system="bm25",
+                                    search_method="bm25",
                                     num_results=20)
     else:  # Case if target is source dataset
         index_ref = pt.IndexRef.of(DOCUMENT_DATASET_SOURCE_INDEX_PATH + '/data.properties')

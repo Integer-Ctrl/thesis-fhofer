@@ -89,8 +89,9 @@ def run_cross_validation(candidate_path):
     # 2. get all qids
     qids = []
     dataset = pt.get_dataset(DOCUMENT_DATASET_TARGET_NAME_PYTERRIER)
-    for query in dataset.irds_ref().queries_iter():
-        qids.append(query.query_id)
+    for qrel in dataset.irds_ref().qrels_iter():
+        qids.append(qrel.query_id)
+    qids = list(set(qids))
 
     # 3. N-fold cross validation for each retrieval method and evaluation method pair
     cross_validation_scores = {}  # key should be evaluation
