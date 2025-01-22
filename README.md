@@ -39,7 +39,7 @@ If you want to use chatnoir for the target dataset pleases provide following con
 
 **ChatNoir** (optional)
 - CHATNOIR_RETRIEVAL
-- CHATNOIR_INDICES
+- CHATNOIR_TARGET_INDICES
 - CHATNOIR_API_KEY
 
 ### Dataset Segmentation (serial)

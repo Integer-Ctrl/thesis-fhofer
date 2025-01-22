@@ -34,7 +34,7 @@ TYPE_TARGET = config['TYPE_TARGET']  # retrieve documents or passages from targe
 
 # Either retrrieve with local index or with ChatNoir API
 CHATNOIR_RETRIEVAL = config['CHATNOIR_RETRIEVAL']
-CHATNOIR_INDICES = config['CHATNOIR_INDICES']
+CHATNOIR_TARGET_INDICES = config['CHATNOIR_TARGET_INDICES']
 CHATNOIR_API_KEY = config['CHATNOIR_API_KEY']
 
 DOCUMENT_DATASET_TARGET_NAME = config['DOCUMENT_DATASET_TARGET_NAME']
@@ -62,8 +62,9 @@ if CHATNOIR_RETRIEVAL:
 else:
     CANDIDATES_PATH = os.path.join(TARGET_PATH, config['CANDIDATES_LOCAL_PATH'])
 
-RECALL_PRECISION_PATH = os.path.join(TARGET_PATH, 'recall_precision.txt')
-CROSS_VALIDATION_SCORES_PATH = os.path.join(SOURCE_PATH, config['CROSS_VALIDATION_SCORES_PATH'])
+RECALL_PRECISION_PATH = os.path.join(CANDIDATES_PATH, 'recall_precision.txt')
+
+PASSAGE_SCORES_CROSS_VALIDATION_SCORES_PATH = os.path.join(SOURCE_PATH, config['CROSS_VALIDATION_SCORES_PATH'])
 
 PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
 KEY_SEPARATOR = config['KEY_SEPARATOR']
@@ -112,9 +113,13 @@ class PassageChunker:
         BATCH_SIZE = batch_size
         batch = []
         known_doc_ids = set()
+        chunked_docs_count = 0
 
-        for docid in tqdm(docs_to_chunk, desc='Chunking', unit='doc'):
-            doc = self.docstore.get(docid)
+        docs_dict = self.docstore.get_many(docs_to_chunk)
+        print(f"Loaded {len(docs_dict)} documents from {len(docs_to_chunk)} docs to chunk")
+
+        print(f"Chunking documents: {chunked_docs_count}")
+        for docid, doc in docs_dict.items():
             # Skip documents that should not be chunked
             if doc.doc_id not in docs_to_chunk:
                 continue
@@ -135,13 +140,18 @@ class PassageChunker:
 
             # If the batch reaches the specified batch size, process and save it
             if len(batch) >= BATCH_SIZE:
+                chunked_docs_count += len(batch)
+                print(f"Chunking documents: {chunked_docs_count}")
                 self.chunk_batch(batch)
                 # Reset the batch after saving
                 batch = []
 
         # Process and save any remaining documents in the batch
         if batch:
+            chunked_docs_count += len(batch)
             self.chunk_batch(batch)
+
+        print(f"Chunked {chunked_docs_count} documents")
 
 
 ######################
@@ -161,8 +171,8 @@ def naive_retrieval():
     # 1000 documents via the query text and 1000 documents via the query description
     if CHATNOIR_RETRIEVAL:
         chatnoir = ChatNoirRetrieve(api_key=CHATNOIR_API_KEY,
-                                    index=CHATNOIR_INDICES,
-                                    retrieval_system="bm25",
+                                    index=CHATNOIR_TARGET_INDICES,
+                                    search_method="bm25",
                                     num_results=1000)
     else:
         index_ref = pt.IndexRef.of(DOCUMENT_DATASET_SOURCE_INDEX_PATH + '/data.properties')
@@ -240,8 +250,8 @@ def nearest_neighbor_retrieval():
     # Retrieve for each relevant passage for its corresponding qid the top 20 docnos
     if CHATNOIR_RETRIEVAL:  # Case if target is ClueWeb22/b
         chatnoir = ChatNoirRetrieve(api_key=CHATNOIR_API_KEY,
-                                    index=CHATNOIR_INDICES,
-                                    retrieval_system="bm25",
+                                    index=CHATNOIR_TARGET_INDICES,
+                                    search_method="bm25",
                                     num_results=20)
     else:  # Case if target is source dataset
         index_ref = pt.IndexRef.of(DOCUMENT_DATASET_SOURCE_INDEX_PATH + '/data.properties')
@@ -339,7 +349,8 @@ def plot_precision_recall(recalls, precisions, filename=None):
         plt.tight_layout()
 
     # Save plot
-        plt.savefig(filename, format='pdf')
+        path = os.path.join(CANDIDATES_PATH, filename)
+        plt.savefig(path, format='pdf')
         print(f"Plot saved to {filename}")
 
 
@@ -347,14 +358,23 @@ def plot_precision_recall(recalls, precisions, filename=None):
 # Only for old dataset
 def compute_recall_precision(qid_docnos_cache, filename=None):
 
+    num_retrieved_documents_per_query = {}
     # 1. Number of relevant documents per query
     num_all_relevant_documents_per_query = {}
-    num_retrieved_documents_per_query = {}
     num_retrieved_relevant_documents_per_query = {}
+    # 2. Number of judged documents per query
+    num_all_judged_documents_per_query = {}
+    num_retrieved_judged_documents_per_query = {}
 
     dataset = pt.get_dataset(DOCUMENT_DATASET_TARGET_NAME_PYTERRIER)
     qrels = dataset.get_qrels(variant='relevance')
     for index, row in qrels.iterrows():
+        # Count the number of judged documents per query
+        if row['qid'] not in num_all_judged_documents_per_query:
+            num_all_judged_documents_per_query[row['qid']] = 0
+        num_all_judged_documents_per_query[row['qid']] += 1
+
+        # Count the number of relevant documents per query
         if row['label'] > 0:
             if row['qid'] not in num_all_relevant_documents_per_query:
                 num_all_relevant_documents_per_query[row['qid']] = 0
@@ -363,26 +383,44 @@ def compute_recall_precision(qid_docnos_cache, filename=None):
     for qid, docnos in qid_docnos_cache.items():
         num_retrieved_documents_per_query[qid] = len(docnos)
         num_retrieved_relevant_documents_per_query[qid] = 0
+        num_retrieved_judged_documents_per_query[qid] = 0
 
         for docno in docnos:
+            # Count the number of judged documents per query
+            if docno in qrels[qrels['qid'] == qid]['docno'].values:
+                num_retrieved_judged_documents_per_query[qid] += 1
+
+            # Count the number of relevant documents per query
             if docno in qrels[(qrels['qid'] == qid) & (qrels['label'] > 0)]['docno'].values:
                 num_retrieved_relevant_documents_per_query[qid] += 1
 
-    # 2. Compute recall and precision for each query
-    recalls = {qid: num_retrieved_relevant_documents_per_query[qid] / num_all_relevant_documents_per_query[qid]
-               for qid in num_all_relevant_documents_per_query.keys()}
-    precisions = {qid: num_retrieved_relevant_documents_per_query[qid] / num_retrieved_documents_per_query[qid]
-                  for qid in num_all_relevant_documents_per_query.keys()}
+    # 3. RELEVANCE: Compute recall and precision for each query
+    relevant_recalls = {qid: num_retrieved_relevant_documents_per_query[qid] / num_all_relevant_documents_per_query[qid]
+                        for qid in num_all_relevant_documents_per_query.keys()}
+    relevant_precisions = {qid: num_retrieved_relevant_documents_per_query[qid] / num_retrieved_documents_per_query[qid]
+                           for qid in num_all_relevant_documents_per_query.keys()}
+
+    # 4. JUDGEMENT: Compute recall and precision for each query
+    judged_recalls = {qid: num_retrieved_judged_documents_per_query[qid] / num_all_judged_documents_per_query[qid]
+                      for qid in num_all_judged_documents_per_query.keys()}
+    judged_precisions = {qid: num_retrieved_judged_documents_per_query[qid] / num_retrieved_documents_per_query[qid]
+                         for qid in num_all_judged_documents_per_query.keys()}
 
     # 3. Plot the precision and recall for each query and save the plot as a PDF
     if filename:
-        plot_precision_recall(recalls, precisions, filename=filename)
+        relevant_filename = filename.replace('.pdf', '_relevant.pdf')
+        judged_filename = filename.replace('.pdf', '_judged.pdf')
+        plot_precision_recall(relevant_recalls, relevant_precisions, filename=relevant_filename)
+        plot_precision_recall(judged_recalls, judged_precisions, filename=judged_filename)
 
     # 4. Compute average recall and precision
-    recall = sum(recalls.values()) / len(recalls)
-    precision = sum(precisions.values()) / len(precisions)
+    relevant_recall = sum(relevant_recalls.values()) / len(relevant_recalls)
+    relevant_precision = sum(relevant_precisions.values()) / len(relevant_precisions)
 
-    return recall, precision
+    judged_recall = sum(judged_recalls.values()) / len(judged_recalls)
+    judged_precision = sum(judged_precisions.values()) / len(judged_precisions)
+
+    return relevant_recall, relevant_precision, judged_recall, judged_precision
 
 
 ###################################################
@@ -391,7 +429,7 @@ def compute_recall_precision(qid_docnos_cache, filename=None):
 
 # Get type of metric with highest rank correlation
 best_scoring_metric_retriever = None
-with gzip.open(CROSS_VALIDATION_SCORES_PATH, 'rt', encoding='UTF-8') as file:
+with gzip.open(PASSAGE_SCORES_CROSS_VALIDATION_SCORES_PATH, 'rt', encoding='UTF-8') as file:
     for line in file:  # already decending sorted
         data = json.loads(line)  # return only best scoring method
         best_scoring_metric = data['eval_method___retriever___metric'].split(KEY_SEPARATOR)[-1]
@@ -462,7 +500,7 @@ for qid, passageno_scores in passages_score_cache.items():
 # WRITE RESULTS TO FILE #
 #########################
 
-def write_candidates(candidates_file, candidates, recall, precision):
+def write_candidates(candidates_file, candidates, relevant_recall, relevant_precision, judged_recall, judged_precision):
     dataset = pt.get_dataset(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
     candidates_file_opd = candidates_file.replace('.jsonl.gz', '_opd.jsonl.gz')
     # opd: add 15 known relevant and 5 known non-relevant passages for each query
@@ -564,8 +602,10 @@ def write_candidates(candidates_file, candidates, recall, precision):
     with open(RECALL_PRECISION_PATH, 'a') as recall_precision_file:
         recall_precision_file.write(json.dumps({
             "approach_name": candidates_file.split('/')[-1].split('.')[0],
-            "recall": recall,
-            "precision": precision
+            "relevant_recall": relevant_recall,
+            "relevant_precision": relevant_precision,
+            "judged_recall": judged_recall,
+            "judged_precision": judged_precision
         }) + '\n')
 
 
@@ -589,14 +629,21 @@ if __name__ == '__main__':
     print(f'Nearest Neighbor: {sum([len(docnos) for docnos in docnos_nearest_neighbor.values()])} documents (docnos)')
     print(f'Union: {sum([len(docnos) for docnos in docnos_union.values()])} documents (docnos)')
 
-    recall_naive, precision_naive = compute_recall_precision(docnos_naive, filename='recall_precision_naive.pdf')
-    recall_nearest_neighbor, precision_nearest_neighbor = compute_recall_precision(
-        docnos_nearest_neighbor, filename='recall_precision_nearest_neighbor.pdf')
-    recall_union, precision_union = compute_recall_precision(docnos_union, filename='recall_precision_union.pdf')
+    rel_rec_naive, rel_prec_naive, jud_rec_naive, jud_prec_naive = compute_recall_precision(
+        docnos_naive, filename='recall_precision_naive.pdf')
 
-    print(f'Naive: Recall={recall_naive}, Precision={precision_naive}')
-    print(f'Nearest Neighbor: Recall={recall_nearest_neighbor}, Precision={precision_nearest_neighbor}')
-    print(f'Union: Recall={recall_union}, Precision={precision_union}')
+    rel_rec_near_neigb, rel_prec_near_neigb, jud_rec_near_neigb, jud_prec_near_neigb = compute_recall_precision(
+        docnos_nearest_neighbor, filename='recall_precision_nearest_neigbor.pdf')
+
+    rel_rec_union, rel_prec_union, jud_rec_union, jud_prec_union = compute_recall_precision(
+        docnos_union, filename='recall_precision_union.pdf')
+
+    print(f'Naive: Relevant Recall={rel_rec_naive}, Relevant Precision={rel_prec_naive}')
+    print(f'Naive: Judged Recall={jud_rec_naive}, Judged Precision={jud_prec_naive}')
+    print(f'Nearest Neighbor: Relevant Recall={rel_rec_near_neigb}, Relevant Precision={rel_prec_near_neigb}')
+    print(f'Nearest Neighbor: Judged Recall={jud_rec_near_neigb}, Judged Precision={jud_prec_near_neigb}')
+    print(f'Union: Relevant Recall={rel_rec_union}, Relevant Precision={rel_prec_union}')
+    print(f'Union: Judged Recall={jud_rec_union}, Judged Precision={jud_prec_union}')
 
     # Write results to file
     naive_file_name = os.path.join(CANDIDATES_PATH, 'naive.jsonl.gz')
@@ -604,10 +651,13 @@ if __name__ == '__main__':
     union_file_name = os.path.join(CANDIDATES_PATH, 'union.jsonl.gz')
 
     write_candidates(naive_file_name, docnos_naive,
-                     recall_naive, precision_naive)
+                     rel_rec_naive, rel_prec_naive,
+                     jud_rec_naive, jud_prec_naive)
 
     write_candidates(nearest_neighbor_file_name, docnos_nearest_neighbor,
-                     recall_nearest_neighbor, precision_nearest_neighbor)
+                     rel_rec_near_neigb, rel_prec_near_neigb,
+                     jud_rec_near_neigb, jud_prec_near_neigb)
 
     write_candidates(union_file_name, docnos_union,
-                     recall_union, precision_union)
+                     rel_rec_union, rel_prec_union,
+                     jud_rec_union, jud_prec_union)

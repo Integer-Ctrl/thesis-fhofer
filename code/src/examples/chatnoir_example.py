@@ -14,7 +14,8 @@ def load_config(filename=pwd + "/../config.json"):
 
 # Get the configuration settings
 config = load_config()
-CHATNOIR_INDICES = config['CHATNOIR_INDICES']
+CHATNOIR_TARGET_INDICES = config['CHATNOIR_TARGET_INDICES']
+CHATNOIR_API_KEY = config['CHATNOIR_API_KEY']
 
 text1 = ' "Well, this is a debate about sexual education, and since that point seemed to be irrelevant to the \
       topic at hand, I didn\'t see much point in commenting."*facepalm*"What are you referring to as \'standard\' \
@@ -50,12 +51,14 @@ text2 = (
     'contraceptives or STD\'s. '
 )
 
-chatnoir = ChatNoirRetrieve(index=CHATNOIR_INDICES,
-                            features=Feature.CONTENTS,
+chatnoir = ChatNoirRetrieve(index='clueweb12',
+                            api_key=CHATNOIR_API_KEY,
                             num_results=2000,
-                            retrieval_system="bm25")
-# results = chatnoir.search('What about us').loc[:, ['qid', 'docno']].head(20)
-# print(results)
+                            search_method="bm25")
+results = chatnoir.search('What about us').loc[
+            :, ['qid', 'docno', 'rank', 'score']].rename(
+            columns={'qid': 'query', 'docno': 'docid', 'score': 'score'}).head(11)
+print(results)
 
 documentID = '9QQJQYBpWz-l-1PbkkEXjA'
 warcID = 'b8117996-4581-43eb-b33a-348c5aa48a0a'

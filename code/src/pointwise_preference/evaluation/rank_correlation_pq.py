@@ -32,10 +32,10 @@ DOCUMENT_DATASET_TARGET_NAME = config['DOCUMENT_DATASET_TARGET_NAME']
 DOCUMENT_DATASET_TARGET_NAME_PYTERRIER = config['DOCUMENT_DATASET_TARGET_NAME_PYTERRIER']
 DOCUMENT_DATASET_TARGET_NAME_PYTHON_API = config['DOCUMENT_DATASET_TARGET_NAME_PYTHON_API']
 
-PAIRWISE_PREFERENCES_PATTERN = os.path.join(TARGET_PATH, config['DUOPROMPT_PATH'], '*.jsonl.gz')  # glob pattern
-# to compute on duoprompt pairwise preferences (not on monoprompt)
+PAIRWISE_PREFERENCES_PATTERN = os.path.join(TARGET_PATH, config['MONOPROMPT_PATH'], '*.jsonl.gz')  # glob pattern
+# to compute on monoprompt pairwise preferences (not on duoprompt)
 LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH = os.path.join(
-    TARGET_PATH, config['DUOPROMPT_PATH'], config['LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH'])
+    TARGET_PATH, config['MONOPROMPT_PATH'], config['LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH'])
 
 PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
 AGGREGATION_METHODS = config['AGGREGATION_METHODS']
@@ -81,13 +81,7 @@ def read_pairwise_preferences(path):
                 qid_docno_passage_scores[qid][docno][passageno] = []
 
             # Known relevant passage vs. known non relevant passage
-            if line['known_relevant_passage_id']:
-                qid_docno_passage_scores[qid][docno][passageno] += [line['score']]
-            elif line['known_non_relevant_passage_id']:
-                qid_docno_passage_scores[qid][docno][passageno] += [line['score']]
-            else:
-                print(f"Unknown passage type: {line}")
-                exit()
+            qid_docno_passage_scores[qid][docno][passageno] += [line['score']]
 
     return qid_docno_passage_scores
 

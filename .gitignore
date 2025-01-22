@@ -9,6 +9,9 @@ launch.json
 .vscode/
 *err
 
+## Chatnoir API key
+code/src/config.json
+
 ## Core latex/pdflatex auxiliary files:
 *.aux
 *.lof
