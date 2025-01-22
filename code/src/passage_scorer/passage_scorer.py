@@ -6,6 +6,8 @@ import gzip
 from trectools import TrecQrel, TrecRun, TrecEval
 import sys
 import time
+from chatnoir_pyterrier import ChatNoirRetrieve
+from requests.exceptions import ReadTimeout
 
 
 # Load the configuration settings
@@ -36,6 +38,11 @@ PASSAGE_DATASET_SOURCE_SCORE_AQ_PATH = os.path.join(SOURCE_PATH, config['PASSAGE
 PASSAGE_DATASET_SOURCE_SCORE_REL_PATH = os.path.join(SOURCE_PATH, config['PASSAGE_DATASET_SOURCE_SCORE_REL_PATH'])
 
 PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
+
+CHATNOIR_RETRIEVAL = config['CHATNOIR_RETRIEVAL']
+CHATNOIR_SOURCE_INDICES = config['CHATNOIR_SOURCE_INDICES']
+CHATNOIR_API_KEY = config['CHATNOIR_API_KEY']
+
 
 # Script should only compute passage scores for none existing qids
 if len(sys.argv) < 3:
@@ -80,9 +87,6 @@ def pt_tokenize(text):
     return ' '.join(tokeniser.getTokens(text))
 
 
-index_ref = pt.IndexRef.of(DOCUMENT_DATASET_SOURCE_INDEX_PATH + '/data.properties')
-dataset_index = pt.IndexFactory.of(index_ref)
-
 # Read passages and cache them
 passages_cache = {}
 with gzip.open(PASSAGE_DATASET_SOURCE_PATH, 'rt', encoding='UTF-8') as file:
@@ -93,10 +97,23 @@ with gzip.open(PASSAGE_DATASET_SOURCE_PATH, 'rt', encoding='UTF-8') as file:
             passages_cache[docno] = []
         passages_cache[docno] += [line]
 
-# retrieval models
-retrievers = {}
-for retriever in PT_RETRIEVERS:
-    retrievers[retriever] = pt.terrier.Retriever(dataset_index, wmodel=retriever)
+if CHATNOIR_RETRIEVAL:
+    PT_RETRIEVERS = ['BM25_chatnoir']
+    retrievers = {}
+    for retriever in PT_RETRIEVERS:
+        retrievers[retriever] = ChatNoirRetrieve(api_key=CHATNOIR_API_KEY,
+                                                 features=[],
+                                                 index=CHATNOIR_SOURCE_INDICES,
+                                                 search_method="bm25",
+                                                 num_results=100)
+else:
+    index_ref = pt.IndexRef.of(DOCUMENT_DATASET_SOURCE_INDEX_PATH + '/data.properties')
+    dataset_index = pt.IndexFactory.of(index_ref)
+
+    # retrieval models
+    retrievers = {}
+    for retriever in PT_RETRIEVERS:
+        retrievers[retriever] = pt.terrier.Retriever(dataset_index, wmodel=retriever)
 
 
 # Get reciprocal rank of the original document in a run
@@ -113,9 +130,26 @@ def get_infered_run(retriever, passage_text, system_name, docno):
     run_wod = TrecRun()
 
     # Retrieve the top 11 entries
-    run.run_data = retriever.search(pt_tokenize(passage_text)).loc[
-        :, ['qid', 'docno', 'rank', 'score']].rename(
-        columns={'qid': 'query', 'docno': 'docid', 'score': 'score'}).head(11)
+    if CHATNOIR_RETRIEVAL:
+        try:
+            run.run_data = retriever.search(passage_text).loc[
+                :, ['qid', 'docno', 'rank', 'score']].rename(
+                columns={'qid': 'query', 'docno': 'docid', 'score': 'score'}).head(11)
+        except ReadTimeout as e:
+            print(f"{e} for passage of {docno}: \n {passage_text}")
+            return None, None, None
+
+        except RuntimeError as e:
+            print(f"{e} for passage of {docno}: \n {passage_text}")
+            return None, None, None
+        except Exception as e:
+            print(f"Unknown error {e} for passage of {docno}: \n {passage_text}")
+            return
+
+    else:
+        run.run_data = retriever.search(pt_tokenize(passage_text)).loc[
+            :, ['qid', 'docno', 'rank', 'score']].rename(
+            columns={'qid': 'query', 'docno': 'docid', 'score': 'score'}).head(11)
 
     run.run_data['query'] = 0  # Dummy value to enable merge of run and qrels (TrecEval)
     run.run_data['q0'] = 'Q0'  # Dummy value to get ndcg score (TrecEval)
@@ -190,17 +224,26 @@ def process_qid(qid, docs_to_score):
                     ndcg10 = {}
 
                     for retriever in PT_RETRIEVERS:
+                        if runs[retriever] is None:
+                            continue
                         p10[retriever], ndcg10[retriever] = evaluate_run(runs[retriever], qrels_for_query)
                         p10[retriever + '_wod'], ndcg10[retriever + '_wod'] = evaluate_run(runs_wod[retriever],
                                                                                            qrels_for_query_wod)
 
                     scores = {'qid': qid, 'docno': passage['docno'], 'label': label}
                     for retriever in PT_RETRIEVERS:
-                        scores['p10_' + retriever] = p10[retriever]
-                        scores['p10_wod_' + retriever] = p10[retriever + '_wod']
-                        scores['ndcg10_' + retriever] = ndcg10[retriever]
-                        scores['ndcg10_wod_' + retriever] = ndcg10[retriever + '_wod']
-                        scores['reciprocal_rank_docno_' + retriever] = reciprocal_ranks[retriever]
+                        if runs[retriever] is None:
+                            scores['p10_' + retriever] = 0
+                            scores['p10_wod_' + retriever] = 0
+                            scores['ndcg10_' + retriever] = 0
+                            scores['ndcg10_wod_' + retriever] = 0
+                            scores['reciprocal_rank_docno_' + retriever] = 0
+                        else:
+                            scores['p10_' + retriever] = p10[retriever]
+                            scores['p10_wod_' + retriever] = p10[retriever + '_wod']
+                            scores['ndcg10_' + retriever] = ndcg10[retriever]
+                            scores['ndcg10_wod_' + retriever] = ndcg10[retriever + '_wod']
+                            scores['reciprocal_rank_docno_' + retriever] = reciprocal_ranks[retriever]
 
                     results.append(scores)
 
