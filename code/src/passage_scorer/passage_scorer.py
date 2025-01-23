@@ -10,11 +10,7 @@ from chatnoir_pyterrier import ChatNoirRetrieve
 from requests.exceptions import ReadTimeout
 
 
-# Load the configuration settings
-pwd = os.path.dirname(os.path.abspath(__file__))
-
-
-def load_config(filename=pwd + "/../config.json"):
+def load_config(filename="/mnt/ceph/storage/data-tmp/current/ho62zoq/thesis-fhofer/code/src/config.json"):
     with open(filename, "r") as f:
         config = json.load(f)
     return config

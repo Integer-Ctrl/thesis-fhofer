@@ -57,6 +57,11 @@ If you are using slurm you can just submit `sbatch code/src/passage-chunker.sh` 
    ```
 
 ### Passage Scoring (parallel)
+
+## Ray
+Run in `code/src/passage_scorer`
+- `ray job submit --working-dir . --runtime-env env.yml --no-wait -- python ray_passage_scorer.py`
+
 To assign scores to the segmented passages run `code/src/passage_scorer/passage_scorer.py JOB_ID NUM_JOBS`
 If you are using slurm you can just submit `sbatch code/src/passage-scorer.sh` to your job manager.
 - **WARNING**: Configure the loading of the _venv_ before submitting `passage-scorer.sh`:
