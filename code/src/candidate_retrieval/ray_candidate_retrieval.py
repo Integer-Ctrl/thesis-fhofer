@@ -600,6 +600,8 @@ def ray_wrapper():
     with open(RECALL_PRECISION_PATH, 'w') as recall_precision_file:
         recall_precision_file.write('')
 
+    chunker = PassageChunker()
+
     # Recall and Precision for each approach
     docnos_naive = naive_retrieval()
     docnos_nearest_neighbor = nearest_neighbor_retrieval()
@@ -607,7 +609,6 @@ def ray_wrapper():
 
     target_qid_docids = [docid for docids in docnos_union.values() for docid in docids]
 
-    chunker = PassageChunker()
     chunker.chunk_target_documents(target_qid_docids, batch_size=2000)
 
     # Print the number of documents (docnos) for each approach
