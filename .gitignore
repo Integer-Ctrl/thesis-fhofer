@@ -8,6 +8,7 @@ data/
 launch.json
 .vscode/
 *err
+*.bkp
 
 ## Chatnoir API key
 code/src/config.json

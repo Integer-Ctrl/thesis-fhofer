@@ -1,96 +1,14 @@
 \chapter{Evaluation}\label{evaluation}
 
-This chapter will evaluate the methods used for document segmentation and relevance assignment.
+This chapter focuses on the evaluation of the transfer pipeline. First, the evaluation methods used are introduced. Rank correlation is employed to compare the original relevance assessments with the relevance scores inferred during the pipeline process. Next, the individual steps of the pipeline are analyzed and evaluated to examine intermediate results and identify potential weaknesses. At the end, the final phase of the transfer pipeline is assessed by evaluating the original relevance assessments of the retrieval tasks with the inferred relevance scores produced by the pipeline.
 
-\section{Inter-annotator Agreement}\label{inter-annotator-agreement}
-
-In order to guarantee the validity of the inferred relevance assignments and the suitability of the dataset for training purposes, it is essential to evaluate the accuracy of the assigned labels, particularly in the context of natural language processing applications. This evaluation is typically performed by calculating the Inter-Annotator Agreement (IAA) between the annotators who labelled the dataset.
-
-The Inter-Annotator Agreement is a statistical measure that quantifies the consistency between the annotations provided by multiple annotators in a collaborative annotation project. It quantifies the level of agreement or disagreement between annotators when labelling the same dataset, thereby providing insight into the objectivity and quality of the annotations. A high IAA indicates the presence of reliable and transparent annotation guidelines, whereas a low IAA may be indicative of task ambiguity or inconsistencies in annotator interpretation.
-
-There are a variety of methods for calculating IAA, each with its strengths and weaknesses. In this thesis, I will utilise the Cohen's Kappa coefficient, which is a statistical measure that can be used to assess the degree of agreement between annotators when categorising data. In this research, each document query pair will be assigned a relevance score of 0, 1, or 2. A score of 0 indicates that the document is not relevant to the query, a score of 1 indicates that the document is somewhat relevant, and a score of 2 indicates that the document is highly relevant.
-
-\begin{itemize}
-    \item Score of 0, 1 or 2 correct?
-    \item Formular
-    \item IAA sources
-    \begin{itemize}
-        \item \href{https://medium.com/@prasanNH/inter-annotator-agreement-in-natural-language-processing-f65685a22816}{Medium}
-        \item \href{https://publications.goettingen-research-online.de/bitstream/2/111141/1/DWP44_Konle-IAA-Metriken.pdf}{Messverfahren zum Inter-annotator-agreement (IAA)}
-        \item \href{https://fortext.net/ueber-fortext/glossar/inter-annotator-agreement-iaa}{fortext}
-    \end{itemize}
-    \item cohen kappa sources
-    \begin{itemize}
-        \item \href{https://scikit-learn.org/dev/modules/generated/sklearn.metrics.cohen_kappa_score.html}{scikit-learn}
-        \item \href{https://surge-ai.medium.com/inter-annotator-agreement-an-introduction-to-cohens-kappa-statistic-dcc15ffa5ac4}{Medium}
-    \end{itemize}
-\end{itemize}
-
-\section{Rank Correlation Passage Scores}\label{rank-correlation-passage-scores}
-
-The relevance scores of the passages were then used to assign relevance labels to the passages. To do this, I used to open source tool \href{https://github.com/seanmacavaney/autoqrels}{autoqrels}. The tool can be used to automatically assign relevance labels to passages based on the relevance scores of the passages.
-
-\begin{itemize}
-    \item Why was this step done?
-    \item How were the relevance labels assigned?
-    \item Usage of \href{https://github.com/seanmacavaney/autoqrels}{autoqrels}
-    \item What is a relevance label?
-\end{itemize}
-
+% ================
+% Rank Correlation
+% ================
 \section{Rank Correlation}\label{rank-correlation}
 
-To assess the relationship between the relevance labels and the calculated scores, a correlation analysis was conducted. Relevance labels represent an ordinal scale with values of 0, 1, and 2, denoting increasing levels of relevance, while calculated scores range from -1 to 1, representing the model's prediction for each document's relevance with respect to the query. Given the distinct nature of these data types, it was necessary to select a correlation measure that could accommodate both ordinal and continuous data without assuming a linear relationship.
-
-\subsection{Spearman's Rank Correlation Coefficient}\label{spearmans-rank-correlation-coefficient}
-
-Among the common correlation measures—Pearson's, Spearman's, and Kendall's—the Spearman's rank correlation coefficient was selected as the most appropriate measure for this analysis. Spearman's correlation is particularly suited to this context for several reasons:
-
-\begin{enumerate}
-    \item Ordinal Nature of Relevance Labels: The relevance labels are ordinal, meaning they indicate an ordered relationship (0 < 1 < 2), but the intervals between values may not represent equal differences in relevance. Spearman's correlation is designed for ranked or ordinal data, making it ideal for assessing relationships where the exact distance between values is less meaningful than the order.
-    \item Monotonic Relationship Requirement: Spearman's correlation assesses whether there is a monotonic relationship between two variables rather than a strict linear relationship. This is important given that the relevance labels and calculated scores may not vary linearly but are expected to follow a general trend (e.g., higher relevance labels should be associated with higher calculated scores).
-    \item Robustness to Outliers and Non-Normality: Unlike Pearson's correlation, Spearman's correlation does not assume normally distributed data or homoscedasticity, which is suitable given the categorical nature of relevance labels and potential non-normal distribution of the calculated scores.
-\end{enumerate}
-
-\begin{itemize}
-    \item +1: perfect monotonic agreement between rankings
-    \item above \~ 0.6: strong monotonic relationship
-    \item 0: no monotonic relationship
-    \item -1: perfect monotonic decrease
-\end{itemize}
-
-\subsection{Kendall's Tau Rank Correlation Coefficient}\label{kendalls-tau-rank-correlation-coefficient}
-
-Kendall's Tau measures the ordinal association between two variables by comparing the number of concordant and discordant pairs of data. It's especially useful for small datasets and ordinal data, offering a more nuanced view of monotonic relationships. The Kendall coefficient ranges from -1 to +1, with higher absolute values indicating stronger associations.
-
-\begin{itemize}
-    \item +1: perfect agreement between rankings
-    \item above \~ 0.5: strong positive association
-    \item 0: no association between rankings
-    \item -1: perfect disagreement between rankings
-\end{itemize}
-
-\subsection{Pearson's Correlation Coefficient}\label{pearsons-correlation-coefficient}
-
-Pearson's Correlation measures the linear relationship between two continuous variables. It assumes that the data is normally distributed and is sensitive to outliers. The result, called the Pearson correlation coefficient (r), ranges from -1 (perfect negative correlation) to +1 (perfect positive correlation), with 0 indicating no linear correlation.
-
-\begin{itemize}
-    \item +1: perfect positive linear relationship
-    \item above \~ 0.7: strong positive linear relationship
-    \item 0: no linear relationship
-    \item -1: perfect negative linear relationship
-\end{itemize}
-
-\subsection{Greedy Correlation Coefficient}\label{greedy-correlation-coefficient}
-
-\begin{itemize}
-    \item What does intended mean?
-    \item What is the greedy version of the correlation coefficients?
-    \item How does it work?
-\end{itemize}
-
-To ensure that the correlation analysis is working as intended a greedy version of the correlation coefficients was implemented. This version of the correlation coefficients will first determine the best ...
-
-\subsection{Unit testing Correlation Coefficients}\label{unit-testing-of-correlation-Coefficients}
+% Unit testing of correlation coefficients
+\subsection{Greedy Rank Correlation}\label{greedy-rank-correlation}
 
 \begin{table}[h!]
     \centering
@@ -111,7 +29,15 @@ To ensure that the correlation analysis is working as intended a greedy version 
     \end{tabular}
 \end{table}
 
-\subsection{Correlation Coefficient of Passage Scores}\label{correlation-coefficient-of-passage-scores}
+% ==================
+% Document Selection
+% ==================
+\section{Document Selection}\label{eval-doucment-selection}
+
+% ===============
+% Passage Scoring
+% ===============
+\section{Passage Scoring}\label{eval-passage-scoring}
 
 \begin{table}[h!]
     \centering
@@ -137,7 +63,10 @@ To ensure that the correlation analysis is working as intended a greedy version 
     \end{tabular}
 \end{table}
 
-\subsection{Candidate Selection}\label{candidate-selection}
+% ===================
+% Candidate Selection
+% ===================
+\section{Candidate Selection}\label{eval-candidate-selection}
 
 \begin{sidewaystable}
     \centering
@@ -157,3 +86,8 @@ To ensure that the correlation analysis is working as intended a greedy version 
         \bottomrule 
     \end{tabular}
 \end{sidewaystable}
+
+% ====================
+% Pairwise Preferences
+% ====================
+\section{Pairwise Preferences}\label{eval-pairwise-preferences}
