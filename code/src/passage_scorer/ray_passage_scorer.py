@@ -221,11 +221,11 @@ def ray_wrapper(job_id, num_jobs):
                         scores = {'qid': qid, 'docno': passage['docno'], 'label': label}
                         for retriever in PT_RETRIEVERS:
                             if runs[retriever] is None:
-                                scores['p10_' + retriever] = 0
-                                scores['p10_wod_' + retriever] = 0
-                                scores['ndcg10_' + retriever] = 0
-                                scores['ndcg10_wod_' + retriever] = 0
-                                scores['reciprocal_rank_docno_' + retriever] = 0
+                                scores['p10_' + retriever] = 0.0
+                                scores['p10_wod_' + retriever] = 0.0
+                                scores['ndcg10_' + retriever] = 0.0
+                                scores['ndcg10_wod_' + retriever] = 0.0
+                                scores['reciprocal_rank_docno_' + retriever] = 0.0
                             else:
                                 scores['p10_' + retriever] = p10[retriever]
                                 scores['p10_wod_' + retriever] = p10[retriever + '_wod']
