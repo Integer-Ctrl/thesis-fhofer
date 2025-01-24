@@ -46,9 +46,15 @@ AGGREGATION_METHODS = config['AGGREGATION_METHODS']
 TRANSFORMATION_METHODS = config['TRANSFORMATION_METHODS']
 EVALUATION_METHODS = config['EVALUATION_METHODS']
 
+CHATNOIR_RETRIEVAL = config['CHATNOIR_RETRIEVAL']
+PT_RETRIEVERS = config['PT_RETRIEVERS']
+
+if CHATNOIR_RETRIEVAL:
+    PT_RETRIEVERS = ['BM25_chatnoir']
+
 METRICS = []
 for metric in config['METRICS']:
-    for retriever in config['PT_RETRIEVERS']:
+    for retriever in PT_RETRIEVERS:
         METRICS.append(metric + '_' + retriever)
 
 # Script should only compute passage scores for none existing qids

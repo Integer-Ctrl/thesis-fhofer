@@ -1,15 +1,16 @@
 import pandas as pd
 import numpy as np
+from typing import Union
 
 
 class GreedySeries(pd.Series):
-    def corr(self, other, method, min_periods: int | None = None,):
+    def corr(self, other, method, min_periods: Union[int, None] = None,):
         if '-greedy' in method:
             return self.greedy_corr(other, method.replace('-greedy', ''), min_periods)
         else:
             return super().corr(other, method, min_periods)
 
-    def greedy_corr(self, other, method, min_periods: int | None = None,):
+    def greedy_corr(self, other, method, min_periods: Union[int, None] = None,):
 
         scores = self.to_list()
         # Normalize the scores to range [0, 1]
