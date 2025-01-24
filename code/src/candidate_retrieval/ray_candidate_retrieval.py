@@ -18,6 +18,12 @@ ray.init()
 
 @ray.remote
 def ray_wrapper():
+    # Symlink ir_dataset
+    symlink_path = '/home/ray/.ir_datasets/disks45/corpus'
+    target_path = '/mnt/ceph/storage/data-tmp/current/ho62zoq/.ir_datasets/disks45/corpus'
+    if not os.path.islink(symlink_path):
+        os.symlink(target_path, symlink_path)
+
     def load_config(filename='/mnt/ceph/storage/data-tmp/current/ho62zoq/thesis-fhofer/code/src/config.json'):
         with open(filename, "r") as f:
             config = json.load(f)
@@ -649,7 +655,7 @@ if __name__ == '__main__':
 
     futures = []
     for i in range(1, NUM_WORKERS + 1):
-        futures.append(ray_wrapper.remote())
+        futures.append(ray_wrapper.options(memory=128 * 1024 * 1024 * 1024).remote())
 
     # Wait for all workers to finish
     ray.get(futures)
