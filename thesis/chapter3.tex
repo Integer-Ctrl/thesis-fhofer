@@ -73,6 +73,12 @@ To simplify data handling, I used \texttt{ir\_datasets}~\citep{macavaney:2021}, 
 % =====================
 \section{Document Segmentation}\label{document-segmentation}
 
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.7\textwidth]{./graphics/drawio/document_segmentation.png}
+    \caption{image}
+  \end{figure}
+
 After selecting the datasets and their associated retrieval tasks, including the queries and \texttt{qrels}, the first step in the transfer pipeline is the segmentation of documents from the source datasets into passages. This step was done because the relevance of a document is often confined to specific sections rather than the entire text. By segmenting documents into passages, the pipeline can focus solely on the relevant passages, disregarding non-relevant parts of a document in the subsequent processing.
 
 % Document Selection
