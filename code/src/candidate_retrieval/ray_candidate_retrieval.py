@@ -176,6 +176,8 @@ def ray_wrapper():
                           desc='Retrieving naive top documents',
                           unit='query'):
             qid = query.query_id
+            if DOCUMENT_DATASET_SOURCE_NAME == 'disks45/nocr/trec-robust-2004' and qid == '672':
+                continue
             query_text = query.default_text()
             query_description = query.description if hasattr(query, 'description') else False
 
@@ -252,6 +254,8 @@ def ray_wrapper():
                           desc='Retrieving nearest neighbor top documents',
                           unit='query'):
             qid = query.query_id
+            if DOCUMENT_DATASET_SOURCE_NAME == 'disks45/nocr/trec-robust-2004' and qid == '672':
+                continue
 
             rel_doc_ids = queries_relevant_passagenos[qid]
 
@@ -493,6 +497,9 @@ def ray_wrapper():
         with gzip.open(candidates_file_opd, 'wt', encoding='UTF-8') as file:
             for query in dataset.irds_ref().queries_iter():
                 qid = query.query_id
+                if DOCUMENT_DATASET_SOURCE_NAME == 'disks45/nocr/trec-robust-2004' and qid == '672':
+                    continue
+
                 query_text = query.default_text()
                 query_description = query.description if hasattr(query, 'description') else ""
                 query_narrative = query.narrative if hasattr(query, 'narrative') else ""
@@ -541,6 +548,8 @@ def ray_wrapper():
         with gzip.open(candidates_file, 'wt', encoding='UTF-8') as file:
             for query in dataset.irds_ref().queries_iter():
                 qid = query.query_id
+                if DOCUMENT_DATASET_SOURCE_NAME == 'disks45/nocr/trec-robust-2004' and qid == '672':
+                    continue
                 query_text = query.default_text()
                 query_description = query.description if hasattr(query, 'description') else ""
                 query_narrative = query.narrative if hasattr(query, 'narrative') else ""
