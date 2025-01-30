@@ -293,4 +293,11 @@ def check_labels():
                     print(line)
 
 
-test_clueweb_access()
+def clueweb22_test():
+    dataset = ir_datasets.load("clueweb22/b")
+    for qrel in dataset.docs_iter():
+        print(qrel)
+        break
+
+
+clueweb22_test()

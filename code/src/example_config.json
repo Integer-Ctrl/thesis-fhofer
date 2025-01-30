@@ -3,9 +3,6 @@
 
         "DATA_PATH": "",
 
-        "PER_QUERY": true,
-        "ALL_QRELS": true,
-
         "CHATNOIR_RETRIEVAL": false,
         "CHATNOIR_SOURCE_INDICES": "",
         "CHATNOIR_TARGET_INDICES": "clueweb22/b",

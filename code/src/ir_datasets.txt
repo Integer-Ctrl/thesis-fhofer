@@ -1,4 +1,4 @@
-argsme/2020-04-01/touche-2021-task-1
+argsme/2020-04-01/touche-2020-task-1
 
 clueweb09/en/trec-web-2009
 clueweb09/en/trec-web-2010
@@ -13,6 +13,9 @@ clueweb12/touche-2022-task-2
 disks45/nocr/trec-robust-2004
 disks45/nocr/trec7
 disks45/nocr/trec8
+
+msmarco-document/trec-dl-2019/judged
+msmarco-document/trec-dl-2020/judged
 
 msmarco-document/trec-dl-2019
 msmarco-document/trec-dl-2020
