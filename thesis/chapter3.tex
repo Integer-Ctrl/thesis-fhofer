@@ -22,9 +22,9 @@ In the final step, the pairwise preferences are inferred. All candidates, i.e., 
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=0.7\textwidth]{./graphics/drawio/datasets.png}
+    \includegraphics[width=0.95\textwidth]{./graphics/drawio/datasets.png}
     \caption{image}
-  \end{figure}
+\end{figure}
 
 \begin{table}[h!]
     \centering
@@ -75,9 +75,9 @@ To simplify data handling, I used \texttt{ir\_datasets}~\citep{macavaney:2021}, 
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=0.7\textwidth]{./graphics/drawio/document_segmentation.png}
+    \includegraphics[width=0.95\textwidth]{./graphics/drawio/document_segmentation.png}
     \caption{image}
-  \end{figure}
+\end{figure}
 
 After selecting the datasets and their associated retrieval tasks, including the queries and \texttt{qrels}, the first step in the transfer pipeline is the segmentation of documents from the source datasets into passages. This step was done because the relevance of a document is often confined to specific sections rather than the entire text. By segmenting documents into passages, the pipeline can focus solely on the relevant passages, disregarding non-relevant parts of a document in the subsequent processing.
 
@@ -107,6 +107,12 @@ The documents from the source dataset, selected in the first step, are now avail
 % ===============
 \section{Passage Scoring}\label{passage-scoring}
 
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.95\textwidth]{./graphics/drawio/passage_scoring.png}
+    \caption{image}
+\end{figure}
+
 In the first step of the transfer pipeline, a subset of the documents from the corpus was segmented into passages. Only documents with at least one relevance assessment in the \texttt{qrels} of the retrieval task were considered for selection. This was done to transfer the information from existing relevance assessments in subsequent stages of the pipeline. To determine which passages of a document best reflect the relevance label from a \texttt{qrel}, i.e., \texttt{(query, document, relevance)} triple, and which passages are most relevant to a query, a ranking of the individual passages is performed in this step.
 \\\\
 As detailed in Section~[\nameref{selection-documents}], each query-label combination of the retrieval task has an associated set of \texttt{qrels}. To evaluate all passages of the selected documents associated to a query-label combination, the following procedure is applied. First, each passage of a selected document is treated independently and submitted as a query to the source dataset. Then, based on the retrieved ranking of documents for this query, the relevance of the passage is computed using \texttt{precision@10} and \texttt{nDCG@10}.
@@ -126,6 +132,12 @@ In this pipeline stage, the individual passages of the selected documents belong
 % Candidate Retreiaval
 % ====================
 \section{Candidate Selection}\label{candidate-selection}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.95\textwidth]{./graphics/drawio/candidate_selection.png}
+    \caption{image}
+\end{figure}
 
 This section outlines the methods used to select candidates for the pairwise preference inference. A candidate consists of a passage from the source dataset, a passage from the target dataset, and a query from a retrieval task, i.e. \texttt{(source passage, target passage, query)}. The goal is to score each candidate using pairwise preferences to infer new relevance assessments for a set of target documents. The process begins with selecting document with retrieval from the target dataset.
 
@@ -164,6 +176,12 @@ For each query, 20 selected passages from either the \texttt{simple} or \texttt{
 % ====================
 \section{Pairwise Preferences}\label{pairwise-transfering-relevance-labels-across-datasets}
 
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.95\textwidth]{./graphics/drawio/pairwise_preferences.png}
+    \caption{image}
+\end{figure}
+
 At this stage, all necessary processing steps have been completed to perform the pairwise preferences. The transfer pipeline began with selecting a subset of documents from the source corpus for each query. These documents were segmented into passages, and each passage was scored by treating it as an independent query against the source corpus. The retrieved document rankings were used to compute \texttt{precision} and \texttt{nDCG} metrics, which were then assigned as passage scores. The highest-scoring passages guided the selection of candidates for the pairwise preferences, which is now described in detail.
 \\\\
 A candidate is defined as a combination of three elements: a query from a retrieval task of the source dataset, a known passage from a source dataset document, and a passage to judge from a target dataset document. The query is predefined by the retrieval task, while the known passage was identified during the initial document selection step. The passage to judge was determined in the candidate retrieval step. The known passage serves as a reference for comparison and can either be relevant or non-relevant. The objective of the pairwise preference evaluation is to assess the relevance of the passage to judge with respect to the query by comparing it to the known passage.
@@ -174,7 +192,7 @@ The \texttt{autoqrels}\footnote{https://github.com/seanmacavaney/autoqrels} GitH
 \\\\
 \begin{figure}[ht]
     \centering
-    \begin{tcolorbox}[title=One-Shot Prompt]
+    \begin{tcolorbox}[title=One-Shot Prompt, width=0.95\textwidth]
         \footnotesize
         \begin{verbatim}
 PROMPT = (
