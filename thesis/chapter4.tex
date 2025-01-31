@@ -63,13 +63,319 @@ This chapter focuses on the evaluation of the transfer pipeline. First, the eval
     \end{tabular}
 \end{table}
 
+% \begin{table}[h!]
+%     \centering
+%     \caption{5-fold cross-validation of the passage scores across.}
+%     \begin{tabular}{lcccccc}
+%         \toprule
+%         \textbf{Retrieval Model} & \multicolumn{3}{c}{\textbf{Default}} & \multicolumn{3}{c}{\textbf{Greedy}} \\
+%         \cmidrule(lr){2-4} \cmidrule(lr){5-7}
+%                                 & $\tau$ & $\rho$ & $r$ & $\tau$ & $\rho$ & $r$ \\
+%         \midrule
+
+%         \multicolumn{7}{c}{\textbf{Args.me Touché 2020}} \\
+%         BM25         & v & v & v & v & v & v \\
+%         DFR\_BM25    & v & v & v & v & v & v \\
+%         DFIZ         & v & v & v & v & v & v \\
+%         DLH          & v & v & v & v & v & v \\
+%         DHP          & v & v & v & v & v & v \\
+%         DirichletLM  & v & v & v & v & v & v \\
+%         Hiemstra\_LM & v & v & v & v & v & v \\
+%         LGD          & v & v & v & v & v & v \\
+%         PL2          & v & v & v & v & v & v \\
+%         TF\_IDF      & v & v & v & v & v & v \\
+%         \midrule
+
+%         \multicolumn{7}{c}{\textbf{Disks4+5 TREC-7}} \\
+%         BM25         & v & v & v & v & v & v \\
+%         DFR\_BM25    & v & v & v & v & v & v \\
+%         DFIZ         & v & v & v & v & v & v \\
+%         DLH          & v & v & v & v & v & v \\
+%         DHP          & v & v & v & v & v & v \\
+%         DirichletLM  & v & v & v & v & v & v \\
+%         Hiemstra\_LM & v & v & v & v & v & v \\
+%         LGD          & v & v & v & v & v & v \\
+%         PL2          & v & v & v & v & v & v \\
+%         TF\_IDF      & v & v & v & v & v & v \\
+%         \midrule
+
+%         \multicolumn{7}{c}{\textbf{Disks4+5 TREC-8}} \\
+%         BM25         & v & v & v & v & v & v \\
+%         DFR\_BM25    & v & v & v & v & v & v \\
+%         DFIZ         & v & v & v & v & v & v \\
+%         DLH          & v & v & v & v & v & v \\
+%         DHP          & v & v & v & v & v & v \\
+%         DirichletLM  & v & v & v & v & v & v \\
+%         Hiemstra\_LM & v & v & v & v & v & v \\
+%         LGD          & v & v & v & v & v & v \\
+%         PL2          & v & v & v & v & v & v \\
+%         TF\_IDF      & v & v & v & v & v & v \\
+%         \midrule
+
+%         \multicolumn{7}{c}{\textbf{Disks4+5 Robust04}} \\
+%         BM25         & v & v & v & v & v & v \\
+%         DFR\_BM25    & v & v & v & v & v & v \\
+%         DFIZ         & v & v & v & v & v & v \\
+%         DLH          & v & v & v & v & v & v \\
+%         DHP          & v & v & v & v & v & v \\
+%         DirichletLM  & v & v & v & v & v & v \\
+%         Hiemstra\_LM & v & v & v & v & v & v \\
+%         LGD          & v & v & v & v & v & v \\
+%         PL2          & v & v & v & v & v & v \\
+%         TF\_IDF      & v & v & v & v & v & v \\
+%         \midrule
+
+%         \multicolumn{7}{c}{\textbf{MS MARCO TREC-19 DL}} \\
+%         BM25         & v & v & v & v & v & v \\
+%         DFR\_BM25    & v & v & v & v & v & v \\
+%         DFIZ         & v & v & v & v & v & v \\
+%         DLH          & v & v & v & v & v & v \\
+%         DHP          & v & v & v & v & v & v \\
+%         DirichletLM  & v & v & v & v & v & v \\
+%         Hiemstra\_LM & v & v & v & v & v & v \\
+%         LGD          & v & v & v & v & v & v \\
+%         PL2          & v & v & v & v & v & v \\
+%         TF\_IDF      & v & v & v & v & v & v \\
+%         \midrule
+
+%         \multicolumn{7}{c}{\textbf{MS MARCO TREC-20 DL}} \\
+%         BM25         & v & v & v & v & v & v \\
+%         DFR\_BM25    & v & v & v & v & v & v \\
+%         DFIZ         & v & v & v & v & v & v \\
+%         DLH          & v & v & v & v & v & v \\
+%         DHP          & v & v & v & v & v & v \\
+%         DirichletLM  & v & v & v & v & v & v \\
+%         Hiemstra\_LM & v & v & v & v & v & v \\
+%         LGD          & v & v & v & v & v & v \\
+%         PL2          & v & v & v & v & v & v \\
+%         TF\_IDF      & v & v & v & v & v & v \\
+%         \midrule
+
+%         \bottomrule
+%     \end{tabular}
+% \end{table}
+
+\pagebreak
+\begin{longtable}{lcccccc}
+    \caption{5-fold cross-validation of the passage scores across datasets.} \\
+    \toprule
+    \textbf{Retrieval Model} & \multicolumn{3}{c}{\textbf{Default}} & \multicolumn{3}{c}{\textbf{Greedy}} \\
+    \cmidrule(lr){2-4} \cmidrule(lr){5-7}
+                            & $\tau$ & $\rho$ & $r$ & $\tau$ & $\rho$ & $r$ \\
+    \midrule
+
+    \multicolumn{7}{c}{\textbf{Args.me Touché 2020}} \\
+    BM25         & v & v & v & v & v & v \\
+    DFR\_BM25    & v & v & v & v & v & v \\
+    DFIZ         & v & v & v & v & v & v \\
+    DLH          & v & v & v & v & v & v \\
+    DHP          & v & v & v & v & v & v \\
+    DirichletLM  & v & v & v & v & v & v \\
+    Hiemstra\_LM & v & v & v & v & v & v \\
+    LGD          & v & v & v & v & v & v \\
+    PL2          & v & v & v & v & v & v \\
+    TF\_IDF      & v & v & v & v & v & v \\
+    \midrule
+
+    \multicolumn{7}{c}{\textbf{Disks4+5 TREC-7}} \\
+    BM25         & v & v & v & v & v & v \\
+    DFR\_BM25    & v & v & v & v & v & v \\
+    DFIZ         & v & v & v & v & v & v \\
+    DLH          & v & v & v & v & v & v \\
+    DHP          & v & v & v & v & v & v \\
+    DirichletLM  & v & v & v & v & v & v \\
+    Hiemstra\_LM & v & v & v & v & v & v \\
+    LGD          & v & v & v & v & v & v \\
+    PL2          & v & v & v & v & v & v \\
+    TF\_IDF      & v & v & v & v & v & v \\
+    \midrule
+
+    \multicolumn{7}{c}{\textbf{Disks4+5 TREC-8}} \\
+    BM25         & v & v & v & v & v & v \\
+    DFR\_BM25    & v & v & v & v & v & v \\
+    DFIZ         & v & v & v & v & v & v \\
+    DLH          & v & v & v & v & v & v \\
+    DHP          & v & v & v & v & v & v \\
+    DirichletLM  & v & v & v & v & v & v \\
+    Hiemstra\_LM & v & v & v & v & v & v \\
+    LGD          & v & v & v & v & v & v \\
+    PL2          & v & v & v & v & v & v \\
+    TF\_IDF      & v & v & v & v & v & v \\
+    \midrule
+
+    \pagebreak
+    \midrule
+    \multicolumn{7}{c}{\textbf{Disks4+5 Robust04}} \\
+    BM25         & v & v & v & v & v & v \\
+    DFR\_BM25    & v & v & v & v & v & v \\
+    DFIZ         & v & v & v & v & v & v \\
+    DLH          & v & v & v & v & v & v \\
+    DHP          & v & v & v & v & v & v \\
+    DirichletLM  & v & v & v & v & v & v \\
+    Hiemstra\_LM & v & v & v & v & v & v \\
+    LGD          & v & v & v & v & v & v \\
+    PL2          & v & v & v & v & v & v \\
+    TF\_IDF      & v & v & v & v & v & v \\
+    \midrule
+
+    \multicolumn{7}{c}{\textbf{MS MARCO TREC-19 DL}} \\
+    BM25         & v & v & v & v & v & v \\
+    DFR\_BM25    & v & v & v & v & v & v \\
+    DFIZ         & v & v & v & v & v & v \\
+    DLH          & v & v & v & v & v & v \\
+    DHP          & v & v & v & v & v & v \\
+    DirichletLM  & v & v & v & v & v & v \\
+    Hiemstra\_LM & v & v & v & v & v & v \\
+    LGD          & v & v & v & v & v & v \\
+    PL2          & v & v & v & v & v & v \\
+    TF\_IDF      & v & v & v & v & v & v \\
+    \midrule
+
+    \multicolumn{7}{c}{\textbf{MS MARCO TREC-20 DL}} \\
+    BM25         & v & v & v & v & v & v \\
+    DFR\_BM25    & v & v & v & v & v & v \\
+    DFIZ         & v & v & v & v & v & v \\
+    DLH          & v & v & v & v & v & v \\
+    DHP          & v & v & v & v & v & v \\
+    DirichletLM  & v & v & v & v & v & v \\
+    Hiemstra\_LM & v & v & v & v & v & v \\
+    LGD          & v & v & v & v & v & v \\
+    PL2          & v & v & v & v & v & v \\
+    TF\_IDF      & v & v & v & v & v & v \\
+    \midrule
+
+    \bottomrule
+\end{longtable}
+
 % ===================
 % Candidate Selection
 % ===================
 \section{Candidate Selection}\label{eval-candidate-selection}
 
+\begin{table}[h!]
+    \centering
+    \footnotesize
+    \caption{Results for different strategies of candidate selection.}
+    \begin{tabular}{lccccccccc}
+        \toprule
+        \textbf{Dataset} & \multicolumn{3}{c}{\textbf{Naive}} & \multicolumn{3}{c}{\textbf{Nearest Neighbor}} & \multicolumn{3}{c}{\textbf{Union}} \\
+        % \textbf{Dataset} & \multicolumn{3}{c}{\textbf{Naive}} & \multicolumn{3}{c}{\textbf{NN}} & \multicolumn{3}{c}{\textbf{Union}} \\
+        \cmidrule(lr){2-4} \cmidrule(lr){5-7} \cmidrule(lr){8-10}
+                         & \rotatebox{90}{Precision} & \rotatebox{90}{Recall} & \rotatebox{90}{Documents} & \rotatebox{90}{Precision} & \rotatebox{90}{Recall} & \rotatebox{90}{Documents} & \rotatebox{90}{Precision} & \rotatebox{90}{Recall} & \rotatebox{90}{Documents} \\
+        \midrule
+
+        % argsme/2020-04-01/touche-2021-task-1 & 0.0175 & 0.9586 & 100,000 & 0.0559 & 1.0000 & 38,807 & 0.0146 & 1.0000 & 123582 \\
+        Args.me Touché 2020 & v & v & v & v & v & v & v & v & v \\
+        Disks4+5 TREC-7     & v & v & v & v & v & v & v & v & v \\
+        Disks4+5 TREC-8     & v & v & v & v & v & v & v & v & v \\
+        Disks4+5 Robust04   & v & v & v & v & v & v & v & v & v \\
+        MS MARCO TREC-19 DL & v & v & v & v & v & v & v & v & v \\
+        MS MARCO TREC-20 DL & v & v & v & v & v & v & v & v & v \\
+
+        \bottomrule 
+    \end{tabular}
+\end{table}
+
+
+\begin{table}[h!]
+    \centering
+    \footnotesize
+    \caption{\texttt{Precision} and \texttt{Recall} for the retrieved candidates from the target corpus, along with the total number of candidates. The retrieval process allows multiple passages from the same document in the source dataset.}
+    \begin{tabular}{rrcccccc}
+        \toprule
+
+        \multicolumn{2}{c}{\textbf{Approach}} & \rotatebox{80}{Args.me Touché 2020} & \rotatebox{80}{Disks4+5 TREC-7} & \rotatebox{80}{Disks4+5 TREC-8} & \rotatebox{80}{Disks4+5 Robust04} & \rotatebox{80}{MS MARCO TREC-19 DL} & \rotatebox{80}{MS MARCO TREC-20 DL} \\
+        \midrule
+
+        \multirow{3}{*}{\textbf{Naive}} & Precision & v & v & v & v & v & v \\
+                               & Recall & v & v & v & v & v & v \\
+                               & Documents & v & v & v & v & v & v \\
+        \midrule
+
+        \multirow{3}{*}{\textbf{NN 10}} & Precision & v & v & v & v & v & v \\
+                               & Recall & v & v & v & v & v & v \\
+                               & Documents & v & v & v & v & v & v \\
+        \midrule
+
+        \multirow{3}{*}{\textbf{NN 50}} & Precision & v & v & v & v & v & v \\
+                               & Recall & v & v & v & v & v & v \\
+                               & Documents & v & v & v & v & v & v \\
+        \midrule
+
+        \multirow{3}{*}{\textbf{NN 100}} & Precision & v & v & v & v & v & v \\
+                               & Recall & v & v & v & v & v & v \\
+                               & Documents & v & v & v & v & v & v \\
+        \midrule
+
+        \multirow{3}{*}{\textbf{Union 10}} & Precision & v & v & v & v & v & v \\
+                               & Recall & v & v & v & v & v & v \\
+                               & Documents & v & v & v & v & v & v \\
+        \midrule
+
+        \multirow{3}{*}{\textbf{Union 50}} & Precision & v & v & v & v & v & v \\
+                               & Recall & v & v & v & v & v & v \\
+                               & Documents & v & v & v & v & v & v \\
+        \midrule
+
+        \multirow{3}{*}{\textbf{Union 100}} & Precision & v & v & v & v & v & v \\
+                               & Recall & v & v & v & v & v & v \\
+                               & Documents & v & v & v & v & v & v \\
+
+        \bottomrule 
+    \end{tabular}
+\end{table}
+
+\begin{table}[h!]
+    \centering
+    \footnotesize
+    \caption{\texttt{Precision} and \texttt{Recall} for the retrieved candidates from the target corpus, along with the total number of candidates. The retrieval process limits the source dataset to a maximum of one passage per document.}
+    \begin{tabular}{rrcccccc}
+        \toprule
+
+        \multicolumn{2}{c}{\textbf{Approach}} & \rotatebox{80}{Args.me Touché 2020} & \rotatebox{80}{Disks4+5 TREC-7} & \rotatebox{80}{Disks4+5 TREC-8} & \rotatebox{80}{Disks4+5 Robust04} & \rotatebox{80}{MS MARCO TREC-19 DL} & \rotatebox{80}{MS MARCO TREC-20 DL} \\
+        \midrule
+
+        \multirow{3}{*}{\textbf{Naive\textsuperscript{*}}} & Precision & v & v & v & v & v & v \\
+                               & Recall & v & v & v & v & v & v \\
+                               & Documents & v & v & v & v & v & v \\
+        \midrule
+
+        \multirow{3}{*}{\textbf{NN 10\textsuperscript{*}}} & Precision & v & v & v & v & v & v \\
+                               & Recall & v & v & v & v & v & v \\
+                               & Documents & v & v & v & v & v & v \\
+        \midrule
+
+        \multirow{3}{*}{\textbf{NN 50\textsuperscript{*}}} & Precision & v & v & v & v & v & v \\
+                               & Recall & v & v & v & v & v & v \\
+                               & Documents & v & v & v & v & v & v \\
+        \midrule
+
+        \multirow{3}{*}{\textbf{NN 100\textsuperscript{*}}} & Precision & v & v & v & v & v & v \\
+                               & Recall & v & v & v & v & v & v \\
+                               & Documents & v & v & v & v & v & v \\
+        \midrule
+
+        \multirow{3}{*}{\textbf{Union 10\textsuperscript{*}}} & Precision & v & v & v & v & v & v \\
+                               & Recall & v & v & v & v & v & v \\
+                               & Documents & v & v & v & v & v & v \\
+        \midrule
+
+        \multirow{3}{*}{\textbf{Union 50\textsuperscript{*}}} & Precision & v & v & v & v & v & v \\
+                               & Recall & v & v & v & v & v & v \\
+                               & Documents & v & v & v & v & v & v \\
+        \midrule
+
+        \multirow{3}{*}{\textbf{Union 100\textsuperscript{*}}} & Precision & v & v & v & v & v & v \\
+                               & Recall & v & v & v & v & v & v \\
+                               & Documents & v & v & v & v & v & v \\
+
+        \bottomrule 
+    \end{tabular}
+\end{table}
+
 \begin{sidewaystable}
     \centering
+    \footnotesize
     \caption{Results for different strategies of candidate selection.}
     \begin{tabular}{lccccccccc}
         \toprule
@@ -81,7 +387,12 @@ This chapter focuses on the evaluation of the transfer pipeline. First, the eval
         \midrule
 
         % argsme/2020-04-01/touche-2021-task-1 & 0.0175 & 0.9586 & 100,000 & 0.0559 & 1.0000 & 38,807 & 0.0146 & 1.0000 & 123582 \\
-        argsme21 & 0.0175 & 0.9586 & 100,000 & 0.0559 & 1.0000 & 38,807 & 0.0146 & 1.0000 & 123582 \\
+        Args.me Touché 2020 & v & v & v & v & v & v & v & v & v \\
+        Disks4+5 TREC-7     & v & v & v & v & v & v & v & v & v \\
+        Disks4+5 TREC-7     & v & v & v & v & v & v & v & v & v \\
+        Disks4+5 Robust04   & v & v & v & v & v & v & v & v & v \\
+        MS MARCO TREC-19 DL & v & v & v & v & v & v & v & v & v \\
+        MS MARCO TREC-20 DL & v & v & v & v & v & v & v & v & v \\
 
         \bottomrule 
     \end{tabular}
@@ -91,3 +402,11 @@ This chapter focuses on the evaluation of the transfer pipeline. First, the eval
 % Pairwise Preferences
 % ====================
 \section{Pairwise Preferences}\label{eval-pairwise-preferences}
+
+The first evaluation of the pairwise preferences involves inferring relevance scores from the original relevance assessments within the source dataset itself. This allows for an automatic evaluation using rank correlation, as the retrieval tasks provide predefined relevance judgments for comparison. Each dataset can be evaluated individually to verify whether the inferred scores align with the original relevance assessments. The second evaluation assesses the transfer of inferred relevance scores from the retrieval tasks to the target corpus, \texttt{ClueWeb22/b}. Since no existing relevance judgments are available for \texttt{ClueWeb22/b}, this evaluation cannot be automated. Instead, randomly selected documents for which relevance scores have been inferred are chosen for each query and manually reviewed. Human assessors then determine whether the inferred relevance scores accurately reflect the relevance of the corresponding documents to the queries.
+
+% Transfer Pipeline to Source Corpus itself
+\subsection{Transfer Pipeline to Source Corpus itself}\label{eval-pairwise-preferences-source}
+
+% Transfer Pipeline to ClueWeb22/b
+\subsection{Transfer Pipeline to \texttt{ClueWeb22/b}}\label{eval-pairwise-preferences-target}
