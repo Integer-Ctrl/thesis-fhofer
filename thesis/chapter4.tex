@@ -39,6 +39,8 @@ This chapter focuses on the evaluation of the transfer pipeline. First, the eval
 % ===============
 \section{Passage Scoring}\label{eval-passage-scoring}
 
+Since this study does not aim to optimize or analyze a specific set of retriever systems but uses them for passage scoring, a diverse selection of models was employed to minimize bias in the scores that could arise from relying on a single model. For that reason \texttt{Precision} and \texttt{nDCG} scores were calculated using the following retriever systems: \texttt{BM25, DFR\_BM25, DFIZ, DLH, DPH, DirichletLM, Hiemstra\_LM, LGD, PL2, and TF\_IDF}. An evaluation of which model best scores the passages in relation to the goal of relevance transfer follows in Chapter~\ref{evaluation}~[\nameref{rank-correlation-passage-scores}].
+
 \begin{table}[h!]
     \centering
     \caption{5-fold cross-validation of the passage scores.}
@@ -407,6 +409,8 @@ The first evaluation of the pairwise preferences involves inferring relevance sc
 
 % Transfer Pipeline to Source Corpus itself
 \subsection{Transfer Pipeline to Source Corpus itself}\label{eval-pairwise-preferences-source}
+
+
 
 % Transfer Pipeline to ClueWeb22/b
 \subsection{Transfer Pipeline to \texttt{ClueWeb22/b}}\label{eval-pairwise-preferences-target}
