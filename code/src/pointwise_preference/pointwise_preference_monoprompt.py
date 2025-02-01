@@ -66,7 +66,7 @@ def process_candidates(candidates_path, pointwise_preferences_path):
     monoprompt = autoqrels.zeroshot.GradedMonoPrompt(dataset=dataset,
                                                      backbone='google/flan-t5-base',
                                                      device='cuda',
-                                                     batch_size=32)
+                                                     batch_size=128)
 
     used_cached_count = 0
     infered_count = 0

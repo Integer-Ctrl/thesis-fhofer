@@ -16,6 +16,3 @@ disks45/nocr/trec8
 
 msmarco-document/trec-dl-2019/judged
 msmarco-document/trec-dl-2020/judged
-
-msmarco-document/trec-dl-2019
-msmarco-document/trec-dl-2020

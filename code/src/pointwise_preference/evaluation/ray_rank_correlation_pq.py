@@ -15,6 +15,21 @@ import ray
 ray.init()
 
 
+def load_config(filename='/mnt/ceph/storage/data-tmp/current/ho62zoq/thesis-fhofer/code/src/config.json'):
+    with open(filename, "r") as f:
+        config = json.load(f)
+    return config
+
+
+# Get the configuration settings
+config = load_config()
+SOURCE_PATH = os.path.join(config['DATA_PATH'], config['DOCUMENT_DATASET_SOURCE_NAME'])
+TARGET_PATH = os.path.join(SOURCE_PATH, config['DOCUMENT_DATASET_TARGET_NAME'])
+POINTWISE_PREFERENCES_PATTERN = os.path.join(TARGET_PATH, config['MONOPROMPT_PATH'], '*.jsonl.gz')  # glob pattern
+LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH = os.path.join(
+    TARGET_PATH, config['MONOPROMPT_PATH'], config['LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH'])
+
+
 @ray.remote
 def ray_wrapper(JOB_ID, NUM_JOBS):
     def load_config(filename='/mnt/ceph/storage/data-tmp/current/ho62zoq/thesis-fhofer/code/src/config.json'):
@@ -30,8 +45,8 @@ def ray_wrapper(JOB_ID, NUM_JOBS):
 
     DOCUMENT_DATASET_TARGET_NAME_PYTERRIER = config['DOCUMENT_DATASET_TARGET_NAME_PYTERRIER']
 
-    PAIRWISE_PREFERENCES_PATTERN = os.path.join(TARGET_PATH, config['MONOPROMPT_PATH'], '*.jsonl.gz')  # glob pattern
-    # to compute on monoprompt pairwise preferences (not on duoprompt)
+    POINTWISE_PREFERENCES_PATTERN = os.path.join(TARGET_PATH, config['MONOPROMPT_PATH'], '*.jsonl.gz')  # glob pattern
+    # to compute on monoprompt pointwise preferences (not on duoprompt)
     LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH = os.path.join(
         TARGET_PATH, config['MONOPROMPT_PATH'], config['LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH'])
 
@@ -39,14 +54,6 @@ def ray_wrapper(JOB_ID, NUM_JOBS):
     AGGREGATION_METHODS = config['AGGREGATION_METHODS']
     TRANSFORMATION_METHODS = config['TRANSFORMATION_METHODS']
     EVALUATION_METHODS = config['EVALUATION_METHODS']
-
-    # Script should only compute passage scores for none existing qids
-    if len(sys.argv) < 1:
-        print("Please provide a job ID and the number of jobs as an argument.")
-        sys.exit(1)
-
-    JOB_ID = int(sys.argv[1])
-    NUM_JOBS = int(sys.argv[2])
 
     # Read qrels and cache relevant qrels
     dataset = pt.get_dataset(DOCUMENT_DATASET_TARGET_NAME_PYTERRIER)
@@ -58,10 +65,10 @@ def ray_wrapper(JOB_ID, NUM_JOBS):
                 (qrels['qid'] == row['qid'])
             ]
 
-    # Read pairwise preference scores {qid: docno: passage_id: scores[]}
-    # Which known relevant passages are used for pairwise preferences is not important here
+    # Read pointwise preference scores {qid: docno: passage_id: scores[]}
+    # Which known relevant passages are used for pointwise preferences is not important here
 
-    def read_pairwise_preferences(path):
+    def read_pointwise_preferences(path):
         qid_docno_passage_scores = {}
 
         with gzip.open(path, 'rt', encoding='UTF-8') as file:
@@ -186,10 +193,7 @@ def ray_wrapper(JOB_ID, NUM_JOBS):
 
                 docno = qrel['docno']
                 if docno not in qid_docno_score[qid]:
-                    # print(f"Docno {docno} not present for qid {qid}")
-                    # Implicit relevance score of 0
-                    transformed_scores.append(0)
-                    relevance_labels.append(qrel['label'])
+                    # Only evaluate on judged documents
                     continue
 
                 transformed_scores.append(qid_docno_score[qid][docno])
@@ -248,16 +252,14 @@ def ray_wrapper(JOB_ID, NUM_JOBS):
 
     COMBINATIONS = combinations[start_index:end_index]
 
-    for pairwise_preferences_path in glob(PAIRWISE_PREFERENCES_PATTERN):
+    for pointwise_preferences_path in glob(POINTWISE_PREFERENCES_PATTERN):
         # Extract the file name
-        file_name = os.path.basename(pairwise_preferences_path)
+        file_name = os.path.basename(pointwise_preferences_path)
         base_name = file_name.split('.')[0]
         write_path = os.path.join(LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH, base_name)
-        if not os.path.exists(write_path):
-            os.makedirs(write_path)
 
         print(f"Processing candidates: {file_name}")
-        qid_docno_passage_scores = read_pairwise_preferences(pairwise_preferences_path)
+        qid_docno_passage_scores = read_pointwise_preferences(pointwise_preferences_path)
 
         correlation_scores = []
         for combination in COMBINATIONS:
@@ -290,11 +292,19 @@ def ray_wrapper(JOB_ID, NUM_JOBS):
 
 if __name__ == '__main__':
 
+    for pointwise_preferences_path in glob(POINTWISE_PREFERENCES_PATTERN):
+        # Extract the file name
+        file_name = os.path.basename(pointwise_preferences_path)
+        base_name = file_name.split('.')[0]
+        write_path = os.path.join(LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH, base_name)
+        if not os.path.exists(write_path):
+            os.makedirs(write_path)
+
     NUM_WORKERS = 50
 
     futures = []
     for i in range(1, NUM_WORKERS + 1):
-        futures.append(ray_wrapper.remote())
+        futures.append(ray_wrapper.remote(i, NUM_WORKERS))
 
     # Wait for all workers to finish
     ray.get(futures)

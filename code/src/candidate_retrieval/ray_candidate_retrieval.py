@@ -17,6 +17,11 @@ ray.init()
 
 @ray.remote
 def ray_wrapper(job_id, NUM_WORKERS):
+    # Symlink ir_dataset
+    symlink_path = '/home/ray/.ir_datasets/disks45/corpus'
+    target_path = '/mnt/ceph/storage/data-tmp/current/ho62zoq/.ir_datasets/disks45/corpus'
+    if not os.path.islink(symlink_path):
+        os.symlink(target_path, symlink_path)
 
     def load_config(filename="/mnt/ceph/storage/data-tmp/current/ho62zoq/thesis-fhofer/code/src/config.json"):
         with open(filename, "r") as f:
@@ -251,6 +256,9 @@ def ray_wrapper(job_id, NUM_WORKERS):
                           desc='Retrieving naive top documents',
                           unit='query'):
             qid = query.query_id
+            if DOCUMENT_DATASET_SOURCE_NAME == 'disks45/nocr/trec-robust-2004' and qid == '672':
+                continue  # Skip query 672 as it has no relevant passages
+
             query_text = query.default_text()
             query_description = query.description if hasattr(query, 'description') else False
 
@@ -298,6 +306,8 @@ def ray_wrapper(job_id, NUM_WORKERS):
                           desc='Retrieving nearest neighbor top documents',
                           unit='query'):
             qid = query.query_id
+            if DOCUMENT_DATASET_SOURCE_NAME == 'disks45/nocr/trec-robust-2004' and qid == '672':
+                continue  # Skip query 672 as it has no relevant passages
 
             if one_per_document:
                 top_rel_doc_ids = queries_best_passages_opd_cache[qid][:num_top_passages]
@@ -353,6 +363,9 @@ def ray_wrapper(job_id, NUM_WORKERS):
             with gzip.open(file_name, 'wt', encoding='UTF-8') as file:
                 for query in dataset.irds_ref().queries_iter():
                     qid = query.query_id
+                    if DOCUMENT_DATASET_SOURCE_NAME == 'disks45/nocr/trec-robust-2004' and qid == '672':
+                        continue  # Skip query 672 as it has no relevant passages
+
                     query_text = query.default_text()
                     query_description = query.description if hasattr(query, 'description') else ""
                     query_narrative = query.narrative if hasattr(query, 'narrative') else ""
@@ -402,6 +415,9 @@ def ray_wrapper(job_id, NUM_WORKERS):
             with gzip.open(file_name, 'wt', encoding='UTF-8') as file:
                 for query in dataset.irds_ref().queries_iter():
                     qid = query.query_id
+                    if DOCUMENT_DATASET_SOURCE_NAME == 'disks45/nocr/trec-robust-2004' and qid == '672':
+                        continue  # Skip query 672 as it has no relevant passages
+
                     query_text = query.default_text()
                     query_description = query.description if hasattr(query, 'description') else ""
                     query_narrative = query.narrative if hasattr(query, 'narrative') else ""
@@ -461,6 +477,9 @@ def ray_wrapper(job_id, NUM_WORKERS):
 
     num_top_passages, num_retrieval_docs, one_per_document = combinations[job_id - 1]
 
+    # Initialize the chunker
+    chunker = PassageChunker()
+
     # Determine file names
     naive_file_name = os.path.join(CANDIDATES_PATH, 'naive.jsonl.gz')
     naive_opd_file_name = os.path.join(CANDIDATES_PATH, 'naive_opd.jsonl.gz')
@@ -484,7 +503,6 @@ def ray_wrapper(job_id, NUM_WORKERS):
 
     # Chunk the target documents
     target_qid_docids = [docid for docids in docnos_union.values() for docid in docids]
-    chunker = PassageChunker()
     chunker.chunk_target_documents(target_qid_docids, batch_size=2000)
 
     # Write to file
