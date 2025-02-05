@@ -11,12 +11,13 @@ from glob import glob
 import pandas as pd
 from spacy_passage_chunker import SpacyPassageChunker
 import ray
+import sys
 
 ray.init()
 
 
 @ray.remote
-def ray_wrapper(job_id, NUM_WORKERS):
+def ray_wrapper(job_id, NUM_QUERIES):
     # Symlink ir_dataset
     symlink_path = '/home/ray/.ir_datasets/disks45/corpus'
     target_path = '/mnt/ceph/storage/data-tmp/current/ho62zoq/.ir_datasets/disks45/corpus'
@@ -38,9 +39,13 @@ def ray_wrapper(job_id, NUM_WORKERS):
 
     DOCUMENT_DATASET_TARGET_NAME = config['DOCUMENT_DATASET_TARGET_NAME']
     DOCUMENT_DATASET_SOURCE_NAME = config['DOCUMENT_DATASET_SOURCE_NAME']
-    DOCUMENT_DATASET_TARGET_NAME_PYTERRIER = config['DOCUMENT_DATASET_TARGET_NAME_PYTERRIER']
     DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER = config['DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER']
     DOCUMENT_DATASET_TARGET_NAME_PYTHON_API = config['DOCUMENT_DATASET_TARGET_NAME_PYTHON_API']
+
+    # Securety check
+    if DOCUMENT_DATASET_TARGET_NAME == 'clueweb22/b' and NUM_QUERIES is None:
+        print("Target dataset is ClueWeb22/b. Please specify the number of queries to process.")
+        return
 
     SOURCE_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_SOURCE_NAME)
     TARGET_PATH = os.path.join(SOURCE_PATH, config["DOCUMENT_DATASET_TARGET_NAME"])
@@ -237,7 +242,9 @@ def ray_wrapper(job_id, NUM_WORKERS):
 
     def naive_retrieval(num_retrieval_docs):
         qid_docnos_naive_retrieval = {}
-        dataset = pt.get_dataset(DOCUMENT_DATASET_TARGET_NAME_PYTERRIER)
+        dataset = pt.get_dataset(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
+        # Count processed queries
+        query_count = 0
 
         # Retrieve top 2000 documents for each query
         # 1000 documents via the query text and 1000 documents via the query description
@@ -255,6 +262,12 @@ def ray_wrapper(job_id, NUM_WORKERS):
         for query in tqdm(dataset.irds_ref().queries_iter(),
                           desc='Retrieving naive top documents',
                           unit='query'):
+
+            # Stop after NUM_QUERIES queries
+            if NUM_QUERIES is not None and query_count >= NUM_QUERIES:
+                break
+            query_count += 1
+
             qid = query.query_id
             if DOCUMENT_DATASET_SOURCE_NAME == 'disks45/nocr/trec-robust-2004' and qid == '672':
                 continue  # Skip query 672 as it has no relevant passages
@@ -289,6 +302,8 @@ def ray_wrapper(job_id, NUM_WORKERS):
     def nearest_neighbor_retrieval(num_top_passages, num_retrieval_docs, one_per_document):
         qid_docnos_nearest_neighbor_retrieval = {}
         dataset = pt.get_dataset(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
+        # Count processed queries
+        query_count = 0
 
         # Retrieve for each relevant passage for its corresponding qid the top 20 docnos
         if CHATNOIR_RETRIEVAL:  # Case if target is ClueWeb22/b
@@ -305,6 +320,12 @@ def ray_wrapper(job_id, NUM_WORKERS):
         for query in tqdm(dataset.irds_ref().queries_iter(),
                           desc='Retrieving nearest neighbor top documents',
                           unit='query'):
+
+            # Stop after NUM_QUERIES queries
+            if NUM_QUERIES is not None and query_count >= NUM_QUERIES:
+                break
+            query_count += 1
+
             qid = query.query_id
             if DOCUMENT_DATASET_SOURCE_NAME == 'disks45/nocr/trec-robust-2004' and qid == '672':
                 continue  # Skip query 672 as it has no relevant passages
@@ -356,12 +377,20 @@ def ray_wrapper(job_id, NUM_WORKERS):
 
     def write_candidates(file_name, candidates, one_per_document):
         dataset = pt.get_dataset(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
+        # Count processed queries
+        query_count = 0
 
         if one_per_document:
             # opd: add 15 known relevant and 5 known non-relevant passages for each query
             # maximum of one passage per document as known relevant or non-relevant passage
             with gzip.open(file_name, 'wt', encoding='UTF-8') as file:
                 for query in dataset.irds_ref().queries_iter():
+
+                    # Stop after NUM_QUERIES queries
+                    if NUM_QUERIES is not None and query_count >= NUM_QUERIES:
+                        break
+                    query_count += 1
+
                     qid = query.query_id
                     if DOCUMENT_DATASET_SOURCE_NAME == 'disks45/nocr/trec-robust-2004' and qid == '672':
                         continue  # Skip query 672 as it has no relevant passages
@@ -414,6 +443,12 @@ def ray_wrapper(job_id, NUM_WORKERS):
             # The top 15 (5) passages are allowed to be from the same source document
             with gzip.open(file_name, 'wt', encoding='UTF-8') as file:
                 for query in dataset.irds_ref().queries_iter():
+
+                    # Stop after NUM_QUERIES queries
+                    if NUM_QUERIES is not None and query_count >= NUM_QUERIES:
+                        break
+                    query_count += 1
+
                     qid = query.query_id
                     if DOCUMENT_DATASET_SOURCE_NAME == 'disks45/nocr/trec-robust-2004' and qid == '672':
                         continue  # Skip query 672 as it has no relevant passages
@@ -520,10 +555,17 @@ def ray_wrapper(job_id, NUM_WORKERS):
 if __name__ == '__main__':
 
     NUM_WORKERS = 6
+    # For how many queries the candidates should be created - None for all queries
+    NUM_QUERIES = None
+    if len(sys.argv) > 1:
+        NUM_QUERIES = int(sys.argv[1])
+        print(f"Creating candidates for the first {NUM_QUERIES} queries")
+    else:
+        print("Creating candidates for all queries")
 
     futures = []
     for job_id in range(1, NUM_WORKERS + 1):
-        futures.append(ray_wrapper.options(memory=96 * 1024 * 1024 * 1024).remote(job_id, NUM_WORKERS))
+        futures.append(ray_wrapper.options(memory=96 * 1024 * 1024 * 1024).remote(job_id, NUM_QUERIES))
 
     # Wait for all workers to finish
     ray.get(futures)

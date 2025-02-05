@@ -2,7 +2,7 @@
 #SBATCH --job-name=monoprompt                               # Job name
 #SBATCH --partition=gammaweb                                # Partition name
 #SBATCH --gres=gpu:3g.20gb:1                                # Request GPU resource
-#SBATCH --mem=128G                                          # Memory request (128GB)
+#SBATCH --mem=128                                           # Memory request (128GB)
 #SBATCH --ntasks=1                                          # Number of tasks (1 job/task)
 #SBATCH --nodes=1                                           # Number of nodes
 #SBATCH --cpus-per-task=2                                   # Number of CPU cores per task
