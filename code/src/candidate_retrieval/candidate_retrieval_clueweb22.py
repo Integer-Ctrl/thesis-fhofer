@@ -11,7 +11,10 @@ from glob import glob
 import pandas as pd
 from spacy_passage_chunker import SpacyPassageChunker
 import sys
+from ir_datasets_clueweb22 import register
 import time
+
+register()
 
 
 # Load the configuration settings

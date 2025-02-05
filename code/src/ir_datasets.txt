@@ -16,3 +16,5 @@ disks45/nocr/trec8
 
 msmarco-document/trec-dl-2019/judged
 msmarco-document/trec-dl-2020/judged
+
+clueweb22/b

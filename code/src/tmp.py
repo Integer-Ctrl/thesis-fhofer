@@ -6,9 +6,6 @@ import gzip
 from tqdm import tqdm
 from collections import Counter
 from glob import glob
-from ir_datasets_clueweb22 import register
-
-register()
 
 DATASET_NAME = 'irds:argsme/2020-04-01/touche-2021-task-1'  # PyTerrier dataset name
 PASSAGE_PATH = 'data/' + DATASET_NAME.replace('irds:', '') + '/passage-dataset/passages.jsonl.gz'
@@ -67,7 +64,7 @@ def docs_ir_dataset():
 
 def ir_read_qrels():
     dataset = ir_datasets.load("argsme/2020-04-01/touche-2020-task-1")
-    for qrel in dataset.qrels_iter():
+    for qrel in dataset.qrels_iter()[:1]:
         print(qrel, '\n')
 
 
@@ -291,13 +288,3 @@ def check_labels():
                 line = json.loads(line)
                 if line['label'] < 0:
                     print(line)
-
-
-def clueweb22_test():
-    dataset = ir_datasets.load("clueweb22/b")
-    for qrel in dataset.docs_iter():
-        print(qrel)
-        break
-
-
-clueweb22_test()

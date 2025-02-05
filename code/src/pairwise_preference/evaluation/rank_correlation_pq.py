@@ -43,7 +43,7 @@ TRANSFORMATION_METHODS = config['TRANSFORMATION_METHODS']
 EVALUATION_METHODS = config['EVALUATION_METHODS']
 
 # Script should only compute passage scores for none existing qids
-if len(sys.argv) < 1:
+if len(sys.argv) < 3:
     print("Please provide a job ID and the number of jobs as an argument.")
     sys.exit(1)
 
@@ -196,11 +196,8 @@ def get_evaluated_score(qid_docno_score, qrels_cache, evaluation_method='pearson
         for index, qrel in qrels_cache[qid].iterrows():
 
             docno = qrel['docno']
+            # Only evaluate on judged documents
             if docno not in qid_docno_score[qid]:
-                # print(f"Docno {docno} not present for qid {qid}")
-                # Implicit relevance score of 0
-                transformed_scores.append(0)
-                relevance_labels.append(qrel['label'])
                 continue
 
             transformed_scores.append(qid_docno_score[qid][docno])
