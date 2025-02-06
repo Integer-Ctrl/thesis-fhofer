@@ -1,8 +1,8 @@
 \chapter{Methodology}\label{methodology}
 
-\begin{figure}[ht]
+\begin{figure}[t]
     \centering
-    \includegraphics[width=0.95\textwidth]{./graphics/drawio/transfer_pipeline.png}
+    \includegraphics[width=\textwidth]{./graphics/drawio/transfer_pipeline.pdf}
     \caption{General overview of the transfer pipeline and its individual steps to transfer exisiting relevance assessments into another document corpus.}
     \label{fig:transfer-pipeline}
 \end{figure}
@@ -11,38 +11,27 @@ In this Chapter, I present the individual steps of the transfer pipeline used fo
 \\\\
 The first step in the transfer pipeline involves selecting and segmenting documents from the retrieval task's document corpus. Only documents that contain at least one relevance assessment are selected, as those without any assessments do not provide useful information for the transfer process. Once selected, these documents are segmented into passages. This segmentation is done because relevant information related to an information need is typically concentrated in specific sections rather than spread across the entire document. By breaking documents into passages, the focus remains on the most relevant content. Additionally, since later stages of the pipeline rely on large language models, limiting the size of processed text through segmentation helps prevent potential issues when handling long documents with transformer models.
 \\\\
-After segmentation, the second step focuses on identifying the most relevant passages within each document. The relevance of each passage is determined based on its association with the query from the document's original relevance assessment. To achieve this, each passage is treated as an independent query and submitted to the source document corpus. The resulting document rankings are then used to compute various evaluation metrics, which are assigned as passage scores. These scores are later used for selecting candidate documents from the target document corpus and identifying source passages for pairwise preference comparisons in the final step.
+The second step focuses on identifying the most relevant passages within each selected document. Therefore, the relevance of each passage is determined in respect to the query of its documents relevance assessment. To achieve this, each passage is treated as an independent query and submitted to the source document corpus. The resulting document rankings are then used to compute various evaluation metrics, which are assigned as passage scores. These scores are later used for selecting candidate documents from the target document corpus and identifying source passages for pairwise preference comparisons.
 \\\\
 The third step is the selection of candidate documents from the target document corpus. For each query in a retrieval task, a set of documents is chosen to receive new relevance assessments. This selection is performed using different strategies with the aim to identify documents most likely to be relevant. Each selected target document is then paired with relevant passages from the source dataset, identified in the previous step. These candidates serve as input for the pairwise inference process in the next step.
 \\\\
 At this stage, the transfer pipeline has identified, for each query, a set of target documents along with a corresponding set of relevant passages from the source dataset. The final step is inferring new relevance assessments for the target documents. To achieve this, target documents are also segmented into passages to be processed with source passages. Each query is then processed alongside a target passage and a source passage using a pairwise ranking model to determine whether the target passage is as relevant as the source passage. Finally, a label for an entire document from the target document corpus is then created by aggregating the relevance scores of all its passages.
-
-% In this Chapter, I present the individual steps of the pipeline used to process the datasets. I begin by introducing all the datasets on which the transfer process was performed and evaluated. Subsequently, I discuss each step of the transfer pipeline in detail. The goal is to automatically infer \texttt{qrels} for the target dataset through pairwise preferences based on the existing \texttt{qrels} of the source dataset.
-% \\\\
-% The first step in the transfer pipeline is the segmentation of a selection of documents in the source dataset into passages. Relevant information within a document, if present, is typically confined to specific parts and not in the whole document. To improve the results in the pairwise preferences later, the goal is on filtering out only those passages that are highly relevant to a query.
-% \\\\
-% The second step identifies the passages of a document that are most relevant to the query of its \texttt{qrel}. For each \texttt{qrel} in the source dataset, i.e., the \texttt{(query, document, label)} triples, all passages of the document are treated as individual queries and submitted as requests against the source dataset. Based on the responses to these requests, various metrics are calculated to measure the proportion of relevant documents retrieved in the document ranking. Passages containing a large amount of relevant information for the query of the \texttt{qrel} retrieve more relevant documents and achieve better metrics than those contributing little or no information to the query.
-% \\\\
-% In the third step, the quality of the assigned passage scores is evaluated using different rank correlation methods. Based on the evaluation results, the metric with the highest rank correlation is used to select candidates for the pairwise preferences. In this selection phase, documents, referred to as candidates, are identified in the target dataset for which \texttt{qrels} will be determined. A candidate, similar to a \texttt{qrel}, consists of a query $q$, a candidate $c$, a set of known, relevant passages, and a set of known, non relevant passages for $q$ from the source dataset. Since the relevant and non relevant passages are later used for the pairwise preference, each candidate $c$ from the target dataset is also divided into passages $c=(c_1, c_2, ..., c_n)$.
-% \\\\
-% In the final step, the pairwise preferences are inferred. All candidates, i.e., triples consisting of \texttt{(query text, non/relevant passage text, unknown passage text)}, are fed into a pairwise ranking model to determine whether the unknown passage is as relevant as the known passage concerning the query text. From the results of the pairwise preferences, labels for the respective unknown passages are generated through the aggregation of all pairwise preferences with the known passages. A label for an entire document in the target dataset is then created by aggregating the labels of all its passages.
-
-\pagebreak
-
 
 % ========
 % Datasets
 % ========
 \section{Datasets}\label{datasets}
 
-\begin{figure}[ht]
+\begin{figure}[t]
     \centering
-    \includegraphics[width=0.95\textwidth]{./graphics/drawio/datasets.png}
+    \includegraphics[width=\textwidth]{./graphics/drawio/datasets.pdf}
     \caption{Simplified structure of a dataset from \texttt{ir\_datasets}, comprising a set of documents, queries, and relevance assessments, along with their attributes.}
     \label{fig:retrieval-task}
 \end{figure}
 
-\begin{table}[h!]
+To simplify data handling, I used \texttt{ir\_datasets}~\citep{macavaney:2021}, a Python package that provides numerous datasets and their associated retrieval tasks. The advantage of \texttt{ir\_datasets} is that it provides a standardized interface for accessing data. Using various iterators, the package manages access to corpora, queries, and \texttt{qrels}, enabling the transfer pipeline to handle different datasets in a uniform way. The datasets and retrieval tasks used in this research are listed in Table~\ref{tab:datasets}. The source datasets were selected because they are widely used in the field of information retrieval and because each dataset comes up with associated retrieval tasks in \texttt{ir\_datasets}. The retrieval tasks, providing \texttt{qrels} for the source datasets, are later transferd to the target dataset, \texttt{ClueWeb22/b}. The target dataset, \texttt{ClueWeb22/b}, was chosen because it is currently the newest ClueWeb corpus in the \texttt{Lemur Project}\footnote{https://lemurproject.org}. The corpus is significantly large, containing over 1.0~billion documents. Due to its size, the ratio of \texttt{qrels} to documents is relatively low. Therefore, the goal is to transfer the existing \texttt{qrels} from the source datasets and their associated retrieval tasks to generate new \texttt{qrels} for \texttt{ClueWeb22/b}, thereby enriching the corpus with additional relevance judgments. 
+
+\begin{table}[t]
     \centering
     \footnotesize
     \caption{List of source datasets and their associated retrieval tasks from which existing \texttt{qrels} where transferd into the target dataset \texttt{ClueWeb22/b}.}
@@ -57,18 +46,6 @@ At this stage, the transfer pipeline has identified, for each query, a set of ta
         Args.me & 0.4~m & Touché 2020 Task 1 & 49 & 2,298 & 3 \\
         \midrule
 
-        % \multirow{4}{*}{ClueWeb09} & \multirow{4}{*}{1.0~b} & TREC 2009 Web Track & 50 & 23,601 & 3 \\
-        % & & TREC 2010 Web Track & 50 & 25,329 & 4 \\
-        % & & TREC 2011 Web Track & 50 & 19,381 & 4\\
-        % & & TREC 2012 Web Track & 50 & 16,055 & 5 \\
-        % \midrule
-
-        % \multirow{4}{*}{ClueWeb12} & \multirow{4}{*}{731.7~m} & TREC 2013 Web Track & 50 & 14,474 & 5 \\
-        % & & TREC 2014 Web Track & 50 & 14,432 & 5 \\
-        % & & Touché 2021 Task 2 & 50 & 2,076 & 3 \\
-        % & & Touché 2022 Task 2 & 50 & 2,107 & 3 \\
-        % \midrule
-
         \multirow{3}{*}{Disks4+5} & \multirow{3}{*}{0.5~m} & Robust04 & 250 & 311,410 & 3 \\
         & & TREC-7 & 50 & 80,345 & 2 \\
         & & TREC-8 & 50 & 86,830 & 2 \\
@@ -81,17 +58,15 @@ At this stage, the transfer pipeline has identified, for each query, a set of ta
     \end{tabular}
 \end{table}
 
-To simplify data handling, I used \texttt{ir\_datasets}~\citep{macavaney:2021}, a Python package that provides numerous datasets and their associated retrieval tasks. The advantage of \texttt{ir\_datasets} is that it provides a standardized interface for accessing data. Using various iterators, the package manages access to corpora, queries, and \texttt{qrels}, enabling the transfer pipeline to handle different datasets in a uniform way. The datasets and retrieval tasks used in this research are listed in Table~\ref{tab:datasets}. The source datasets were selected because they are widely used in the field of information retrieval and because each dataset comes up with associated retrieval tasks in \texttt{ir\_datasets}. The retrieval tasks, providing \texttt{qrels} for the source datasets, are later transferd to the target dataset, \texttt{ClueWeb22/b}. The target dataset, \texttt{ClueWeb22/b}, was chosen because it is currently the newest ClueWeb corpus in the \texttt{Lemur Project}\footnote{https://lemurproject.org}. The corpus is significantly large, containing over 1.0~billion documents. Due to its size, the ratio of \texttt{qrels} to documents is relatively low. Therefore, the goal is to transfer the existing \texttt{qrels} from the source datasets and their associated retrieval tasks to generate new \texttt{qrels} for \texttt{ClueWeb22/b}, thereby enriching the corpus with additional relevance judgments. 
-
 
 % =====================
 % Document Segmentation
 % =====================
 \section{Document Segmentation}\label{document-segmentation}
 
-\begin{figure}[ht]
+\begin{figure}[t]
     \centering
-    \includegraphics[width=0.95\textwidth]{./graphics/drawio/document_segmentation.png}
+    \includegraphics[width=\textwidth]{./graphics/drawio/document_segmentation.pdf}
     \caption{Visualization of the document segmentation step in the process pipeline. First, a subset of documents is selected from the document store. Then, the selected documents are segmented using \texttt{spaCy}.}
     \label{fig:document-segmentation}
 \end{figure}
@@ -126,9 +101,9 @@ The selected documents from the source corpora are now available as passages. In
 % ===============
 \section{Passage Scoring}\label{passage-scoring}
 
-\begin{figure}[ht]
+\begin{figure}[t]
     \centering
-    \includegraphics[width=0.95\textwidth]{./graphics/drawio/passage_scoring.png}
+    \includegraphics[width=\textwidth]{./graphics/drawio/passage_scoring.pdf}
     \caption{Generalised visualisation of the passage scoring process by submitting a passage as a query and retrieving a document ranking from the source corpus.}
     \label{fig:passage-scoring}
 \end{figure}
@@ -151,9 +126,9 @@ At this stage of the pipeline, the individual passages of the selected documents
 % ====================
 \section{Candidate Selection}\label{candidate-selection}
 
-\begin{figure}[ht]
+\begin{figure}[t]
     \centering
-    \includegraphics[width=0.95\textwidth]{./graphics/drawio/candidate_selection.png}
+    \includegraphics[width=\textwidth]{./graphics/drawio/candidate_selection.pdf}
     \caption{Tested approaches for the selection of documents from the target corpus for which relevance labels are to be determined.}
 \end{figure}
 
@@ -194,18 +169,29 @@ For each query in a retrieval task, 20 selected passages, either from the simple
 % ====================
 % Pairwise Preferences
 % ====================
+\pagebreak
 \section{Pairwise Preferences}\label{pairwise-transfering-relevance-labels-across-datasets}
 
-\begin{figure}[ht]
+\begin{figure}[t]
     \centering
-    \includegraphics[width=0.95\textwidth]{./graphics/drawio/pairwise_preferences.png}
+    \includegraphics[width=\textwidth]{./graphics/drawio/pairwise_preferences.pdf}
     \caption{Visualization of the pairwise preference inference process with \texttt{DuoPrompt}. Each candidate consists of a query, a known passage from the source corpus, and a passage to judge from the target corpus.}
     \label{fig:pairwise-preferences}
 \end{figure}
 
-\begin{figure}[ht]
+So far, the transfer pipeline has selected a subset of documents from the source corpus for each query. These documents were then segmented into passages, and each passage was scored to identify the relevance of a passage, used for later processing steps. Subsequently, three approaches were described for determining candidates for pairwise preference inference.
+\\\\
+At this stage, all necessary processing steps have been completed to perform pairwise preference inference. As an output of Section \ref{candidate-selection}, each selected document from the target corpus has been broken down into passages and each passage is paired with 15 relevant and 5 non-relevant passages from the source corpus. The queries used for the pairwise preferences are predefined by the corresponding retrieval tasks. These resulting candidates are triples, consisting of \texttt{(query, known passage, passage to judge)}, that are now ready for processing, as visualized in Figure~\ref{fig:pairwise-preferences}.
+\\\\
+To perform the pairwise preference inference, the Python library \texttt{autoqrels}\footnote{https://github.com/seanmacavaney/autoqrels} was used. \texttt{autoqrels} is a tool designed for automatically inferring relevance assessments. It supports zero-shot and one-shot prompting for relevance inference and includes several pre-implemented inference models. The original \texttt{autoqrels} paper~\citep{macavaney:2023} evaluated the effectiveness of one-shot labelers for automatic relevance estimation. Among the tested approaches \texttt{MaxRep-BM25}, \texttt{MaxRep-TCT}, \texttt{DuoT5}, and \texttt{DuoPrompt}, the \texttt{DuoPrompt} approach for pairwise inference demonstrated superior performance and therefore was utilized for one-shot labeling in this thesis.
+\\\\
+\texttt{DuoPrompt} processes a $query$, a known passage $A$, and a passage to judge $B$. It constructs a prompt that includes a brief instruction before the query and passage texts, asking the model to assess the relevance of passage $B$ for the given query, as shown in Figure~\ref{fig:oneshot-prompt}. This prompt is then fed into \mbox{\texttt{FLAN-T5}~\citep{chung:2022}}, along with the question of whether passage $B$ is as relevant as passage $A$.
+\\\\
+\texttt{FLAN-T5} is a Text-to-Text Transfer Transformer model, an advanced version of Google's \texttt{T5} model~\citep{raffel:2020}. While maintaining the backbone architecture of \texttt{T5}, \texttt{FLAN-T5} has been further fine-tuned on a diverse set of training tasks, enhancing its performance across various natural language processing applications. \texttt{FLAN-T5} is available in multiple sizes, ranging from smaller, resource-efficient versions like \texttt{flan-t5-small}, with 80~million parameters, to larger models such as \texttt{flan-t5-xxl}, which contains 11~billion parameters. These variations accommodate different computational and application needs. Given the computational constraints for this thesis, \texttt{flan-t5-base} model \footnote{https://huggingface.co/google/flan-t5-base}, with 250~million parameters, was selected as the transformer model for \texttt{DuoPrompt}.
+
+\begin{figure}[t]
     \centering
-    \begin{tcolorbox}[title=One-Shot Prompt, width=0.95\textwidth]
+    \begin{tcolorbox}[title=One-Shot Prompt, width=\textwidth]
         \footnotesize
         \begin{verbatim}
 PROMPT = (
@@ -222,16 +208,6 @@ PROMPT = (
     \label{fig:oneshot-prompt}
 \end{figure}
 
-So far, the transfer pipeline has selected a subset of documents from the source corpus for each query. These documents were then segmented into passages, and each passage was scored to identify the relevance of a passage, used for later processing steps. Subsequently, three approaches were described for determining candidates for pairwise preference inference.
-\\\\
-At this stage, all necessary processing steps have been completed to perform pairwise preference inference. As an output of Section \ref{candidate-selection}, each selected document from the target corpus has been broken down into passages and each passage is paired with 15 relevant and 5 non-relevant passages from the source corpus. The queries used for the pairwise preferences are predefined by the corresponding retrieval tasks. These resulting candidates are triples, consisting of \texttt{(query, known passage, passage to judge)}, that are now ready for processing, as visualized in Figure~\ref{fig:pairwise-preferences}.
-\\\\
-To perform the pairwise preference inference, the Python library \texttt{autoqrels}\footnote{https://github.com/seanmacavaney/autoqrels} was used. \texttt{autoqrels} is a tool designed for automatically inferring relevance assessments. It supports zero-shot and one-shot prompting for relevance inference and includes several pre-implemented inference models. The original \texttt{autoqrels} paper~\citep{macavaney:2023} evaluated the effectiveness of one-shot labelers for automatic relevance estimation. Among the tested approaches \texttt{MaxRep-BM25}, \texttt{MaxRep-TCT}, \texttt{DuoT5}, and \texttt{DuoPrompt}, the \texttt{DuoPrompt} approach for pairwise inference demonstrated superior performance and therefore was utilized for one-shot labeling in this thesis.
-\\\\
-\texttt{DuoPrompt} processes a $query$, a known passage $A$, and a passage to judge $B$. It constructs a prompt that includes a brief instruction before the query and passage texts, asking the model to assess the relevance of passage $B$ for the given query, as shown in Figure~\ref{fig:oneshot-prompt}. This prompt is then fed into \mbox{\texttt{FLAN-T5}~\citep{chung:2022}}, along with the question of whether passage $B$ is as relevant as passage $A$.
-\\\\
-\texttt{FLAN-T5} is a Text-to-Text Transfer Transformer model, an advanced version of Google's \texttt{T5} model~\citep{raffel:2020}. While maintaining the backbone architecture of \texttt{T5}, \texttt{FLAN-T5} has been further fine-tuned on a diverse set of training tasks, enhancing its performance across various natural language processing applications. \texttt{FLAN-T5} is available in multiple sizes, ranging from smaller, resource-efficient versions like \texttt{flan-t5-small}, with 80~million parameters, to larger models such as \texttt{flan-t5-xxl}, which contains 11~billion parameters. These variations accommodate different computational and application needs. Given the computational constraints for this thesis, \texttt{flan-t5-base} model \footnote{https://huggingface.co/google/flan-t5-base}, with 250~million parameters, was selected as the transformer model for \texttt{DuoPrompt}.
-\\\\
 Figure~\ref{fig:oneshot-prompt} illustrates the prompt structure provided to \texttt{FLAN-T5}. The prompt takes a query, a known passage (referred to as \texttt{rel\_doc\_text}), and a passage to judge (referred to as \texttt{unk\_doc\_text}) as inputs for pairwise inference. The model then predicts the probability values by computing the softmax over the logits of two tokens, which are subsequently used as the relevance score. If the passage to judge is highly relevant to the query, the model's expected output should be a score close to 1.0. Conversely, if the passage is not relevant, the model should produce a score close to 0.0.
 \\\\
 All candidates undergo pairwise preference inference, where each passage to judge is compared against 20 known passages, as outlined in Section \ref{composing-final-candidates}. Accordingly, the outcome of the pairwise preference inference generates 20 relevance scores for each passage to judge, with higher scores indicating greater relevance to the query.
