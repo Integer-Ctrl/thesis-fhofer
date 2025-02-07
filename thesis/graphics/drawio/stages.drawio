@@ -292,7 +292,7 @@
     </mxGraphModel>
   </diagram>
   <diagram id="NTGv4uMrdoTe5AkUEegp" name="datasets">
-    <mxGraphModel dx="1434" dy="836" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="989" dy="577" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -323,25 +323,25 @@
         <mxCell id="pYhv811A7yg6qZeYVkYp-7" value="&lt;b&gt;&lt;font style=&quot;font-size: 24px;&quot;&gt;Retrieval Task&lt;/font&gt;&lt;/b&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" parent="1" vertex="1">
           <mxGeometry x="210" width="180" height="40" as="geometry" />
         </mxCell>
-        <mxCell id="4MzMh5OFydat-2vjnlEX-2" value="" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+        <mxCell id="4MzMh5OFydat-2vjnlEX-2" value="" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="420" y="415" width="120" height="210" as="geometry" />
         </mxCell>
-        <mxCell id="4MzMh5OFydat-2vjnlEX-3" value="Relevance&lt;div&gt;Assessments&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontStyle=1" vertex="1" parent="1">
-          <mxGeometry x="435" y="410" width="90" height="40" as="geometry" />
+        <mxCell id="4MzMh5OFydat-2vjnlEX-3" value="Relevance&lt;div&gt;Judgments&lt;/div&gt;" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontStyle=1" parent="1" vertex="1">
+          <mxGeometry x="440" y="410" width="80" height="40" as="geometry" />
         </mxCell>
-        <mxCell id="4MzMh5OFydat-2vjnlEX-4" value="" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+        <mxCell id="4MzMh5OFydat-2vjnlEX-4" value="" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
           <mxGeometry x="60" y="415" width="120" height="210" as="geometry" />
         </mxCell>
-        <mxCell id="4MzMh5OFydat-2vjnlEX-5" value="&lt;b&gt;Document&lt;/b&gt;&lt;div&gt;&lt;b&gt;Store&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;&lt;/div&gt;&lt;div&gt;doc_id&lt;/div&gt;&lt;div&gt;text&lt;/div&gt;&lt;div&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;&lt;/div&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;" vertex="1" parent="1">
+        <mxCell id="4MzMh5OFydat-2vjnlEX-5" value="&lt;b&gt;Document&lt;/b&gt;&lt;div&gt;&lt;b&gt;Store&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;&lt;/div&gt;&lt;div&gt;doc_id&lt;/div&gt;&lt;div&gt;text&lt;/div&gt;&lt;div&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;&lt;/div&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;" parent="1" vertex="1">
           <mxGeometry x="70" y="445" width="100" height="170" as="geometry" />
         </mxCell>
-        <mxCell id="4MzMh5OFydat-2vjnlEX-6" value="&lt;b&gt;Query&lt;/b&gt;&lt;div&gt;&lt;b&gt;Store&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;&lt;/div&gt;&lt;div&gt;query_id&lt;/div&gt;&lt;div&gt;text&lt;/div&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;" vertex="1" parent="1">
+        <mxCell id="4MzMh5OFydat-2vjnlEX-6" value="&lt;b&gt;Query&lt;/b&gt;&lt;div&gt;&lt;b&gt;Store&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;&lt;/div&gt;&lt;div&gt;query_id&lt;/div&gt;&lt;div&gt;text&lt;/div&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;" parent="1" vertex="1">
           <mxGeometry x="250" y="445" width="100" height="170" as="geometry" />
         </mxCell>
-        <mxCell id="4MzMh5OFydat-2vjnlEX-7" value="&lt;b&gt;Qrel&lt;/b&gt;&lt;div&gt;&lt;b&gt;Store&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;&lt;/div&gt;&lt;div&gt;query_id&lt;/div&gt;&lt;div&gt;doc_id&lt;/div&gt;&lt;div&gt;relevance&lt;/div&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;" vertex="1" parent="1">
+        <mxCell id="4MzMh5OFydat-2vjnlEX-7" value="&lt;b&gt;Qrel&lt;/b&gt;&lt;div&gt;&lt;b&gt;Store&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;&lt;br&gt;&lt;/b&gt;&lt;/div&gt;&lt;div&gt;query_id&lt;/div&gt;&lt;div&gt;doc_id&lt;/div&gt;&lt;div&gt;relevance&lt;/div&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;" parent="1" vertex="1">
           <mxGeometry x="430" y="445" width="100" height="170" as="geometry" />
         </mxCell>
-        <mxCell id="4MzMh5OFydat-2vjnlEX-8" value="Corpus" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontStyle=1" vertex="1" parent="1">
+        <mxCell id="4MzMh5OFydat-2vjnlEX-8" value="Corpus" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontStyle=1" parent="1" vertex="1">
           <mxGeometry x="90" y="415" width="60" height="30" as="geometry" />
         </mxCell>
       </root>

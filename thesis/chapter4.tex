@@ -1,6 +1,10 @@
 \chapter{Evaluation}\label{evaluation}
 
-This chapter focuses on the evaluation of the transfer pipeline. First, the evaluation methods used are introduced. Rank correlation is employed to compare the original relevance assessments with the relevance scores inferred during the pipeline process. Next, the individual steps of the pipeline are analyzed and evaluated to examine intermediate results and identify potential weaknesses. At the end, the final phase of the transfer pipeline is assessed by evaluating the original relevance assessments of the retrieval tasks with the inferred relevance scores produced by the pipeline.
+\begin{itemize}
+    \item Dependencies to the number of relevance labels, the number of documents, and the number of queries?
+\end{itemize}
+
+This chapter focuses on the evaluation of the transfer pipeline. First, the evaluation methods used are introduced. Rank correlation is employed to compare the original relevance judgments with the relevance scores inferred during the pipeline process. Next, the individual steps of the pipeline are analyzed and evaluated to examine intermediate results and identify potential weaknesses. At the end, the final phase of the transfer pipeline is assessed by evaluating the original relevance judgments of the retrieval tasks with the inferred relevance scores produced by the pipeline.
 
 % ================
 % Rank Correlation
@@ -119,7 +123,7 @@ Since this study does not aim to optimize or analyze a specific set of retriever
 % ====================
 \section{Pairwise Preferences}\label{eval-pairwise-preferences}
 
-The first evaluation of the pairwise preferences involves inferring relevance scores from the original relevance assessments within the source dataset itself. This allows for an automatic evaluation using rank correlation, as the retrieval tasks provide predefined relevance judgments for comparison. Each dataset can be evaluated individually to verify whether the inferred scores align with the original relevance assessments. The second evaluation assesses the transfer of inferred relevance scores from the retrieval tasks to the target corpus, \texttt{ClueWeb22/b}. Since no existing relevance judgments are available for \texttt{ClueWeb22/b}, this evaluation cannot be automated. Instead, randomly selected documents for which relevance scores have been inferred are chosen for each query and manually reviewed. Human assessors then determine whether the inferred relevance scores accurately reflect the relevance of the corresponding documents to the queries.
+The first evaluation of the pairwise preferences involves inferring relevance scores from the original relevance judgments within the source dataset itself. This allows for an automatic evaluation using rank correlation, as the retrieval tasks provide predefined relevance judgments for comparison. Each dataset can be evaluated individually to verify whether the inferred scores align with the original relevance judgments. The second evaluation assesses the transfer of inferred relevance scores from the retrieval tasks to the target corpus, \texttt{ClueWeb22/b}. Since no existing relevance judgments are available for \texttt{ClueWeb22/b}, this evaluation cannot be automated. Instead, randomly selected documents for which relevance scores have been inferred are chosen for each query and manually reviewed. Human assessors then determine whether the inferred relevance scores accurately reflect the relevance of the corresponding documents to the queries.
 
 \begin{table}[t]
     \centering
