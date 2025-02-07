@@ -6,23 +6,23 @@
     \caption{Correlations of the assigned passage scores to the original document judgments reported in terms of the \textbf{greedy} Kendall's $\tau$ and Spearman's $\rho$.}
     \resizebox{\textwidth}{!}{%
     \renewcommand{\arraystretch}{1.2}
-    \begin{tabular}{lcccccccccccc}
+    \begin{tabular}{lcccccccccccccc}
         \toprule
-        \textbf{Retrieval Model} & \multicolumn{2}{c}{\textbf{Touché 20}} & \multicolumn{2}{c}{\textbf{Robust04}} & \multicolumn{2}{c}{\textbf{TREC-7}} & \multicolumn{2}{c}{\textbf{TREC-8}} & \multicolumn{2}{c}{\textbf{TREC-19 DL}} & \multicolumn{2}{c}{\textbf{TREC-20 DL}} \\
+        \textbf{Retrieval Model} & \multicolumn{2}{c}{\textbf{Touché 20}} & \multicolumn{2}{c}{\textbf{Robust04}} & \multicolumn{2}{c}{\textbf{TREC-7}} & \multicolumn{2}{c}{\textbf{TREC-8}} & \multicolumn{2}{c}{\textbf{TREC-19 DL}} & \multicolumn{2}{c}{\textbf{TREC-20 DL}} & & \\
         \cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9} \cmidrule(lr){10-11} \cmidrule(lr){12-13}
-                                 & $\tau$ & $\rho$ & $\tau$ & $\rho$ & $\tau$ & $\rho$ & $\tau$ & $\rho$ & $\tau$ & $\rho$ & $\tau$ & $\rho$ \\
+                                 & $\tau$ & $\rho$ & $\tau$ & $\rho$ & $\tau$ & $\rho$ & $\tau$ & $\rho$ & $\tau$ & $\rho$ & $\tau$ & $\rho$ & $\overline{\tau}$ & $\overline{\rho}$ \\
         \midrule
 
-        BM25         & 0.889          & 0.912          & 0.968          & 0.974          & 0.984          & 0.984          & 0.986          & 0.986          & 0.853          & 0.894          & 0.862          & 0.895 \\
-        DFR\_BM25    & 0.879          & 0.901          & 0.969          & 0.974          & 0.984          & 0.984          & 0.986          & 0.986          & 0.851          & 0.893          & 0.860          & 0.893 \\
-        DFIZ         & 0.857          & 0.863          & 0.968          & 0.973          & 0.982          & 0.982          & 0.986          & 0.986          & 0.846          & 0.888          & 0.897          & 0.908 \\
-        DLH          & 0.920          & 0.935          & 0.969          & 0.973          & 0.982          & 0.982          & 0.980          & 0.980          & 0.842          & 0.888          & 0.895          & 0.922 \\
-        DPH          & 0.863          & 0.885          & 0.968          & 0.973          & 0.985          & 0.985          & 0.986          & 0.986          & 0.849          & 0.894          & 0.857          & 0.884 \\
-        DirichletLM  & 0.773          & 0.821          & 0.965          & 0.970          & 0.980          & 0.980          & 0.984          & 0.984          & \textbf{0.857} & \textbf{0.898} & \textbf{0.904} & \textbf{0.930} \\
-        Hiemstra\_LM & \textbf{0.937} & \textbf{0.951} & \textbf{0.973} & \textbf{0.977} & \textbf{0.989} & \textbf{0.989} & \textbf{0.989} & \textbf{0.989} & 0.856          & 0.895          & 0.897          & 0.924 \\
-        LGD          & 0.895          & 0.916          & 0.967          & 0.973          & 0.983          & 0.983          & 0.985          & 0.985          & 0.855          & 0.897          & 0.897          & 0.923 \\
-        PL2          & 0.883          & 0.901          & 0.965          & 0.970          & 0.979          & 0.979          & 0.978          & 0.978          & 0.849          & 0.890          & 0.858          & 0.892 \\
-        TF\_IDF      & 0.885          & 0.907          & 0.969          & 0.974          & 0.984          & 0.984          & 0.985          & 0.985          & 0.851          & 0.893          & 0.862          & 0.895 \\
+        BM25         & 0.889          & 0.912          & 0.968          & 0.974          & 0.984          & 0.984          & 0.986          & 0.986          & 0.853          & 0.894          & 0.862          & 0.895          & 0.000 & 0.000 \\
+        DFR\_BM25    & 0.879          & 0.901          & 0.969          & 0.974          & 0.984          & 0.984          & 0.986          & 0.986          & 0.851          & 0.893          & 0.860          & 0.893          & 0.000 & 0.000 \\
+        DFIZ         & 0.857          & 0.863          & 0.968          & 0.973          & 0.982          & 0.982          & 0.986          & 0.986          & 0.846          & 0.888          & 0.897          & 0.908          & 0.000 & 0.000 \\
+        DLH          & 0.920          & 0.935          & 0.969          & 0.973          & 0.982          & 0.982          & 0.980          & 0.980          & 0.842          & 0.888          & 0.895          & 0.922          & 0.000 & 0.000 \\
+        DPH          & 0.863          & 0.885          & 0.968          & 0.973          & 0.985          & 0.985          & 0.986          & 0.986          & 0.849          & 0.894          & 0.857          & 0.884          & 0.000 & 0.000 \\
+        DirichletLM  & 0.773          & 0.821          & 0.965          & 0.970          & 0.980          & 0.980          & 0.984          & 0.984          & \textbf{0.857} & \textbf{0.898} & \textbf{0.904} & \textbf{0.930} & 0.000 & 0.000 \\
+        Hiemstra\_LM & \textbf{0.937} & \textbf{0.951} & \textbf{0.973} & \textbf{0.977} & \textbf{0.989} & \textbf{0.989} & \textbf{0.989} & \textbf{0.989} & 0.856          & 0.895          & 0.897          & 0.924          & 0.000 & 0.000 \\
+        LGD          & 0.895          & 0.916          & 0.967          & 0.973          & 0.983          & 0.983          & 0.985          & 0.985          & 0.855          & 0.897          & 0.897          & 0.923          & 0.000 & 0.000 \\
+        PL2          & 0.883          & 0.901          & 0.965          & 0.970          & 0.979          & 0.979          & 0.978          & 0.978          & 0.849          & 0.890          & 0.858          & 0.892          & 0.000 & 0.000 \\
+        TF\_IDF      & 0.885          & 0.907          & 0.969          & 0.974          & 0.984          & 0.984          & 0.985          & 0.985          & 0.851          & 0.893          & 0.862          & 0.895          & 0.000 & 0.000 \\
 
         \bottomrule
     \end{tabular}}
