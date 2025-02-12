@@ -28,12 +28,8 @@ EVALUATION_METHODS = config['EVALUATION_METHODS']
 NUMBER_OF_CROSS_VALIDATION_FOLDS = config['NUMBER_OF_CROSS_VALIDATION_FOLDS']
 KEY_SEPARATOR = config['KEY_SEPARATOR']
 
-# to compute on duoprompt pairwise preferences (not on monoprompt)
-LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH = os.path.join(
-    TARGET_PATH, config['DUOPROMPT_PATH'], config['LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH'])
-CANDIDATE_PATTERN = os.path.join(LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH, '*')  # naive, union, ...
-
-LABEL_CROSS_VALIDATION_PATH = os.path.join(TARGET_PATH, config['DUOPROMPT_PATH'], config['LABEL_CROSS_VALIDATION_PATH'])
+BACKBONES = config['BACKBONES']  # all backbones
+DUOPROMPT_PATH = config['DUOPROMPT_PATH']
 
 
 # 1. Load correlation scores per evaluation
@@ -141,5 +137,15 @@ def run_cross_validation(candidate_path):
 
 
 if __name__ == '__main__':
-    for candidate_path in glob(CANDIDATE_PATTERN):
-        run_cross_validation(candidate_path)
+    for backbone in BACKBONES:
+        # to compute on monoprompt pairwise preferences (not on monoprompt)
+        LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH = os.path.join(
+            TARGET_PATH, config['DUOPROMPT_PATH'], backbone, config['LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH'])
+        CANDIDATE_PATTERN = os.path.join(LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH, '*')  # naive, union, ...
+
+        LABEL_CROSS_VALIDATION_PATH = os.path.join(TARGET_PATH, config['DUOPROMPT_PATH'], backbone, config['LABEL_CROSS_VALIDATION_PATH'])
+        if not os.path.exists(LABEL_CROSS_VALIDATION_PATH):
+            os.makedirs(LABEL_CROSS_VALIDATION_PATH)
+
+        for candidate_path in glob(CANDIDATE_PATTERN):
+            run_cross_validation(candidate_path)

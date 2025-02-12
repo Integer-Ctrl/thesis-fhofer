@@ -33,9 +33,8 @@ MONOPROMPT_PATH = config['MONOPROMPT_PATH']
 
 
 # 1. Load correlation scores per evaluation
-#    KEY1: eval_method
-#    KEY2: aggr_passage---tra_passage---aggr_doc---tra_doc
-#    SAVING: {KEY1: {KEY2: {qid: score}}}
+#    KEY1: eval_method---aggr_passage---tra_passage---aggr_doc---tra_doc
+#    SAVING: {KEY1: {qid: score}}}
 def get_key(list):
     return KEY_SEPARATOR.join(list)
 
@@ -47,7 +46,7 @@ def run_cross_validation(candidate_path):
 
     # Extract the file name
     dir_name = os.path.basename(candidate_path)
-    write_path = os.path.join(LABEL_CROSS_VALIDATION_PATH, f"{dir_name}.jsonl.gz")
+    write_path = os.path.join(LABEL_CORRELATION_AVR_PER_QUERY_PATH, f"{dir_name}.jsonl.gz")
 
     print(f"Processing candidates: {dir_name}")
 
@@ -68,65 +67,24 @@ def run_cross_validation(candidate_path):
                 eva_met = line['evaluation_method']
                 correlation_per_query = line['correlation_scores']
 
-                key1 = get_key([eva_met])
-                key2 = get_key([aggr_passage, tra_passage, aggr_doc, tra_doc])
+                key1 = get_key([eva_met, aggr_passage, tra_passage, aggr_doc, tra_doc])
 
                 # Correlation scores for each evaluation
                 if key1 not in correlation_scores:
                     correlation_scores[key1] = {}
-                if key2 in correlation_scores[key1]:
-                    print('Dublicate:', key1, key2)
-                    exit()
-                correlation_scores[key1][key2] = correlation_per_query
+                correlation_scores[key1] = correlation_per_query
 
     print(f"Files: {files}, Entries: {entries_in_files}")
     print(f"Correlation scores: {len(correlation_scores)}")
 
-    # 2. get all qids
-    qids = []
-    dataset = pt.get_dataset(DOCUMENT_DATASET_TARGET_NAME_PYTERRIER)
-    for qrel in dataset.irds_ref().qrels_iter():
-        qids.append(qrel.query_id)
-    qids = list(set(qids))
+    # 3. Avarage correlation scores per query
+    cross_validation_scores = {}
 
-    # 3. N-fold cross validation for each retrieval method and evaluation method pair
-    cross_validation_scores = {}  # key should be evaluation
-
-    fold_size = len(qids) // NUMBER_OF_CROSS_VALIDATION_FOLDS
-
-    for eva_method in EVALUATION_METHODS:
-
-        key1 = get_key([eva_method])
+    for key1, scores in correlation_scores.items():
         total_score = 0
-
-        for i in range(NUMBER_OF_CROSS_VALIDATION_FOLDS):
-
-            max_score = -float('inf')
-            max_key2 = None
-
-            for key2, scores in correlation_scores[key1].items():
-                test_qids = qids[i * fold_size:(i + 1) * fold_size]
-                train_qids = qids[:i * fold_size] + qids[(i + 1) * fold_size:]
-
-                # Get best avarage score for each key in train set
-                score = 0
-                for qid in train_qids:
-                    score += scores[qid]
-                if (score / len(train_qids)) > max_score:
-                    max_score = score
-                    max_key2 = key2
-
-            # Get avarage score for best key in test set
-            score = 0
-            for qid in test_qids:
-                score += correlation_scores[key1][max_key2][qid]
-
-            score = score / len(test_qids)
-
+        for qid, score in scores.items():
             total_score += score
-
-        total_score = total_score / NUMBER_OF_CROSS_VALIDATION_FOLDS
-        cross_validation_scores[key1] = total_score
+        cross_validation_scores[key1] = total_score / len(scores)
 
     # Sort and save the cross validation scores
     cross_validation_scores = dict(sorted(cross_validation_scores.items(), key=lambda item: item[1], reverse=True))
@@ -144,9 +102,10 @@ if __name__ == '__main__':
             TARGET_PATH, config['MONOPROMPT_PATH'], backbone, config['LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH'])
         CANDIDATE_PATTERN = os.path.join(LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH, '*')  # naive, union, ...
 
-        LABEL_CROSS_VALIDATION_PATH = os.path.join(TARGET_PATH, config['MONOPROMPT_PATH'], backbone, config['LABEL_CROSS_VALIDATION_PATH'])
-        if not os.path.exists(LABEL_CROSS_VALIDATION_PATH):
-            os.makedirs(LABEL_CROSS_VALIDATION_PATH)
+        LABEL_CORRELATION_AVR_PER_QUERY_PATH = os.path.join(
+            TARGET_PATH, config['MONOPROMPT_PATH'], backbone, config['LABEL_CORRELATION_AVR_PER_QUERY_PATH'])
+        if not os.path.exists(LABEL_CORRELATION_AVR_PER_QUERY_PATH):
+            os.makedirs(LABEL_CORRELATION_AVR_PER_QUERY_PATH)
 
         for candidate_path in glob(CANDIDATE_PATTERN):
             run_cross_validation(candidate_path)
