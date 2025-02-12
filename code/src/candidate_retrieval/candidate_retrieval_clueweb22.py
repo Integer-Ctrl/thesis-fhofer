@@ -44,19 +44,14 @@ SOURCE_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_SOURCE_NAME)
 TARGET_PATH = os.path.join(SOURCE_PATH, config["DOCUMENT_DATASET_TARGET_NAME"])
 
 # For how many queries the candidates should be created - None for all queries
-NUM_QUERIES = None
-if len(sys.argv) > 1:
-    NUM_QUERIES = int(sys.argv[1])
-    print(f"Creating candidates for the first {NUM_QUERIES} queries")
-else:
-    print("Creating candidates for all queries")
+QUERIES = config['QUERIES']  # retrieve for following queries only
 
 # Securety check
 if DOCUMENT_DATASET_TARGET_NAME == 'clueweb22/b':
     if CHATNOIR_RETRIEVAL is False:
         print("Target dataset is clueWeb22/b. Please use ChatNoir for retrieval.")
         exit()
-    if NUM_QUERIES is None:
+    if QUERIES is None:
         print("Target dataset is clueWeb22/b. Please specify the number of queries to process.")
         exit()
     print(f"Running candidate retrieval for {DOCUMENT_DATASET_SOURCE_NAME} on target clueWeb22/b")
@@ -74,6 +69,7 @@ if CHATNOIR_RETRIEVAL:
     CANDIDATES_PATH = os.path.join(TARGET_PATH, config['CANDIDATE_CHATNOIR_PATH'])
 else:
     CANDIDATES_PATH = os.path.join(TARGET_PATH, config['CANDIDATES_LOCAL_PATH'])
+print(f"Save location: {CANDIDATES_PATH}")
 
 RECALL_PRECISION_PATH = os.path.join(CANDIDATES_PATH, 'recall_precision.txt')
 
@@ -264,8 +260,6 @@ with gzip.open(PASSAGE_DATASET_SOURCE_PATH, 'rt', encoding='UTF-8') as file:
 def naive_retrieval(num_retrieval_docs):
     qid_docnos_naive_retrieval = {}
     dataset = pt.get_dataset(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
-    # Count processed queries
-    query_count = 0
 
     # Retrieve top 2000 documents for each query
     # 1000 documents via the query text and 1000 documents via the query description
@@ -284,12 +278,10 @@ def naive_retrieval(num_retrieval_docs):
                       desc='Retrieving naive top documents',
                       unit='query'):
 
-        # Stop after NUM_QUERIES queries
-        if NUM_QUERIES is not None and query_count >= NUM_QUERIES:
-            break
-        query_count += 1
-
         qid = query.query_id
+        # Only retrieve for the specified queries
+        if QUERIES is not None and qid not in QUERIES:
+            continue
         if DOCUMENT_DATASET_SOURCE_NAME == 'disks45/nocr/trec-robust-2004' and qid == '672':
             continue  # Skip query 672 as it has no relevant passages
 
@@ -327,8 +319,6 @@ def naive_retrieval(num_retrieval_docs):
 def nearest_neighbor_retrieval(num_top_passages, num_retrieval_docs, one_per_document):
     qid_docnos_nearest_neighbor_retrieval = {}
     dataset = pt.get_dataset(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
-    # Count processed queries
-    query_count = 0
 
     # Retrieve for each relevant passage for its corresponding qid the top 20 docnos
     if CHATNOIR_RETRIEVAL:  # Case if target is ClueWeb22/b
@@ -346,12 +336,10 @@ def nearest_neighbor_retrieval(num_top_passages, num_retrieval_docs, one_per_doc
                       desc='Retrieving nearest neighbor top documents',
                       unit='query'):
 
-        # Stop after NUM_QUERIES queries
-        if NUM_QUERIES is not None and query_count >= NUM_QUERIES:
-            break
-        query_count += 1
-
         qid = query.query_id
+        # Only retrieve for the specified queries
+        if QUERIES is not None and qid not in QUERIES:
+            continue
         if DOCUMENT_DATASET_SOURCE_NAME == 'disks45/nocr/trec-robust-2004' and qid == '672':
             continue  # Skip query 672 as it has no relevant passages
 
@@ -406,8 +394,6 @@ def union_retrieval(qid_docnos_set_1, qid_docnos_set_2):
 
 def write_candidates(file_name, candidates, one_per_document):
     dataset = pt.get_dataset(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
-    # Count processed queries
-    query_count = 0
 
     if one_per_document:
         # opd: add 15 known relevant and 5 known non-relevant passages for each query
@@ -415,12 +401,10 @@ def write_candidates(file_name, candidates, one_per_document):
         with gzip.open(file_name, 'wt', encoding='UTF-8') as file:
             for query in dataset.irds_ref().queries_iter():
 
-                # Stop after NUM_QUERIES queries
-                if NUM_QUERIES is not None and query_count >= NUM_QUERIES:
-                    break
-                query_count += 1
-
                 qid = query.query_id
+                # Only retrieve for the specified queries
+                if QUERIES is not None and qid not in QUERIES:
+                    continue
                 if DOCUMENT_DATASET_SOURCE_NAME == 'disks45/nocr/trec-robust-2004' and qid == '672':
                     continue  # Skip query 672 as it has no relevant passages
 
@@ -473,12 +457,10 @@ def write_candidates(file_name, candidates, one_per_document):
         with gzip.open(file_name, 'wt', encoding='UTF-8') as file:
             for query in dataset.irds_ref().queries_iter():
 
-                # Stop after NUM_QUERIES queries
-                if NUM_QUERIES is not None and query_count >= NUM_QUERIES:
-                    break
-                query_count += 1
-
                 qid = query.query_id
+                # Only retrieve for the specified queries
+                if QUERIES is not None and qid not in QUERIES:
+                    continue
                 if DOCUMENT_DATASET_SOURCE_NAME == 'disks45/nocr/trec-robust-2004' and qid == '672':
                     continue  # Skip query 672 as it has no relevant passages
 
@@ -564,6 +546,7 @@ if __name__ == '__main__':
 
     # Flatten all docid lists and remove duplicates using set
     target_qid_docids = list(set(docid for docnos in docnos_dicts for docids in docnos.values() for docid in docids))
+    print("Chunking target documents")
     chunker.chunk_target_documents(target_qid_docids, batch_size=2000)
 
     # File names
@@ -587,9 +570,11 @@ if __name__ == '__main__':
     union_100_opd_file_name = os.path.join(CANDIDATES_PATH, 'union_100_opd.jsonl.gz')
 
     # Write to file
+    print("Writing naive candidates to file")
     write_candidates(naive_file_name, docnos_naive, one_per_document=False)
     write_candidates(naive_opd_file_name, docnos_naive, one_per_document=True)
 
+    print("Writing nearest neighbor candidates to file")
     write_candidates(nn_10_file_name, docnos_nn_10, one_per_document=False)
     write_candidates(nn_50_file_name, docnos_nn_50, one_per_document=False)
     write_candidates(nn_100_file_name, docnos_nn_100, one_per_document=False)
@@ -598,6 +583,7 @@ if __name__ == '__main__':
     write_candidates(nn_50_opd_file_name, docnos_nn_50_opd, one_per_document=True)
     write_candidates(nn_100_opd_file_name, docnos_nn_100_opd, one_per_document=True)
 
+    print("Writing union candidates to file")
     write_candidates(union_10_file_name, docnos_union_10, one_per_document=False)
     write_candidates(union_50_file_name, docnos_union_50, one_per_document=False)
     write_candidates(union_100_file_name, docnos_union_100, one_per_document=False)

@@ -271,6 +271,8 @@ def ray_wrapper(job_id, NUM_QUERIES):
             qid = query.query_id
             if DOCUMENT_DATASET_SOURCE_NAME == 'disks45/nocr/trec-robust-2004' and qid == '672':
                 continue  # Skip query 672 as it has no relevant passages
+            if DOCUMENT_DATASET_SOURCE_NAME == 'disks45/nocr/trec-robust-2004' and qid == '306':
+                print("Retrieving query 306")
 
             query_text = query.default_text()
             query_description = query.description if hasattr(query, 'description') else False
@@ -329,6 +331,8 @@ def ray_wrapper(job_id, NUM_QUERIES):
             qid = query.query_id
             if DOCUMENT_DATASET_SOURCE_NAME == 'disks45/nocr/trec-robust-2004' and qid == '672':
                 continue  # Skip query 672 as it has no relevant passages
+            if DOCUMENT_DATASET_SOURCE_NAME == 'disks45/nocr/trec-robust-2004' and qid == '306':
+                print("Retrieving query 306")
 
             if one_per_document:
                 top_rel_doc_ids = queries_best_passages_opd_cache[qid][:num_top_passages]
@@ -394,6 +398,8 @@ def ray_wrapper(job_id, NUM_QUERIES):
                     qid = query.query_id
                     if DOCUMENT_DATASET_SOURCE_NAME == 'disks45/nocr/trec-robust-2004' and qid == '672':
                         continue  # Skip query 672 as it has no relevant passages
+                    if DOCUMENT_DATASET_SOURCE_NAME == 'disks45/nocr/trec-robust-2004' and qid == '306':
+                        print("Writing query 306")
 
                     query_text = query.default_text()
                     query_description = query.description if hasattr(query, 'description') else ""
@@ -452,6 +458,8 @@ def ray_wrapper(job_id, NUM_QUERIES):
                     qid = query.query_id
                     if DOCUMENT_DATASET_SOURCE_NAME == 'disks45/nocr/trec-robust-2004' and qid == '672':
                         continue  # Skip query 672 as it has no relevant passages
+                    if DOCUMENT_DATASET_SOURCE_NAME == 'disks45/nocr/trec-robust-2004' and qid == '306':
+                        print("Writing query 306")
 
                     query_text = query.default_text()
                     query_description = query.description if hasattr(query, 'description') else ""
