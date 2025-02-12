@@ -2,7 +2,7 @@
 #SBATCH --job-name=passage_scorer               # Job name
 #SBATCH --partition=gammaweb                    # Partition name
 #SBATCH --exclude=gammaweb10                    # Exclude gammaweb10 node
-#SBATCH --array=1-11                            # Array job with 100 tasks
+#SBATCH --array=1-2                            # Array job with 100 tasks
 #SBATCH --mem=16G                               # Memory request
 #SBATCH --ntasks=1                              # Number of tasks
 #SBATCH --nodes=1                               # Number of nodes

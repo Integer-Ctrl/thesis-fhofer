@@ -2,7 +2,7 @@
 #SBATCH --job-name=duoprompt                                # Job name
 #SBATCH --partition=gammaweb                                # Partition name
 #SBATCH --gres=gpu:hopper:1                                 # Request GPU resource
-#SBATCH --mem=128G                                          # Memory request (128GB)
+#SBATCH --mem=80G                                           # Memory request (128GB)
 #SBATCH --ntasks=1                                          # Number of tasks (1 job/task)
 #SBATCH --nodes=1                                           # Number of nodes
 #SBATCH --cpus-per-task=2                                   # Number of CPU cores per task
@@ -10,6 +10,7 @@
 #SBATCH --output=logs/pairwise_preference/slurm_%j.out      # Standard output log
 #SBATCH --error=logs/pairwise_preference/slurm_%j.err       # Standard error log
 
+# gpu:ampere:1
 # gpu:hopper:1
 # gpu:3g.20gb:1 
 

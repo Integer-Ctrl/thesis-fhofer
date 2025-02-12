@@ -1,20 +1,13 @@
-argsme/2020-04-01/touche-2020-task-1
+argsme/2020-04-01/touche-2020-task-1 '49', '34'
 
-clueweb09/en/trec-web-2009
-clueweb09/en/trec-web-2010
-clueweb09/en/trec-web-2011
-clueweb09/en/trec-web-2012
-
-clueweb12/trec-web-2013
-clueweb12/trec-web-2014
-clueweb12/touche-2021-task-2
-clueweb12/touche-2022-task-2
-
-disks45/nocr/trec-robust-2004
-disks45/nocr/trec7
-disks45/nocr/trec8
+disks45/nocr/trec-robust-2004 '681', '448'
+disks45/nocr/trec7 '354', '358'
+disks45/nocr/trec8 '441', '422'
 
 msmarco-document/trec-dl-2019/judged
 msmarco-document/trec-dl-2020/judged
+
+msmarco-passage/trec-dl-2019/judged '1037798', '1129237'
+msmarco-passage/trec-dl-2020/judged '997622', '1051399', '1127540'
 
 clueweb22/b

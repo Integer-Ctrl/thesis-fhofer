@@ -288,3 +288,41 @@ def check_labels():
                 line = json.loads(line)
                 if line['label'] < 0:
                     print(line)
+
+
+def count_docs_duo():
+    path = '/mnt/ceph/storage/data-in-progress/data-teaching/theses/thesis-fhofer'
+    path += '/data/disks45/nocr/trec7/disks45/nocr/trec7/duoprompt/google-t5/t5-small'
+    path += '/naive.jsonl.gz'
+
+    unique_docs = set()
+    unique_passages = set()
+    preferences_per_passage = {}
+
+    with gzip.open(path, 'rt', encoding='UTF-8') as file:
+        for line in file:
+            line = json.loads(line)
+            docno = line['passage_to_judge_id'].split('___')[0]
+            unique_docs.add(docno)
+            unique_passages.add(line['passage_to_judge_id'])
+
+            if line['passage_to_judge_id'] not in preferences_per_passage:
+                preferences_per_passage[line['passage_to_judge_id']] = 0
+            preferences_per_passage[line['passage_to_judge_id']] += 1
+
+    print(f"Unique docs: {len(unique_docs)}")
+    print(f"Unique passages: {len(unique_passages)}")
+    average_preferences = sum(preferences_per_passage.values()) / len(preferences_per_passage)
+    print(f"Average preferences per passage: {average_preferences}")
+
+
+def read_qrels_ms_passage():
+    dataset = pt.get_dataset("irds:msmarco-passage/trec-dl-2020")
+    qrels = dataset.get_qrels(variant='relevance')
+    qrels_cache = {}
+    for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
+        print(row)
+        break
+
+
+read_qrels_ms_passage()

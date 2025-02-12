@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --job-name=monoprompt                               # Job name
 #SBATCH --partition=gammaweb                                # Partition name
-#SBATCH --gres=gpu:3g.20gb:1                                # Request GPU resource
-#SBATCH --mem=128                                           # Memory request (128GB)
+#SBATCH --gres=gpu:ampere:1                                 # Request GPU resource
+#SBATCH --mem=64G                                           # Memory request (128GB)
 #SBATCH --ntasks=1                                          # Number of tasks (1 job/task)
 #SBATCH --nodes=1                                           # Number of nodes
 #SBATCH --cpus-per-task=2                                   # Number of CPU cores per task
@@ -11,6 +11,7 @@
 #SBATCH --error=logs/pointwise_preference/slurm_%j.err      # Standard error log
 
 # gpu:hopper:1
+# gpu:ampere:1
 # gpu:3g.20gb:1 
 
 # Load Python virtual environment
