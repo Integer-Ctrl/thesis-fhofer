@@ -14,19 +14,6 @@ SELECTED_QUERIES = {
     'disks45/nocr/trec8': ('441', '422')
 }
 
-DATA_PATH = '/mnt/ceph/storage/data-in-progress/data-teaching/theses/thesis-fhofer/data'
-CLUEWEB_PATH = '/clueweb22/b/candidates-chatnoir'
-APPROACH = '/union_50_opd.jsonl.gz'
-
-CANDIDATE_PATHS = {
-    'msmarco-passage/trec-dl-2019/judged': f'{DATA_PATH}/msmarco-passage/trec-dl-2019/judged{CLUEWEB_PATH}{APPROACH}',
-    'msmarco-passage/trec-dl-2020/judged': f'{DATA_PATH}/msmarco-passage/trec-dl-2020/judged{CLUEWEB_PATH}{APPROACH}',
-    'argsme/2020-04-01/touche-2020-task-1': f'{DATA_PATH}/argsme/2020-04-01/touche-2020-task-1{CLUEWEB_PATH}{APPROACH}',
-    'disks45/nocr/trec-robust-2004': f'{DATA_PATH}/disks45/nocr/trec-robust-2004{CLUEWEB_PATH}{APPROACH}',
-    'disks45/nocr/trec7': f'{DATA_PATH}/disks45/nocr/trec7{CLUEWEB_PATH}{APPROACH}',
-    'disks45/nocr/trec8': f'{DATA_PATH}/disks45/nocr/trec8{CLUEWEB_PATH}{APPROACH}',
-}
-
 
 def print_selected_queries():
     for dataset_id, qids in SELECTED_QUERIES.items():
@@ -34,6 +21,11 @@ def print_selected_queries():
         for q in dataset.queries_iter():
             if str(q.query_id) in qids:
                 print(q)
+
+
+DATA_PATH = '/mnt/ceph/storage/data-in-progress/data-teaching/theses/thesis-fhofer/data'
+CLUEWEB_PATH = '/clueweb22/b/candidates-chatnoir'
+APPROACH = '/union_50_opd.jsonl.gz'
 
 
 def write_docs_to_judge():
