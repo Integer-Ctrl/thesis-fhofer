@@ -82,36 +82,38 @@ Since this study does not aim to optimize or analyze a specific set of retriever
 \begin{table}[t]
     \centering
     \footnotesize
-    \caption{\texttt{Recall} for the retrieved candidates from the target corpus, along with the total number of candidates. The retrieval process allows multiple passages from the same document in the source dataset.}
+    % \caption{\texttt{Recall} for the retrieved candidates from the target corpus, along with the total number of candidates. The retrieval process allows multiple passages from the same document in the source dataset.}
+    % \caption{Overview of the recall (Rec.) and the total number of candidate documents (Docs.) for all three candidate retrieval approaches. Each approach was tested with restricting the selection of documents to a maximum of one passage per document (opd.) and without (def.). Also, the nearest neighbor, and therefore the union appproach which combines the results of naive and nearest neighbor retrieval, were evaluated with different values of $k$ which specifies the number of used passages for candidate retrievel.}
+    \caption{Overview of recall (Rec.) and the total number of candidate documents (Docs.) for all three candidate retrieval approaches, tested with document selection restricted to one passage per document (opd.) and without restriction (def.). The \texttt{Nearest Neighbor} and the \texttt{Union} approaches were also evaluated with varying $k$, determining the number of passages used for candidate retrieval.}
     \resizebox{\textwidth}{!}{%
     \renewcommand{\arraystretch}{1.2}
-    \begin{tabular}{ccccccccccccccc}
+    \begin{tabular}{ccrcrcrcrcrcrcr}
         \toprule
 
         \multicolumn{3}{c}{\textbf{Approach}} & \multicolumn{2}{c}{\textbf{Touché 20}} & \multicolumn{2}{c}{\textbf{Robust04}} & \multicolumn{2}{c}{\textbf{TREC-7}} & \multicolumn{2}{c}{\textbf{TREC-8}} & \multicolumn{2}{c}{\textbf{TREC-19 DL}} & \multicolumn{2}{c}{\textbf{TREC-20 DL}} \\
 
         \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9} \cmidrule(lr){10-11} \cmidrule(lr){12-13} \cmidrule(lr){14-15}
-                                          & & & REC & \#DOC & REC & \#DOC & REC & \#DOC & REC & \#DOC & REC & \#DOC & REC & \#DOC \\
+                                          & & $k$ & Rec. & Docs. & Rec. & Docs. & Rec. & Docs. & Rec. & Docs. & Rec. & Docs. & Rec. & Docs. \\
         \midrule
-        \multirow{2}{*}{\rotatebox{90}{\textbf{Naive}}} & def. & & 0.912 & 76284 & 0.777 & 391626 & 0.657 & 80032 & 0.713 & 78334 & 0.708 & 42006 & 0.806 & 44156 \\
+        \multirow{2}{*}{\rotatebox{90}{\textbf{Naive}}} & def. & - & $0.912$ & $76\,284$ & $0.777$ &$ 391\,626$ & $0.657$ & $80\,032$ & $0.713$ & $78\,334$ & $0.708$ & $42\,006$ & $0.806$ & $44\,156$ \\
         \cmidrule(lr){2-15}
-                                                        & opd & & 0.912 & 76284 & 0.777 & 391626 & 0.657 & 80032 & 0.713 & 78334 & 0.708 & 42006 & 0.806 & 44156 \\
+                                                        & opd. & - & $0.912$ & $76\,284$ & $0.777$ &$ 391\,626$ & $0.657$ & $80\,032$ & $0.713$ & $78\,334$ & $0.708$ & $42\,006$ & $0.806$ & $44\,156$ \\
         \midrule
-        \multirow{6}{*}{\rotatebox{90}{\textbf{Nearest Neighbor}}} & \multirow{3}{*}{def.} &  10 & 0.599 & 5106 & 0.520 & 22904  & 0.446 & 4464 & 0.454 & 4642 & 0.419 & 3549 & 0.583 & 4080 \\
-                                                                                        &  &  50 & 0.795 & 13809 & 0.726 & 84128 & 0.707 & 17573 & 0.668 & 17993 & 0.595 & 12043 & 0.73 & 13102 \\
-                                                                                        &  & 100 & 0.852 & 16469 & 0.790 & 144213 & 0.793 & 32829 & 0.75 & 34089 & 0.669 & 20254 & 0.775 & 20134 \\
+        \multirow{6}{*}{\rotatebox{90}{\textbf{Nearest Neighbor}}} & \multirow{3}{*}{def.} &  10 & $0.599$ &  $5\,106$ & $0.520$ &  $22\,904$ & $0.446$ &  $4\,464$ & $0.454$ &  $4\,642$ & $0.419$ &  $3\,549$ & $0.583$ &  $4\,080$ \\
+                                                                                        &  &  50 & $0.795$ & $13\,809$ & $0.726$ &  $84\,128$ & $0.707$ & $17\,573$ & $0.668$ & $17\,993$ & $0.595$ & $12\,043$ & $0.730$ & $13\,102$ \\
+                                                                                        &  & 100 & $0.852$ & $16\,469$ & $0.790$ & $144\,213$ & $0.793$ & $32\,829$ & $0.750$ & $34\,089$ & $0.669$ & $20\,254$ & $0.775$ & $20\,134$ \\
        \cmidrule(lr){2-15}
-                                                                   & \multirow{3}{*}{opd}  &  10 & 0.707 & 5287 & 0.577 & 24246 & 0.508 & 5016 & 0.495 & 5198 & 0.444 & 3371 & 0.618 & 3405 \\
-                                                                                        &  &  50 & 0.816 & 7262 & 0.809 & 79589 & 0.829 & 20818 & 0.797 & 22010 & 0.624 & 8177 & 0.712 & 5884 \\
-                                                                                        &  & 100 & 0.816 & 7262 & 0.813 & 81527 & 0.829 & 20818 & 0.797 & 22010 & 0.658 & 10322 & 0.712 & 5884 \\
+                                                                   & \multirow{3}{*}{opd.}  &  10 & $0.707$ &  $5\,287$ & $0.577$ &  $24\,246$ & $0.508$ &  $5\,016$ & $0.495$ &  $5\,198$ & $0.444$ &  $3\,371$ & $0.618$ & $3\,405$ \\
+                                                                                        &  &  50 & $0.816$ &  $7\,262$ & $0.809$ &  $79\,589$ & $0.829$ & $20\,818$ & $0.797$ & $22\,010$ & $0.624$ &  $8\,177$ & $0.712$ & $5\,884$ \\
+                                                                                        &  & 100 & $0.816$ &  $7\,262$ & $0.813$ &  $81\,527$ & $0.829$ & $20\,818$ & $0.797$ & $22\,010$ & $0.658$ & $10\,322$ & $0.712$ & $5\,884$ \\
         \midrule
-        \multirow{6}{*}{\rotatebox{90}{\textbf{Union}}} & \multirow{3}{*}{def.} &  10 & 0.932 & 77509 & 0.851 & 403659 & 0.769 & 82690 & 0.797 & 80705 & 0.771 & 43616 & 0.869 & 46282 \\
-                                                                             &  &  50 & 0.964 & 81753 & 0.906 & 451335 & 0.862 & 93116 & 0.864 & 90979 & 0.826 & 49939 & 0.91 & 53547 \\
-                                                                             &  & 100 & 0.982 & 83473 & 0.930 & 503548 & 0.905 & 106555 & 0.893 & 105038 & 0.859 & 56783 & 0.923 & 59629 \\
+        \multirow{6}{*}{\rotatebox{90}{\textbf{Union}}} & \multirow{3}{*}{def.} &  10 & $0.932$ & $77\,509$ & $0.851$ & $403\,659$ & $0.769$ &  $82\,690$ & $0.797$ &  $80\,705$ & $0.771$ & $43\,616$ & $0.869$ & $46\,282$ \\
+                                                                             &  &  50 & $0.964$ & $81\,753$ & $0.906$ & $451\,335$ & $0.862$ &  $93\,116$ & $0.864$ &  $90\,979$ & $0.826$ & $49\,939$ & $0.910$ & $53\,547$ \\
+                                                                             &  & 100 & $0.982$ & $83\,473$ & $0.930$ & $503\,548$ & $0.905$ & $106\,555$ & $0.893$ & $105\,038$ & $0.859$ & $56\,783$ & $0.923$ & $59\,629$ \\
         \cmidrule(lr){2-15}
-                                                        & \multirow{3}{*}{opd}  &  10 & 0.949 & 77401 & 0.863 & 404321 & 0.792 & 82938 & 0.809 & 81094 & 0.78 & 43398 & 0.889 & 45680 \\
-                                                                             &  &  50 & 0.982 & 78136 & 0.942 & 447708 & 0.916 & 95672 & 0.918 & 94441 & 0.843 & 46290 & 0.917 & 47474 \\
-                                                                             &  & 100 & 0.982 & 78136 & 0.943 & 449425 & 0.916 & 95672 & 0.918 & 94441 & 0.862 & 47961 & 0.917 & 47474 \\
+                                                        & \multirow{3}{*}{opd.}  &  10 & $0.949$ & $77\,401$ & $0.863$ & $404\,321$ & $0.792$ & $82\,938$ & $0.809$ & $81\,094$ & $0.780$ & $43\,398$ & $0.889$ & $45\,680$ \\
+                                                                             &  &  50 & $0.982$ & $78\,136$ & $0.942$ & $447\,708$ & $0.916$ & $95\,672$ & $0.918$ & $94\,441$ & $0.843$ & $46\,290$ & $0.917$ & $47\,474$ \\
+                                                                             &  & 100 & $0.982$ & $78\,136$ & $0.943$ & $449\,425$ & $0.916$ & $95\,672$ & $0.918$ & $94\,441$ & $0.862$ & $47\,961$ & $0.917$ & $47\,474$ \\
 
         \bottomrule 
     \end{tabular}}
