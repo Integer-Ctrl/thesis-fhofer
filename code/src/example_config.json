@@ -6,6 +6,7 @@
         "CHATNOIR_RETRIEVAL": false,
         "CHATNOIR_SOURCE_INDICES": "",
         "CHATNOIR_TARGET_INDICES": "clueweb22/b",
+        "QUERIES": [],
         "CHATNOIR_API_KEY": "",
 
         "PASSAGE_ID_SEPARATOR": "___",
@@ -55,6 +56,10 @@
 
         "CANDIDATES_LOCAL_PATH": "candidates/",
         "CANDIDATE_CHATNOIR_PATH": "candidates-chatnoir/",
+
+        "PREFERENCE_BACKBONE": "google/flan-t5-small",
+        "BACKBONES": ["google/flan-t5-base", "google/flan-t5-small", "google-t5/t5-small"],
+        "ONLY_JUDGED": true,
 
         "DUOPROMPT_PATH": "duoprompt/",
         "DUOPROMPT_CACHE_NAME": "duoprompt.jsonl.cache.gz",

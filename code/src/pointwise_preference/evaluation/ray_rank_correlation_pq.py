@@ -25,9 +25,9 @@ def load_config(filename='/mnt/ceph/storage/data-tmp/current/ho62zoq/thesis-fhof
 config = load_config()
 SOURCE_PATH = os.path.join(config['DATA_PATH'], config['DOCUMENT_DATASET_SOURCE_NAME'])
 TARGET_PATH = os.path.join(SOURCE_PATH, config['DOCUMENT_DATASET_TARGET_NAME'])
-POINTWISE_PREFERENCES_PATTERN = os.path.join(TARGET_PATH, config['MONOPROMPT_PATH'], '*.jsonl.gz')  # glob pattern
-LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH = os.path.join(
-    TARGET_PATH, config['MONOPROMPT_PATH'], config['LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH'])
+
+BACKBONES = config['BACKBONES']  # all backbones
+MONOPROMPT_PATH = config['MONOPROMPT_PATH']
 
 
 @ray.remote
@@ -45,10 +45,8 @@ def ray_wrapper(JOB_ID, NUM_JOBS):
 
     DOCUMENT_DATASET_TARGET_NAME_PYTERRIER = config['DOCUMENT_DATASET_TARGET_NAME_PYTERRIER']
 
-    POINTWISE_PREFERENCES_PATTERN = os.path.join(TARGET_PATH, config['MONOPROMPT_PATH'], '*.jsonl.gz')  # glob pattern
-    # to compute on monoprompt pointwise preferences (not on duoprompt)
-    LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH = os.path.join(
-        TARGET_PATH, config['MONOPROMPT_PATH'], config['LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH'])
+    BACKBONES = config['BACKBONES']  # all backbones
+    MONOPROMPT_PATH = config['MONOPROMPT_PATH']
 
     PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
     AGGREGATION_METHODS = config['AGGREGATION_METHODS']
@@ -235,8 +233,8 @@ def ray_wrapper(JOB_ID, NUM_JOBS):
     combinations = []
     for aggregation_method_passage in AGGREGATION_METHODS:
         for transformation_method_passage in TRANSFORMATION_METHODS:
-            for aggregation_method_document in AGGREGATION_METHODS:
-                for transformation_method_document in TRANSFORMATION_METHODS:
+            for aggregation_method_document in ['max']:  # Only max aggregation for documents
+                for transformation_method_document in ['id']:  # Only id transformation for documents
                     for evaluation_method in EVALUATION_METHODS:
                         combinations += [(aggregation_method_passage,
                                          transformation_method_passage,
@@ -252,53 +250,68 @@ def ray_wrapper(JOB_ID, NUM_JOBS):
 
     COMBINATIONS = combinations[start_index:end_index]
 
-    for pointwise_preferences_path in glob(POINTWISE_PREFERENCES_PATTERN):
-        # Extract the file name
-        file_name = os.path.basename(pointwise_preferences_path)
-        base_name = file_name.split('.')[0]
-        write_path = os.path.join(LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH, base_name)
+    for backbone in BACKBONES:
+        print(f"Processing backbone: {backbone}")
+        POINTWISE_PREFERENCES_PATTERN = os.path.join(TARGET_PATH, MONOPROMPT_PATH, backbone, '*.jsonl.gz')  # glob pattern
 
-        print(f"Processing candidates: {file_name}")
-        qid_docno_passage_scores = read_pointwise_preferences(pointwise_preferences_path)
+        LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH = os.path.join(
+            TARGET_PATH, MONOPROMPT_PATH, backbone, config['LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH'])
 
-        correlation_scores = []
-        for combination in COMBINATIONS:
-            agr_met_passage, tra_met_passage, agr_met_doc, tra_met_doc, eval_met = combination
-            print(f"Job {JOB_ID} processing {agr_met_passage}-{tra_met_passage}-{agr_met_doc}-{tra_met_doc}-{eval_met}")
+        for pointwise_preferences_path in glob(POINTWISE_PREFERENCES_PATTERN):
+            # Extract the file name
+            file_name = os.path.basename(pointwise_preferences_path)
+            base_name = file_name.split('.')[0]
+            write_path = os.path.join(LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH, base_name)
 
-            # Get the aggregated and transformed scores for passages
-            aggregated_scores_passages = get_aggregated_scores_passages(qid_docno_passage_scores, agr_met_passage)
-            transformed_scores_passages = get_transformed_scores_passages(aggregated_scores_passages, tra_met_passage)
+            print(f"Processing candidates: {file_name}")
+            qid_docno_passage_scores = read_pointwise_preferences(pointwise_preferences_path)
 
-            # Get the aggregated and transformed scores for documents
-            aggregated_scores_documents = get_aggregated_scores_documents(transformed_scores_passages, agr_met_doc)
-            transformed_scores_documents = get_transformed_scores_documents(aggregated_scores_documents, tra_met_doc)
+            correlation_scores = []
+            for combination in COMBINATIONS:
+                agr_met_passage, tra_met_passage, agr_met_doc, tra_met_doc, eval_met = combination
+                print(f"Job {JOB_ID} processing {agr_met_passage}-{tra_met_passage}-{agr_met_doc}-{tra_met_doc}-{eval_met}")
 
-            # Get the correlation scores
-            correlations_per_query = get_evaluated_score(transformed_scores_documents, qrels_cache, eval_met)
-            correlation_scores += [{'aggregation_method_passage': agr_met_passage,
-                                    'transformation_method_passage': tra_met_passage,
-                                    'aggregation_method_document': agr_met_doc,
-                                    'transformation_method_document': tra_met_doc,
-                                    'evaluation_method': eval_met,
-                                    'correlation_scores': correlations_per_query}]
+                # Get the aggregated and transformed scores for passages
+                aggregated_scores_passages = get_aggregated_scores_passages(qid_docno_passage_scores, agr_met_passage)
+                transformed_scores_passages = get_transformed_scores_passages(aggregated_scores_passages, tra_met_passage)
 
-        # Save the correlation scores to an indexed file
-        rank_correlation_job_path = os.path.join(write_path, f'job_{JOB_ID}.jsonl.gz')
-        with gzip.open(rank_correlation_job_path, 'wt', encoding='UTF-8') as file:
-            for evaluation_entry in correlation_scores:
-                file.write(json.dumps(evaluation_entry) + '\n')
+                # Get the aggregated and transformed scores for documents
+                aggregated_scores_documents = get_aggregated_scores_documents(transformed_scores_passages, agr_met_doc)
+                transformed_scores_documents = get_transformed_scores_documents(aggregated_scores_documents, tra_met_doc)
+
+                # Get the correlation scores
+                correlations_per_query = get_evaluated_score(transformed_scores_documents, qrels_cache, eval_met)
+                correlation_scores += [{'aggregation_method_passage': agr_met_passage,
+                                        'transformation_method_passage': tra_met_passage,
+                                        'aggregation_method_document': agr_met_doc,
+                                        'transformation_method_document': tra_met_doc,
+                                        'evaluation_method': eval_met,
+                                        'correlation_scores': correlations_per_query}]
+
+            # Save the correlation scores to an indexed file
+            rank_correlation_job_path = os.path.join(write_path, f'job_{JOB_ID}.jsonl.gz')
+            with gzip.open(rank_correlation_job_path, 'wt', encoding='UTF-8') as file:
+                for evaluation_entry in correlation_scores:
+                    file.write(json.dumps(evaluation_entry) + '\n')
 
 
 if __name__ == '__main__':
 
-    for pointwise_preferences_path in glob(POINTWISE_PREFERENCES_PATTERN):
-        # Extract the file name
-        file_name = os.path.basename(pointwise_preferences_path)
-        base_name = file_name.split('.')[0]
-        write_path = os.path.join(LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH, base_name)
-        if not os.path.exists(write_path):
-            os.makedirs(write_path)
+    for backbone in BACKBONES:
+        POINTWISE_PREFERENCES_PATTERN = os.path.join(TARGET_PATH, MONOPROMPT_PATH, backbone, '*.jsonl.gz')  # glob pattern
+
+        LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH = os.path.join(
+            TARGET_PATH, MONOPROMPT_PATH, backbone, config['LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH'])
+        if not os.path.exists(LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH):
+            os.makedirs(LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH)
+
+        for pointwise_preferences_path in glob(POINTWISE_PREFERENCES_PATTERN):
+            # Extract the file name
+            file_name = os.path.basename(pointwise_preferences_path)
+            base_name = file_name.split('.')[0]
+            write_path = os.path.join(LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH, base_name)
+            if not os.path.exists(write_path):
+                os.makedirs(write_path)
 
     NUM_WORKERS = 50
 

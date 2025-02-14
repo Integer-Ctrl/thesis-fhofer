@@ -35,10 +35,17 @@ else:
     CANDIDATES_PATH = os.path.join(TARGET_PATH, config['CANDIDATES_LOCAL_PATH'])
 CANDIDATES_FILE_PATTERN = os.path.join(CANDIDATES_PATH, "*.jsonl.gz")
 
-MONOPROMPT_PATH = os.path.join(TARGET_PATH, config['MONOPROMPT_PATH'])
+ONLY_JUDGED = config['ONLY_JUDGED']  # only infer the scores for the judged documents
+PREFERENCE_BACKBONE = config['PREFERENCE_BACKBONE']
+print(f"Preference backbone: {PREFERENCE_BACKBONE}")
+MONOPROMPT_PATH = os.path.join(TARGET_PATH, config['MONOPROMPT_PATH'], PREFERENCE_BACKBONE)
 MONOPROMPT_CACHE = os.path.join(MONOPROMPT_PATH, config['MONOPROMPT_CACHE_NAME'])
 
+if not os.path.exists(MONOPROMPT_PATH):
+    os.makedirs(MONOPROMPT_PATH)
+
 KEY_SEPARATOR = config['KEY_SEPARATOR']
+PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
 
 
 # Helper function to access the cache
@@ -59,14 +66,14 @@ if os.path.exists(MONOPROMPT_CACHE):
             candidates_cache[key] = line['score']
 
 
-def process_candidates(candidates_path, pointwise_preferences_path):
+def process_candidates(candidates_path, pointwise_preferences_path, judged_doc_ids):
 
     # Load the dataset and the MonoPrompt model
     dataset = ir_datasets.load(DOCUMENT_DATASET_TARGET_NAME_PYTHON_API)
     monoprompt = autoqrels.zeroshot.GradedMonoPrompt(dataset=dataset,
-                                                     backbone='google/flan-t5-base',
+                                                     backbone=PREFERENCE_BACKBONE,
                                                      device='cuda',
-                                                     batch_size=128)
+                                                     batch_size=64)
 
     used_cached_count = 0
     infered_count = 0
@@ -78,6 +85,11 @@ def process_candidates(candidates_path, pointwise_preferences_path):
             # Add all candidates to the list, also those that are already in the cache due to the cache is overwritten
             candidate = json.loads(line)
             qid = candidate['qid']
+
+            if ONLY_JUDGED:
+                docno = candidate['passage_to_judge']['docno'].split(PASSAGE_ID_SEPARATOR)[0]
+                if docno not in judged_doc_ids[qid]:
+                    continue
 
             if qid not in grouped_candidates:
                 grouped_candidates[qid] = []
@@ -165,9 +177,28 @@ def process_candidates(candidates_path, pointwise_preferences_path):
                                        "score": candidates_cache[key]}) + '\n')
 
 
+# Get the judged documents if the ONLY_JUDGED flag is set
+def get_judged_doc_ids():
+    judged_doc_ids = {}
+    dataset = ir_datasets.load(DOCUMENT_DATASET_TARGET_NAME_PYTHON_API)
+
+    for qrel in dataset.qrels_iter():
+        qid = qrel.query_id
+        if qid not in judged_doc_ids:
+            judged_doc_ids[qid] = set()
+        judged_doc_ids[qid].add(qrel.doc_id)
+
+    return judged_doc_ids
+
+
 if __name__ == '__main__':
 
     for candidates_path in glob(CANDIDATES_FILE_PATTERN):
+
+        # Get judged document ids if the flag is set
+        judged_doc_ids = None  # Set to None if all documents should be inferred
+        if ONLY_JUDGED:
+            judged_doc_ids = get_judged_doc_ids()
 
         # Extract the file name
         file_name = os.path.basename(candidates_path)
@@ -179,5 +210,5 @@ if __name__ == '__main__':
 
         start_time = time.time()
         print(f"Processing {candidates_path}")
-        process_candidates(candidates_path, pointwise_preferences_path)
+        process_candidates(candidates_path, pointwise_preferences_path, judged_doc_ids)
         print(f"Processed {file_name} in {(time.time() - start_time) / 60} minutes")

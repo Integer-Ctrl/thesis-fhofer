@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=candidate_retrieval                      # Job name
+#SBATCH --job-name=candidate                                # Job name
 #SBATCH --partition=gammaweb                                # Partition name
 #SBATCH --exclude=gammaweb10                                # Exclude gammaweb10 node
 #SBATCH --mem=48G                                           # Memory request (128GB)
@@ -17,6 +17,6 @@ echo "Python virtual environment loaded."
 
 # Step 1: Run canidate-retrieval for pairwise candidates
 echo "Running candidate_retrieval.py..."
-python3 -u src/candidate_retrieval/candidate_retrieval.py  # Run for all queries
-# python3 -u src/candidate_retrieval/candidate_retrieval.py 5  # Run for a first n queries
+# python3 -u src/candidate_retrieval/candidate_retrieval.py  # Run for all queries
+python3 -u src/candidate_retrieval/candidate_retrieval_clueweb22.py # Run for clueweb22
 echo "Candidate retrieval completed."

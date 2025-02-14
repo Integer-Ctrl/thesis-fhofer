@@ -2,7 +2,7 @@
 #SBATCH --job-name=chunker                           # Job name
 #SBATCH --partition=gammaweb                         # Partition name
 #SBATCH --exclude=gammaweb10                         # Exclude gammaweb10 node
-#SBATCH --mem=128G                                   # Memory request (128GB)
+#SBATCH --mem=64G                                   # Memory request (128GB)
 #SBATCH --ntasks=1                                   # Number of tasks (1 job/task)
 #SBATCH --nodes=1                                    # Number of nodes
 #SBATCH --time=48:00:00                              # Time limit (48 hours)
