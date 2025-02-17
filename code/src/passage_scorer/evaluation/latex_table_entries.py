@@ -17,6 +17,7 @@ paths = [
 
 
 def print_table(greedy):
+
     kendall_default = {}
     spearman_default = {}
 
@@ -50,10 +51,16 @@ def print_table(greedy):
                         spearman_default[retriever][dataset] = score
 
     for retriever in retriever_order:
+        kendall_sum = 0.0
+        spearman_sum = 0.0
+
         print(retriever, end=' ')
         for dataset in dataset_order:
+            kendall_sum += kendall_default[retriever][dataset]
+            spearman_sum += spearman_default[retriever][dataset]
+
             print(f'& {round(kendall_default[retriever][dataset], 3)} & {round(spearman_default[retriever][dataset], 3)}', end=' ')
-        print('\\\\')
+        print(f'& {round((kendall_sum/len(dataset_order)), 3)} & {round((spearman_sum/len(dataset_order)), 3)} \\\\')
 
 
 print('Default rank correlation')

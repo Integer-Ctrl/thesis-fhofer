@@ -6,69 +6,77 @@ from glob import glob
 
 
 separator = '---'
-dataset_order = ['touche-2020-task-1', 'trec-robust-2004', 'trec7', 'trec8', 'trec-dl-2019/judged', 'trec-dl-2020/judged']
-aggre_order = ['mean', 'min', 'max', 'sum']
+aggre_order = ['max']
 eval_order = ['kendall', 'spearman']
-tra_order = ['id', 'log', 'exp', 'sqrt']
-paths = {  # used candidate as key : path
-    'nearest_neighbor_10.jsonl.gz': '/mnt/ceph/storage/data-in-progress/data-teaching/theses/thesis-fhofer/data/argsme/2020-04-01/touche-2020-task-1/argsme/2020-04-01/touche-2020-task-1/monoprompt/',
-    # '/mnt/ceph/storage/data-in-progress/data-teaching/theses/thesis-fhofer/data/disks45/nocr/trec7/disks45/nocr/trec7/monoprompt/',
-    # '/mnt/ceph/storage/data-in-progress/data-teaching/theses/thesis-fhofer/data/disks45/nocr/trec8/disks45/nocr/trec8/monoprompt/',
-    # '/mnt/ceph/storage/data-in-progress/data-teaching/theses/thesis-fhofer/data/disks45/nocr/trec-robust-2004/disks45/nocr/trec-robust-2004/monoprompt/',
-    # '/mnt/ceph/storage/data-in-progress/data-teaching/theses/thesis-fhofer/data/msmarco-document/trec-dl-2019/judged/msmarco-document/trec-dl-2019/judged/monoprompt/',
-    # '/mnt/ceph/storage/data-in-progress/data-teaching/theses/thesis-fhofer/data/msmarco-document/trec-dl-2020/judged/msmarco-document/trec-dl-2020/judged/monoprompt',
-}
+tra_order = ['id']
 
-# Load the configuration settings
-pwd = os.path.dirname(os.path.abspath(__file__))
+DATA_PATH = '/mnt/ceph/storage/data-in-progress/data-teaching/theses/thesis-fhofer/data'
+PATHS = [
+    'argsme/2020-04-01/touche-2020-task-1',
+    # 'disks45/nocr/trec-robust-2004',
+    'disks45/nocr/trec7',
+    'disks45/nocr/trec8',
+    'msmarco-document/trec-dl-2019/judged',
+    'msmarco-document/trec-dl-2020/judged',
+]
+BACKBONES =  ['google/flan-t5-base',
+              'google/flan-t5-small',
+              'google-t5/t5-small']
+AVR_PATH = 'avr-per-query'
+APPROACH = 'union_50_opd.jsonl.gz'
 
+correlation_scores = {}
 
-def load_config(filename=pwd + "/../../config.json"):
-    with open(filename, "r") as f:
-        config = json.load(f)
-    return config
+for PATH in PATHS:
 
+    if PATH not in correlation_scores:
+        correlation_scores[PATH] = {}
 
-# Get the configuration settings
-config = load_config()
+    for BACKBONE in BACKBONES:
 
-DOCUMENT_DATASET_TARGET_NAME = config['DOCUMENT_DATASET_TARGET_NAME']
-DOCUMENT_DATASET_TARGET_NAME_PYTERRIER = config['DOCUMENT_DATASET_TARGET_NAME_PYTERRIER']
-
-SOURCE_PATH = os.path.join(config['DATA_PATH'], config["DOCUMENT_DATASET_SOURCE_NAME"])
-TARGET_PATH = os.path.join(SOURCE_PATH, config["DOCUMENT_DATASET_TARGET_NAME"])
-
-EVALUATION_METHODS = config['EVALUATION_METHODS']
-NUMBER_OF_CROSS_VALIDATION_FOLDS = config['NUMBER_OF_CROSS_VALIDATION_FOLDS']
-KEY_SEPARATOR = config['KEY_SEPARATOR']
-
-BACKBONES = config['BACKBONES']  # all backbones
-MONOPROMPT_PATH = config['MONOPROMPT_PATH']
-
-
-for backbone in BACKBONES:
-
-    print(backbone)
-
-    for APPROACH, PATH in paths.items():
-
-        path = os.path.join(PATH, backbone, config['LABEL_CORRELATION_AVR_PER_QUERY_PATH'], APPROACH)
-
-        correlation_scores = {}
+        if BACKBONE not in correlation_scores[PATH]:
+            correlation_scores[PATH][BACKBONE] = {}
+    
+        path = f'{DATA_PATH}/{PATH}/{PATH}/duoprompt/{BACKBONE}/{AVR_PATH}/{APPROACH}'
+        print(path)
 
         with gzip.open(path, 'rt', encoding='UTF-8') as file:
             for line in file:
                 line = json.loads(line)
+
                 eval_method, aggre_met, tra_met, _, _ = line['evaluation_method'].split('---')
 
-                if aggre_met not in correlation_scores:
-                    correlation_scores[aggre_met] = {}
-                if tra_met not in correlation_scores[aggre_met]:
-                    correlation_scores[aggre_met][tra_met] = {}
-                if eval_method not in correlation_scores[aggre_met][tra_met]:
-                    correlation_scores[aggre_met][tra_met][eval_method] = line['score']
+                if aggre_met not in correlation_scores[PATH][BACKBONE]:
+                    correlation_scores[PATH][BACKBONE][aggre_met] = {}
+                if tra_met not in correlation_scores[PATH][BACKBONE][aggre_met]:
+                    correlation_scores[PATH][BACKBONE][aggre_met][tra_met] = {}
+                if eval_method not in correlation_scores[PATH][BACKBONE][aggre_met][tra_met]:
+                    correlation_scores[PATH][BACKBONE][aggre_met][tra_met][eval_method] = line['score']
 
-        for aggre_met in aggre_order:
-            for tra_met in tra_order:
-                for eval_method in eval_order:
-                    print(correlation_scores[aggre_met][tra_met][eval_method])
+
+# default metrics
+print('Default metrics')
+for backbone in BACKBONES:
+    print(backbone)
+    for aggre_met in aggre_order:
+        for tra_met in tra_order:
+            print(f'& \multicolumn{{2}}{{c}}{{\\textbf{{{backbone}}}}}', end=' ')
+            for PATH in PATHS:
+                kendall = correlation_scores[PATH][backbone][aggre_met][tra_met]['kendall']
+                spearman = correlation_scores[PATH][backbone][aggre_met][tra_met]['spearman']
+                print(f'& {round(kendall, 3)} & {round(spearman, 3)}', end=' ')
+            print('\\\\')
+
+# greedy metrics
+# print('Greedy metrics')
+# for backbone in BACKBONES:
+#     print(backbone)
+#     for aggre_met in aggre_order:
+#         print(f'& \\multirow{{4}}{{*}}{{\\textbf{{{aggre_met}}}}}')
+#         for tra_met in tra_order:
+#             print(f'\t& & \\textbf{{{tra_met}}}', end=' ')
+#             for PATH in PATHS:
+#                 kendall = correlation_scores[PATH][backbone][aggre_met][tra_met]['kendall-greedy']
+#                 spearman = correlation_scores[PATH][backbone][aggre_met][tra_met]['spearman-greedy']
+#                 print(f'& {round(kendall, 3)} & {round(spearman, 3)}', end=' ')
+#             print('\\\\')

@@ -31,7 +31,7 @@ MONOPROMPT_PATH = config['MONOPROMPT_PATH']
 
 
 @ray.remote
-def ray_wrapper(JOB_ID, NUM_JOBS):
+def ray_wrapper(JOB_ID, NUM_JOBS, qrels_cache):
     def load_config(filename='/mnt/ceph/storage/data-tmp/current/ho62zoq/thesis-fhofer/code/src/config.json'):
         with open(filename, "r") as f:
             config = json.load(f)
@@ -53,15 +53,15 @@ def ray_wrapper(JOB_ID, NUM_JOBS):
     TRANSFORMATION_METHODS = config['TRANSFORMATION_METHODS']
     EVALUATION_METHODS = config['EVALUATION_METHODS']
 
-    # Read qrels and cache relevant qrels
-    dataset = pt.get_dataset(DOCUMENT_DATASET_TARGET_NAME_PYTERRIER)
-    qrels = dataset.get_qrels(variant='relevance')
-    qrels_cache = {}
-    for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
-        if row['qid'] not in qrels_cache:
-            qrels_cache[row['qid']] = qrels.loc[
-                (qrels['qid'] == row['qid'])
-            ]
+    # # Read qrels and cache relevant qrels
+    # dataset = pt.get_dataset(DOCUMENT_DATASET_TARGET_NAME_PYTERRIER)
+    # qrels = dataset.get_qrels(variant='relevance')
+    # qrels_cache = {}
+    # for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
+    #     if row['qid'] not in qrels_cache:
+    #         qrels_cache[row['qid']] = qrels.loc[
+    #             (qrels['qid'] == row['qid'])
+    #         ]
 
     # Read pointwise preference scores {qid: docno: passage_id: scores[]}
     # Which known relevant passages are used for pointwise preferences is not important here
@@ -231,8 +231,8 @@ def ray_wrapper(JOB_ID, NUM_JOBS):
     #           MAIN           #
     ############################
     combinations = []
-    for aggregation_method_passage in AGGREGATION_METHODS:
-        for transformation_method_passage in TRANSFORMATION_METHODS:
+    for aggregation_method_passage in ['max']:  # Only one passage inexists
+        for transformation_method_passage in ['id']:  # Only one passage exists
             for aggregation_method_document in ['max']:  # Only max aggregation for documents
                 for transformation_method_document in ['id']:  # Only id transformation for documents
                     for evaluation_method in EVALUATION_METHODS:
@@ -297,6 +297,16 @@ def ray_wrapper(JOB_ID, NUM_JOBS):
 
 if __name__ == '__main__':
 
+    # Read qrels and cache relevant qrels
+    dataset = pt.get_dataset("irds:msmarco-document/trec-dl-2020/judged")
+    qrels = dataset.get_qrels(variant='relevance')
+    qrels_cache = {}
+    for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
+        if row['qid'] not in qrels_cache:
+            qrels_cache[row['qid']] = qrels.loc[
+                (qrels['qid'] == row['qid'])
+            ]
+
     for backbone in BACKBONES:
         POINTWISE_PREFERENCES_PATTERN = os.path.join(TARGET_PATH, MONOPROMPT_PATH, backbone, '*.jsonl.gz')  # glob pattern
 
@@ -313,11 +323,11 @@ if __name__ == '__main__':
             if not os.path.exists(write_path):
                 os.makedirs(write_path)
 
-    NUM_WORKERS = 50
+    NUM_WORKERS = 100
 
     futures = []
     for i in range(1, NUM_WORKERS + 1):
-        futures.append(ray_wrapper.remote(i, NUM_WORKERS))
+        futures.append(ray_wrapper.remote(i, NUM_WORKERS, qrels_cache))
 
     # Wait for all workers to finish
     ray.get(futures)
