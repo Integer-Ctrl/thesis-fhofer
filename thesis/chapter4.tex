@@ -45,6 +45,35 @@ In contrast to the default algorithms, the desired rank correlation for this the
 % ==================
 \section{Document Selection}\label{eval-doucment-selection}
 
+The first step in the transfer pipeline is to select and segment a subset of documents for each query of a retrieval task from the source datasets. The selected documents play a crucial role in two subsequent steps of the pipeline: (1) the selection of candidate documents from the target corpus and (2) the pairwise preference comparison using \texttt{DouPrompt}. Since only a subset of documents is necessary for each query, three selection conditions were applied.
+\begin{table}[t]
+  \centering
+  \caption{The table presents the results of the candidate selection process, showing the minimum (min), maximum (max), and average (mean) number of documents per query for each source dataset. A maximum of 50 documents per query is possible.}
+  \label{tab:document-selection}
+  \resizebox{\textwidth}{!}{%
+  \begin{tabular}{rcccccc}
+      \toprule
+      \textbf{Docs./Query} & \textbf{Touché 20} & \textbf{Robust04} & \textbf{TREC-7} & \textbf{TREC-8} & \textbf{TREC-19 DL} & \textbf{TREC-20 DL}  \\
+
+      \midrule
+
+      min  & $1$   & $1$ & $7$ & $6$ & $1$ & $1$ \\
+      max  & $12$  & $50$ & $50$ & $50$ & $50$ & 17 \\
+      mean & $5.8$ & $28.1$ & $40.2$ & $40.5$ & $12.0$ & $4.7$ \\
+
+      \bottomrule
+  \end{tabular}}
+\end{table}
+\\\\\\\\
+First, only documents with at least one relevance judgment in the \texttt{qrel store} of a retrieval task are considered for selection, as documents without relevance judgments do not have information to transfer. Second, a maximum of 50 relevance judgments per relevance label for each query (referred to as a query-label combination) is selected to limit the number of processed documents. Third, the number of documents for each query-label combination is capped at the minimum number of judged documents across all labels for that query, to prevent bias towards labels with a higher number of relevance judgments.
+\\\\
+The results of the selection process under these conditions are presented in Table~\ref{tab:document-selection}. An average close to 50 documents per query is aimed for. \texttt{TREC-7} and \texttt{TREC-8} achieve the best results, with averages above 40 documents per query. \texttt{Robust04} remains sufficient with nearly 30 documents per query, while the other three datasets fall short. \texttt{Touché 20} has a maximum of only 12 documents for any query, and although \texttt{TREC-19 DL} and \texttt{TREC-20 DL} have higher maximum values, their averages are also very low.
+\\\\
+The low averages are likely due to the limited number of relevance judgments per query provided by the retrieval tasks, see Tabel~\ref{tab:datasets}. Additionally, the third condition that caps the number of documents for each query-label combination to the minimum number of judged documents across all labels for that query has a significant impact. For example, if a query has 40 relevant documents but only 5 non-relevant documents, both categories are capped at 5 documents during the selection process. This small number of selected relevance judgments and their associated documents could negatively affect the quality of the candidate selection with the nearest neighbor approaches, and the final inferred relevance judgments.
+%\\\\
+% The segmentation of the selected documents was performed using the \texttt{trec-cast-tools} GitHub repository\footnote{\url{https://github.com/grill-lab/trec-cast-tools}}, which splits documents into passages of up to 250 words in length. This segmentation process is independent of the transfer pipeline and is therefore not evaluated in this thesis.
+\pagebreak
+
 % ===============
 % Passage Scoring
 % ===============
@@ -134,106 +163,208 @@ Since this study does not aim to optimize or analyze a specific set of retriever
 
 The first evaluation of the pairwise preferences involves inferring relevance scores from the original relevance judgments within the source dataset itself. This allows for an automatic evaluation using rank correlation, as the retrieval tasks provide predefined relevance judgments for comparison. Each dataset can be evaluated individually to verify whether the inferred scores align with the original relevance judgments. The second evaluation assesses the transfer of inferred relevance scores from the retrieval tasks to the target corpus, \texttt{ClueWeb22/b}. Since no existing relevance judgments are available for \texttt{ClueWeb22/b}, this evaluation cannot be automated. Instead, randomly selected documents for which relevance scores have been inferred are chosen for each query and manually reviewed. Human assessors then determine whether the inferred relevance scores accurately reflect the relevance of the corresponding documents to the queries.
 
+% \begin{table}[t]
+%     \centering
+%     \footnotesize
+%     \caption{Correlations of the inferred relevance judgements to the original document judgments reported in terms of Kendall's $\tau$ and Spearman's $\rho$.}
+%     \resizebox{\textwidth}{!}{%
+%     \renewcommand{\arraystretch}{1.0}
+%     \begin{tabular}{cclccccccccccccc}
+%         \toprule
+
+%         \multicolumn{3}{c}{\textbf{Approach}} & \multicolumn{2}{c}{\textbf{Touché 20}} & \multicolumn{2}{c}{\textbf{Robust04}} & \multicolumn{2}{c}{\textbf{TREC-7}} & \multicolumn{2}{c}{\textbf{TREC-8}} & \multicolumn{2}{c}{\textbf{TREC-19 DL}} & \multicolumn{2}{c}{\textbf{TREC-20 DL}} \\
+%         \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9} \cmidrule(lr){10-11} \cmidrule(lr){12-13} \cmidrule(lr){14-15}
+%                             & & & $\tau$ & $\rho$ & $\tau$ & $\rho$ & $\tau$ & $\rho$ & $\tau$ & $\rho$ & $\tau$ & $\rho$ & $\tau$ & $\rho$ \\
+%         \midrule
+%         \multirow{16}{*}{\rotatebox{90}{\makecell{\textbf{Pairwise Preferences} \\ \textbf{flant5-base}}}}
+%             & \multirow{4}{*}{\textbf{mean}} 
+%               & \textbf{id}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & & \textbf{log}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & & \textbf{exp}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & & \textbf{sqrt} & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%         \cmidrule{2-15}
+%             & \multirow{4}{*}{\textbf{min}} 
+%               & \textbf{id}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & & \textbf{log}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & & \textbf{exp}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & & \textbf{sqrt} & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%         \cmidrule{2-15}
+%             & \multirow{4}{*}{\textbf{max}} 
+%               & \textbf{id}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & & \textbf{log}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & & \textbf{exp}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & & \textbf{sqrt} & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%         \cmidrule{2-15}
+%             & \multirow{4}{*}{\textbf{sum}} 
+%               & \textbf{id}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & & \textbf{log}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & & \textbf{exp}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & & \textbf{sqrt} & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%         \midrule
+
+%         \multirow{16}{*}{\rotatebox{90}{\makecell{\textbf{Pairwise Preferences} \\ \textbf{flant5-small}}}}
+%             & \multirow{4}{*}{\textbf{mean}} 
+%               & \textbf{id}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & & \textbf{log}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & & \textbf{exp}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & & \textbf{sqrt} & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%         \cmidrule{2-15}
+%             & \multirow{4}{*}{\textbf{min}} 
+%               & \textbf{id}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & & \textbf{log}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & & \textbf{exp}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & & \textbf{sqrt} & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%         \cmidrule{2-15}
+%             & \multirow{4}{*}{\textbf{max}} 
+%               & \textbf{id}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & & \textbf{log}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & & \textbf{exp}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & & \textbf{sqrt} & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%         \cmidrule{2-15}
+%             & \multirow{4}{*}{\textbf{sum}} 
+%               & \textbf{id}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & & \textbf{log}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & & \textbf{exp}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & & \textbf{sqrt} & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%         \midrule
+
+%         \multirow{16}{*}{\rotatebox{90}{\makecell{\textbf{Pairwise Preferences} \\ \textbf{t5-small}}}}
+%             & \multirow{4}{*}{\textbf{mean}} 
+%               & \textbf{id}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & & \textbf{log}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & & \textbf{exp}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & & \textbf{sqrt} & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%         \cmidrule{2-15}
+%             & \multirow{4}{*}{\textbf{min}} 
+%               & \textbf{id}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & & \textbf{log}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & & \textbf{exp}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & & \textbf{sqrt} & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%         \cmidrule{2-15}
+%             & \multirow{4}{*}{\textbf{max}} 
+%               & \textbf{id}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & & \textbf{log}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & & \textbf{exp}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & & \textbf{sqrt} & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%         \cmidrule{2-15}
+%             & \multirow{4}{*}{\textbf{sum}} 
+%               & \textbf{id}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & & \textbf{log}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & & \textbf{exp}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & & \textbf{sqrt} & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%         \midrule
+
+%         \multirow{5}{*}{\rotatebox{90}{\makecell{\textbf{Pointwise} \\ \textbf{Preferences}}}}
+%             & & & & & & & & & & & & & & \\
+%             & \multicolumn{2}{c}{\textbf{flant5-base}}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & \multicolumn{2}{c}{\textbf{flant5-small}}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & \multicolumn{2}{c}{\textbf{t5-small}}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+%             & & & & & & & & & & & & & & \\
+%         \bottomrule 
+%     \end{tabular}}
+%     \renewcommand{\arraystretch}{1.0}
+% \end{table}
+
 \begin{table}[t]
-    \centering
-    \footnotesize
-    \caption{Correlations of the inferred relevance judgements to the original document judgments reported in terms of Kendall's $\tau$ and Spearman's $\rho$.}
-    \resizebox{\textwidth}{!}{%
-    \renewcommand{\arraystretch}{1.0}
-    \begin{tabular}{cclccccccccccccc}
-        \toprule
+  \centering
+  \footnotesize
+  \caption{Correlations of the inferred relevance judgements to the original document judgments reported in terms of Kendall's $\tau$ and Spearman's $\rho$.}
+  \resizebox{\textwidth}{!}{%
+  \renewcommand{\arraystretch}{1.0}
+  \begin{tabular}{cclccccccccccc}
+      \toprule
 
-        \multicolumn{3}{c}{\textbf{Approach}} & \multicolumn{2}{c}{\textbf{Touché 20}} & \multicolumn{2}{c}{\textbf{Robust04}} & \multicolumn{2}{c}{\textbf{TREC-7}} & \multicolumn{2}{c}{\textbf{TREC-8}} & \multicolumn{2}{c}{\textbf{TREC-19 DL}} & \multicolumn{2}{c}{\textbf{TREC-20 DL}} \\
-        \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9} \cmidrule(lr){10-11} \cmidrule(lr){12-13} \cmidrule(lr){14-15}
-                            & & & $\tau$ & $\rho$ & $\tau$ & $\rho$ & $\tau$ & $\rho$ & $\tau$ & $\rho$ & $\tau$ & $\rho$ & $\tau$ & $\rho$ \\
-        \midrule
-        \multirow{16}{*}{\rotatebox{90}{\makecell{\textbf{Pairwise Preferences} \\ \textbf{flant5-base}}}}
-            & \multirow{4}{*}{\textbf{mean}} 
-              & \textbf{id}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & & \textbf{log}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & & \textbf{exp}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & & \textbf{sqrt} & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-        \cmidrule{2-15}
-            & \multirow{4}{*}{\textbf{min}} 
-              & \textbf{id}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & & \textbf{log}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & & \textbf{exp}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & & \textbf{sqrt} & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-        \cmidrule{2-15}
-            & \multirow{4}{*}{\textbf{max}} 
-              & \textbf{id}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & & \textbf{log}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & & \textbf{exp}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & & \textbf{sqrt} & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-        \cmidrule{2-15}
-            & \multirow{4}{*}{\textbf{sum}} 
-              & \textbf{id}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & & \textbf{log}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & & \textbf{exp}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & & \textbf{sqrt} & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-        \midrule
+      \multicolumn{3}{c}{\textbf{Approach}} & \multicolumn{2}{c}{\textbf{Touché 20}} & \multicolumn{2}{c}{\textbf{TREC-7}} & \multicolumn{2}{c}{\textbf{TREC-8}} & \multicolumn{2}{c}{\textbf{TREC-19 DL}} & \multicolumn{2}{c}{\textbf{TREC-20 DL}} \\
+      \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9} \cmidrule(lr){10-11} \cmidrule(lr){12-13}
+                          & & & $\tau$ & $\rho$ & $\tau$ & $\rho$ & $\tau$ & $\rho$ & $\tau$ & $\rho$ & $\tau$ & $\rho$ \\
+      \midrule
+      \multirow{16}{*}{\rotatebox{90}{\makecell{\textbf{Pairwise Preferences} \\ \textbf{flant5-base}}}}
+      & \multirow{4}{*}{\textbf{mean}}
+      & \textbf{id} & 0.218 & 0.271 & 0.117 & 0.143 & 0.168 & 0.205 & 0.159 & 0.199 & 0.218 & 0.27 \\
+    & & \textbf{log} & 0.218 & 0.271 & 0.117 & 0.143 & 0.168 & 0.205 & 0.159 & 0.199 & 0.218 & 0.27 \\
+    & & \textbf{exp} & 0.218 & 0.271 & 0.117 & 0.143 & 0.168 & 0.205 & 0.159 & 0.199 & 0.218 & 0.27 \\
+    & & \textbf{sqrt} & 0.218 & 0.271 & 0.117 & 0.143 & 0.168 & 0.205 & 0.159 & 0.199 & 0.218 & 0.27 \\
+\cmidrule{2-13}
+& \multirow{4}{*}{\textbf{mean}}
+      & \textbf{id} & 0.233 & 0.293 & 0.125 & 0.153 & 0.184 & 0.225 & 0.184 & 0.231 & 0.225 & 0.279 \\
+    & & \textbf{log} & 0.233 & 0.293 & 0.125 & 0.153 & 0.184 & 0.225 & 0.184 & 0.231 & 0.225 & 0.279 \\
+    & & \textbf{exp} & 0.233 & 0.293 & 0.125 & 0.153 & 0.184 & 0.225 & 0.184 & 0.231 & 0.225 & 0.279 \\
+    & & \textbf{sqrt} & 0.233 & 0.293 & 0.125 & 0.153 & 0.184 & 0.225 & 0.184 & 0.231 & 0.225 & 0.279 \\
+\cmidrule{2-13}
+& \multirow{4}{*}{\textbf{mean}}
+      & \textbf{id} & 0.222 & 0.275 & 0.087 & 0.106 & 0.074 & 0.09 & 0.077 & 0.097 & 0.1 & 0.123 \\
+    & & \textbf{log} & 0.222 & 0.275 & 0.087 & 0.106 & 0.074 & 0.09 & 0.077 & 0.097 & 0.1 & 0.123 \\
+    & & \textbf{exp} & 0.222 & 0.275 & 0.087 & 0.106 & 0.074 & 0.09 & 0.077 & 0.097 & 0.1 & 0.123 \\
+    & & \textbf{sqrt} & 0.222 & 0.275 & 0.087 & 0.106 & 0.074 & 0.09 & 0.077 & 0.097 & 0.1 & 0.123 \\
+\cmidrule{2-13}
+& \multirow{4}{*}{\textbf{mean}}
+      & \textbf{id} & 0.218 & 0.271 & 0.117 & 0.143 & 0.168 & 0.205 & 0.159 & 0.199 & 0.218 & 0.27 \\
+    & & \textbf{log} & 0.218 & 0.271 & 0.117 & 0.143 & 0.168 & 0.205 & 0.159 & 0.199 & 0.218 & 0.27 \\
+    & & \textbf{exp} & 0.218 & 0.271 & 0.117 & 0.143 & 0.168 & 0.205 & 0.159 & 0.199 & 0.218 & 0.27 \\
+    & & \textbf{sqrt} & 0.218 & 0.271 & 0.117 & 0.143 & 0.168 & 0.205 & 0.159 & 0.199 & 0.218 & 0.27 \\
+      \midrule
 
-        \multirow{16}{*}{\rotatebox{90}{\makecell{\textbf{Pairwise Preferences} \\ \textbf{flant5-small}}}}
-            & \multirow{4}{*}{\textbf{mean}} 
-              & \textbf{id}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & & \textbf{log}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & & \textbf{exp}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & & \textbf{sqrt} & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-        \cmidrule{2-15}
-            & \multirow{4}{*}{\textbf{min}} 
-              & \textbf{id}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & & \textbf{log}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & & \textbf{exp}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & & \textbf{sqrt} & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-        \cmidrule{2-15}
-            & \multirow{4}{*}{\textbf{max}} 
-              & \textbf{id}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & & \textbf{log}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & & \textbf{exp}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & & \textbf{sqrt} & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-        \cmidrule{2-15}
-            & \multirow{4}{*}{\textbf{sum}} 
-              & \textbf{id}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & & \textbf{log}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & & \textbf{exp}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & & \textbf{sqrt} & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-        \midrule
+      \multirow{16}{*}{\rotatebox{90}{\makecell{\textbf{Pairwise Preferences} \\ \textbf{flant5-small}}}}
+      & \multirow{4}{*}{\textbf{mean}}
+      & \textbf{id} & 0.253 & 0.324 & 0.056 & 0.069 & 0.073 & 0.089 & 0.142 & 0.179 & 0.136 & 0.169 \\
+    & & \textbf{log} & 0.253 & 0.324 & 0.056 & 0.069 & 0.073 & 0.089 & 0.142 & 0.179 & 0.136 & 0.169 \\
+    & & \textbf{exp} & 0.253 & 0.324 & 0.056 & 0.069 & 0.073 & 0.089 & 0.142 & 0.179 & 0.136 & 0.169 \\
+    & & \textbf{sqrt} & 0.253 & 0.324 & 0.056 & 0.069 & 0.073 & 0.089 & 0.142 & 0.179 & 0.136 & 0.169 \\
+\cmidrule{2-13}
+& \multirow{4}{*}{\textbf{mean}}
+      & \textbf{id} & 0.3 & 0.383 & 0.072 & 0.088 & 0.09 & 0.11 & 0.142 & 0.178 & 0.154 & 0.191 \\
+    & & \textbf{log} & 0.3 & 0.383 & 0.072 & 0.088 & 0.09 & 0.11 & 0.142 & 0.178 & 0.154 & 0.191 \\
+    & & \textbf{exp} & 0.3 & 0.383 & 0.072 & 0.088 & 0.09 & 0.11 & 0.142 & 0.178 & 0.154 & 0.191 \\
+    & & \textbf{sqrt} & 0.3 & 0.383 & 0.072 & 0.088 & 0.09 & 0.11 & 0.142 & 0.178 & 0.154 & 0.191 \\
+\cmidrule{2-13}
+& \multirow{4}{*}{\textbf{mean}}
+      & \textbf{id} & 0.2 & 0.254 & 0.028 & 0.034 & 0.033 & 0.041 & 0.05 & 0.062 & 0.081 & 0.1 \\
+    & & \textbf{log} & 0.2 & 0.254 & 0.028 & 0.034 & 0.033 & 0.041 & 0.05 & 0.062 & 0.081 & 0.1 \\
+    & & \textbf{exp} & 0.2 & 0.254 & 0.028 & 0.034 & 0.033 & 0.041 & 0.05 & 0.062 & 0.081 & 0.1 \\
+    & & \textbf{sqrt} & 0.2 & 0.254 & 0.028 & 0.034 & 0.033 & 0.041 & 0.05 & 0.062 & 0.081 & 0.1 \\
+\cmidrule{2-13}
+& \multirow{4}{*}{\textbf{mean}}
+      & \textbf{id} & 0.253 & 0.324 & 0.056 & 0.069 & 0.073 & 0.089 & 0.142 & 0.179 & 0.136 & 0.169 \\
+    & & \textbf{log} & 0.253 & 0.324 & 0.056 & 0.069 & 0.073 & 0.089 & 0.142 & 0.179 & 0.136 & 0.169 \\
+    & & \textbf{exp} & 0.253 & 0.324 & 0.056 & 0.069 & 0.073 & 0.089 & 0.142 & 0.179 & 0.136 & 0.169 \\
+    & & \textbf{sqrt} & 0.253 & 0.324 & 0.056 & 0.069 & 0.073 & 0.089 & 0.142 & 0.179 & 0.136 & 0.169 \\
+      \midrule
 
-        \multirow{16}{*}{\rotatebox{90}{\makecell{\textbf{Pairwise Preferences} \\ \textbf{t5-small}}}}
-            & \multirow{4}{*}{\textbf{mean}} 
-              & \textbf{id}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & & \textbf{log}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & & \textbf{exp}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & & \textbf{sqrt} & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-        \cmidrule{2-15}
-            & \multirow{4}{*}{\textbf{min}} 
-              & \textbf{id}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & & \textbf{log}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & & \textbf{exp}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & & \textbf{sqrt} & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-        \cmidrule{2-15}
-            & \multirow{4}{*}{\textbf{max}} 
-              & \textbf{id}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & & \textbf{log}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & & \textbf{exp}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & & \textbf{sqrt} & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-        \cmidrule{2-15}
-            & \multirow{4}{*}{\textbf{sum}} 
-              & \textbf{id}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & & \textbf{log}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & & \textbf{exp}  & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & & \textbf{sqrt} & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-        \midrule
+      \multirow{16}{*}{\rotatebox{90}{\makecell{\textbf{Pairwise Preferences} \\ \textbf{t5-small}}}}
+      & \multirow{4}{*}{\textbf{mean}}
+      & \textbf{id} & 0.25 & 0.322 & 0.0 & 0.0 & -0.008 & -0.01 & 0.003 & 0.005 & -0.001 & -0.001 \\
+    & & \textbf{log} & 0.25 & 0.322 & 0.0 & 0.0 & -0.008 & -0.01 & 0.003 & 0.005 & -0.001 & -0.001 \\
+    & & \textbf{exp} & 0.25 & 0.322 & 0.0 & 0.0 & -0.008 & -0.01 & 0.003 & 0.005 & -0.001 & -0.001 \\
+    & & \textbf{sqrt} & 0.25 & 0.322 & 0.0 & 0.0 & -0.008 & -0.01 & 0.003 & 0.005 & -0.001 & -0.001 \\
+\cmidrule{2-13}
+& \multirow{4}{*}{\textbf{mean}}
+      & \textbf{id} & 0.31 & 0.4 & 0.017 & 0.021 & 0.005 & 0.007 & 0.007 & 0.01 & 0.013 & 0.016 \\
+    & & \textbf{log} & 0.31 & 0.4 & 0.017 & 0.021 & 0.005 & 0.007 & 0.007 & 0.01 & 0.013 & 0.016 \\
+    & & \textbf{exp} & 0.31 & 0.4 & 0.017 & 0.021 & 0.005 & 0.007 & 0.007 & 0.01 & 0.013 & 0.016 \\
+    & & \textbf{sqrt} & 0.31 & 0.4 & 0.017 & 0.021 & 0.005 & 0.007 & 0.007 & 0.01 & 0.013 & 0.016 \\
+\cmidrule{2-13}
+& \multirow{4}{*}{\textbf{mean}}
+      & \textbf{id} & 0.164 & 0.213 & 0.004 & 0.005 & -0.005 & -0.007 & 0.005 & 0.007 & 0.008 & 0.01 \\
+    & & \textbf{log} & 0.164 & 0.213 & 0.004 & 0.005 & -0.005 & -0.007 & 0.005 & 0.007 & 0.008 & 0.01 \\
+    & & \textbf{exp} & 0.164 & 0.213 & 0.004 & 0.005 & -0.005 & -0.007 & 0.005 & 0.007 & 0.008 & 0.01 \\
+    & & \textbf{sqrt} & 0.164 & 0.213 & 0.004 & 0.005 & -0.005 & -0.007 & 0.005 & 0.007 & 0.008 & 0.01 \\
+\cmidrule{2-13}
+& \multirow{4}{*}{\textbf{mean}}
+      & \textbf{id} & 0.25 & 0.322 & 0.0 & 0.0 & -0.008 & -0.01 & 0.003 & 0.005 & -0.001 & -0.001 \\
+    & & \textbf{log} & 0.25 & 0.322 & 0.0 & 0.0 & -0.008 & -0.01 & 0.003 & 0.005 & -0.001 & -0.001 \\
+    & & \textbf{exp} & 0.25 & 0.322 & 0.0 & 0.0 & -0.008 & -0.01 & 0.003 & 0.005 & -0.001 & -0.001 \\
+    & & \textbf{sqrt} & 0.25 & 0.322 & 0.0 & 0.0 & -0.008 & -0.01 & 0.003 & 0.005 & -0.001 & -0.001 \\
+      \midrule
 
-        \multirow{5}{*}{\rotatebox{90}{\makecell{\textbf{Pointwise} \\ \textbf{Preferences}}}}
-            & & & & & & & & & & & & & & \\
-            & \multicolumn{2}{c}{\textbf{flant5-base}}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & \multicolumn{2}{c}{\textbf{flant5-small}}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & \multicolumn{2}{c}{\textbf{t5-small}}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-            & & & & & & & & & & & & & & \\
-        \bottomrule 
-    \end{tabular}}
-    \renewcommand{\arraystretch}{1.0}
+      \multirow{5}{*}{\rotatebox{90}{\makecell{\textbf{Pointwise} \\ \textbf{Preferences}}}}
+          & & & & & & & & & & & & \\
+          & \multicolumn{2}{c}{\textbf{flant5-base}}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+          & \multicolumn{2}{c}{\textbf{flant5-small}}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+          & \multicolumn{2}{c}{\textbf{t5-small}}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+          & & & & & & & & & & & & \\
+      \bottomrule 
+  \end{tabular}}
+  \renewcommand{\arraystretch}{1.0}
 \end{table}
 
 % Transfer Pipeline to Source Corpus itself
