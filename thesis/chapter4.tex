@@ -79,11 +79,10 @@ The low averages are likely due to the limited number of relevance judgments per
 % ===============
 \section{Passage Scoring}\label{eval-passage-scoring}
 
-Since this study does not aim to optimize or analyze a specific set of retriever systems but uses them for passage scoring, a diverse selection of models was employed to minimize bias in the scores that could arise from relying on a single model. For that reason \texttt{Precision} and \texttt{nDCG} scores were calculated using the following retriever systems: \texttt{BM25, DFR\_BM25, DFIZ, DLH, DPH, DirichletLM, Hiemstra\_LM, LGD, PL2, and TF\_IDF}. An evaluation of which model best scores the passages in relation to the goal of relevance transfer follows in Chapter~\ref{evaluation}~[\nameref{rank-correlation-passage-scores}].
-
 \begin{table}[t]
     \centering
-    \caption{Correlations of the assigned passage scores to the original document judgments reported in terms of Kendall's $\tau$ and Spearman's $\rho$.}
+    \caption{5-fold cross-validation correlations of the assigned passage scores with the original document judgments, reported using Kendall's $\tau$ and Spearman's $\rho$.}
+    \label{tab:passage-scoring}
     \resizebox{\textwidth}{!}{%
     \renewcommand{\arraystretch}{1.2}
     \begin{tabular}{lcccccccccccccc}
@@ -108,6 +107,16 @@ Since this study does not aim to optimize or analyze a specific set of retriever
     \end{tabular}}
     \renewcommand{\arraystretch}{1.0}
 \end{table}
+
+The next step in the transfer pipeline was to assign passage scores to the passages of the selected documents from the previous step. This was done to identify the most relevant passages of a document with respect to the actual query associated with the document’s relevance judgment. To achieve this, each passage was treated as an independent query and used to retrieve a document ranking from the original source corpus. Since this study does not aim to optimize or analyze specific retriever systems but rather uses them for passage scoring, a diverse selection of models was tested, as listed in Table~\ref{tab:passage-scoring}. Based on the retrieved document rankings, \texttt{precision@10} and \texttt{nDCG@10} were computed and assigned as passage scores.
+\\\\
+To evaluate the quality of the assigned passage scores and to determine which score type (i.e., which retrieval model and whether \texttt{precision@10} or \texttt{nDCG@10}) is most effective in identifying the best passages, the rank correlation between the original relevance judgments and the newly assigned scores was computed using Kendall's $\tau$ and Spearman's $\rho$. First, an overall document score was aggregated from all its passage scores. For each document, all passage scores were aggregated using one of the following methods: \texttt{mean}, \texttt{min}, \texttt{max}, or \texttt{sum}. Thereafter, the resulting document scores were transformed by applying one of the following transformations: \texttt{id}, \texttt{log}, \texttt{exp}, or \texttt{sqrt}. All 16 combinations of aggregation and transformation were tested across all 10 retrieval models, using both \texttt{precision@10} and \texttt{nDCG@10} scores, and then evaluated with Kendall's $\tau$ and Spearman's $\rho$. These rank correlations were computed for each query individually rather than across all relevance judgments of a retrieval task simultaneously. The intent behind macro-averaging across all queries of a retrieval task was to reduce the effect of outliers for individual queries.
+\\\\
+To ensure a robust evaluation of the assigned passage scores, a 5-fold cross-validation was applied across the metrics, aggregation methods, and transformation methods for each combination of retrieval model and retrieval task. First, queries within each retrieval task were divided into five equal subsets (folds). For each fold, one subset was designated as the validation set, while the remaining four subsets formed the training set. In each iteration of the cross-validation, the metric, aggregation method, and transformation method that achieved the highest average correlation score on the training set (four-fifths of the queries) were selected. This selection process involved computing the average correlation score across all queries in the training set for each combination. The chosen combination was then evaluated on the test set (the remaining fifth of the queries) to obtain a final correlation score for that iteration. This process was repeated for all five folds, ensuring that each query subset served as the validation set exactly once. The final cross-validation score for each retrieval model and retrieval task was computed as the average correlation score across all five folds, thereby reducing the impact of overfitting and providing a more reliable estimate of passage scoring performance.
+\\\\
+The results in Table~\ref{tab:passage-scoring} show that a very high rank correlation was achieved for all retrieval models across all tested information retrieval tasks. While \texttt{Hiemstra\_LM} was the best-performing retrieval model, all models demonstrated strong performance when comparing the average $\overline{\tau}$ and $\overline{\rho}$ values. Therefore, the choice of retrieval model is not a critical factor for subsequent steps in the transfer pipeline, as all models produced passage scores with high rank correlation to the actual relevance labels from the retrieval tasks. However, the choice of metric is a significant factor. \texttt{precision@10} resulted in significantly lower rank correlation than \texttt{nDCG@10}. This outcome is expected, as \texttt{precision@10} lacks the granularity needed to differentiate between individual passage scores effectively. Therefore, the clear winning metric for passage scoring is \texttt{nDCG@10}.
+\pagebreak
+
 
 % ===================
 % Candidate Selection
@@ -280,28 +289,28 @@ The first evaluation of the pairwise preferences involves inferring relevance sc
       \midrule
       \multirow{16}{*}{\rotatebox{90}{\makecell{\textbf{Pairwise Preferences} \\ \textbf{flant5-base}}}}
       & \multirow{4}{*}{\textbf{mean}}
-      & \textbf{id} & 0.218 & 0.271 & 0.117 & 0.143 & 0.168 & 0.205 & 0.159 & 0.199 & 0.218 & 0.27 \\
-    & & \textbf{log} & 0.218 & 0.271 & 0.117 & 0.143 & 0.168 & 0.205 & 0.159 & 0.199 & 0.218 & 0.27 \\
-    & & \textbf{exp} & 0.218 & 0.271 & 0.117 & 0.143 & 0.168 & 0.205 & 0.159 & 0.199 & 0.218 & 0.27 \\
-    & & \textbf{sqrt} & 0.218 & 0.271 & 0.117 & 0.143 & 0.168 & 0.205 & 0.159 & 0.199 & 0.218 & 0.27 \\
+      & \textbf{id} & 0.218 & 0.271 & 0.117 & 0.143 & 0.168 & 0.205 & 0.159 & 0.199 & 0.218 & 0.270\\
+    & & \textbf{log} & 0.218 & 0.271 & 0.117 & 0.143 & 0.168 & 0.205 & 0.159 & 0.199 & 0.218 & 0.270\\
+    & & \textbf{exp} & 0.218 & 0.271 & 0.117 & 0.143 & 0.168 & 0.205 & 0.159 & 0.199 & 0.218 & 0.270\\
+    & & \textbf{sqrt} & 0.218 & 0.271 & 0.117 & 0.143 & 0.168 & 0.205 & 0.159 & 0.199 & 0.218 & 0.270\\
 \cmidrule{2-13}
-& \multirow{4}{*}{\textbf{mean}}
+& \multirow{4}{*}{\textbf{min}}
       & \textbf{id} & 0.233 & 0.293 & 0.125 & 0.153 & 0.184 & 0.225 & 0.184 & 0.231 & 0.225 & 0.279 \\
     & & \textbf{log} & 0.233 & 0.293 & 0.125 & 0.153 & 0.184 & 0.225 & 0.184 & 0.231 & 0.225 & 0.279 \\
     & & \textbf{exp} & 0.233 & 0.293 & 0.125 & 0.153 & 0.184 & 0.225 & 0.184 & 0.231 & 0.225 & 0.279 \\
     & & \textbf{sqrt} & 0.233 & 0.293 & 0.125 & 0.153 & 0.184 & 0.225 & 0.184 & 0.231 & 0.225 & 0.279 \\
 \cmidrule{2-13}
-& \multirow{4}{*}{\textbf{mean}}
-      & \textbf{id} & 0.222 & 0.275 & 0.087 & 0.106 & 0.074 & 0.09 & 0.077 & 0.097 & 0.1 & 0.123 \\
-    & & \textbf{log} & 0.222 & 0.275 & 0.087 & 0.106 & 0.074 & 0.09 & 0.077 & 0.097 & 0.1 & 0.123 \\
-    & & \textbf{exp} & 0.222 & 0.275 & 0.087 & 0.106 & 0.074 & 0.09 & 0.077 & 0.097 & 0.1 & 0.123 \\
-    & & \textbf{sqrt} & 0.222 & 0.275 & 0.087 & 0.106 & 0.074 & 0.09 & 0.077 & 0.097 & 0.1 & 0.123 \\
+& \multirow{4}{*}{\textbf{max}}
+      & \textbf{id} & 0.222 & 0.275 & 0.087 & 0.106 & 0.074 & 0.090& 0.077 & 0.097 & 0.100& 0.123 \\
+    & & \textbf{log} & 0.222 & 0.275 & 0.087 & 0.106 & 0.074 & 0.090& 0.077 & 0.097 & 0.100& 0.123 \\
+    & & \textbf{exp} & 0.222 & 0.275 & 0.087 & 0.106 & 0.074 & 0.090& 0.077 & 0.097 & 0.100& 0.123 \\
+    & & \textbf{sqrt} & 0.222 & 0.275 & 0.087 & 0.106 & 0.074 & 0.090& 0.077 & 0.097 & 0.100& 0.123 \\
 \cmidrule{2-13}
-& \multirow{4}{*}{\textbf{mean}}
-      & \textbf{id} & 0.218 & 0.271 & 0.117 & 0.143 & 0.168 & 0.205 & 0.159 & 0.199 & 0.218 & 0.27 \\
-    & & \textbf{log} & 0.218 & 0.271 & 0.117 & 0.143 & 0.168 & 0.205 & 0.159 & 0.199 & 0.218 & 0.27 \\
-    & & \textbf{exp} & 0.218 & 0.271 & 0.117 & 0.143 & 0.168 & 0.205 & 0.159 & 0.199 & 0.218 & 0.27 \\
-    & & \textbf{sqrt} & 0.218 & 0.271 & 0.117 & 0.143 & 0.168 & 0.205 & 0.159 & 0.199 & 0.218 & 0.27 \\
+& \multirow{4}{*}{\textbf{sum}}
+      & \textbf{id} & 0.218 & 0.271 & 0.117 & 0.143 & 0.168 & 0.205 & 0.159 & 0.199 & 0.218 & 0.270\\
+    & & \textbf{log} & 0.218 & 0.271 & 0.117 & 0.143 & 0.168 & 0.205 & 0.159 & 0.199 & 0.218 & 0.270\\
+    & & \textbf{exp} & 0.218 & 0.271 & 0.117 & 0.143 & 0.168 & 0.205 & 0.159 & 0.199 & 0.218 & 0.270\\
+    & & \textbf{sqrt} & 0.218 & 0.271 & 0.117 & 0.143 & 0.168 & 0.205 & 0.159 & 0.199 & 0.218 & 0.270\\
       \midrule
 
       \multirow{16}{*}{\rotatebox{90}{\makecell{\textbf{Pairwise Preferences} \\ \textbf{flant5-small}}}}
@@ -311,19 +320,19 @@ The first evaluation of the pairwise preferences involves inferring relevance sc
     & & \textbf{exp} & 0.253 & 0.324 & 0.056 & 0.069 & 0.073 & 0.089 & 0.142 & 0.179 & 0.136 & 0.169 \\
     & & \textbf{sqrt} & 0.253 & 0.324 & 0.056 & 0.069 & 0.073 & 0.089 & 0.142 & 0.179 & 0.136 & 0.169 \\
 \cmidrule{2-13}
-& \multirow{4}{*}{\textbf{mean}}
-      & \textbf{id} & 0.3 & 0.383 & 0.072 & 0.088 & 0.09 & 0.11 & 0.142 & 0.178 & 0.154 & 0.191 \\
-    & & \textbf{log} & 0.3 & 0.383 & 0.072 & 0.088 & 0.09 & 0.11 & 0.142 & 0.178 & 0.154 & 0.191 \\
-    & & \textbf{exp} & 0.3 & 0.383 & 0.072 & 0.088 & 0.09 & 0.11 & 0.142 & 0.178 & 0.154 & 0.191 \\
-    & & \textbf{sqrt} & 0.3 & 0.383 & 0.072 & 0.088 & 0.09 & 0.11 & 0.142 & 0.178 & 0.154 & 0.191 \\
+& \multirow{4}{*}{\textbf{min}}
+      & \textbf{id} & 0.300& 0.383 & 0.072 & 0.088 & 0.090& 0.110& 0.142 & 0.178 & 0.154 & 0.191 \\
+    & & \textbf{log} & 0.300& 0.383 & 0.072 & 0.088 & 0.090& 0.110& 0.142 & 0.178 & 0.154 & 0.191 \\
+    & & \textbf{exp} & 0.300& 0.383 & 0.072 & 0.088 & 0.090& 0.110& 0.142 & 0.178 & 0.154 & 0.191 \\
+    & & \textbf{sqrt} & 0.300& 0.383 & 0.072 & 0.088 & 0.090& 0.110& 0.142 & 0.178 & 0.154 & 0.191 \\
 \cmidrule{2-13}
-& \multirow{4}{*}{\textbf{mean}}
-      & \textbf{id} & 0.2 & 0.254 & 0.028 & 0.034 & 0.033 & 0.041 & 0.05 & 0.062 & 0.081 & 0.1 \\
-    & & \textbf{log} & 0.2 & 0.254 & 0.028 & 0.034 & 0.033 & 0.041 & 0.05 & 0.062 & 0.081 & 0.1 \\
-    & & \textbf{exp} & 0.2 & 0.254 & 0.028 & 0.034 & 0.033 & 0.041 & 0.05 & 0.062 & 0.081 & 0.1 \\
-    & & \textbf{sqrt} & 0.2 & 0.254 & 0.028 & 0.034 & 0.033 & 0.041 & 0.05 & 0.062 & 0.081 & 0.1 \\
+& \multirow{4}{*}{\textbf{max}}
+      & \textbf{id} & 0.200& 0.254 & 0.028 & 0.034 & 0.033 & 0.041 & 0.050& 0.062 & 0.081 & 0.100\\
+    & & \textbf{log} & 0.200& 0.254 & 0.028 & 0.034 & 0.033 & 0.041 & 0.050& 0.062 & 0.081 & 0.100\\
+    & & \textbf{exp} & 0.200& 0.254 & 0.028 & 0.034 & 0.033 & 0.041 & 0.050& 0.062 & 0.081 & 0.100\\
+    & & \textbf{sqrt} & 0.200& 0.254 & 0.028 & 0.034 & 0.033 & 0.041 & 0.050& 0.062 & 0.081 & 0.100\\
 \cmidrule{2-13}
-& \multirow{4}{*}{\textbf{mean}}
+& \multirow{4}{*}{\textbf{sum}}
       & \textbf{id} & 0.253 & 0.324 & 0.056 & 0.069 & 0.073 & 0.089 & 0.142 & 0.179 & 0.136 & 0.169 \\
     & & \textbf{log} & 0.253 & 0.324 & 0.056 & 0.069 & 0.073 & 0.089 & 0.142 & 0.179 & 0.136 & 0.169 \\
     & & \textbf{exp} & 0.253 & 0.324 & 0.056 & 0.069 & 0.073 & 0.089 & 0.142 & 0.179 & 0.136 & 0.169 \\
@@ -332,35 +341,35 @@ The first evaluation of the pairwise preferences involves inferring relevance sc
 
       \multirow{16}{*}{\rotatebox{90}{\makecell{\textbf{Pairwise Preferences} \\ \textbf{t5-small}}}}
       & \multirow{4}{*}{\textbf{mean}}
-      & \textbf{id} & 0.25 & 0.322 & 0.0 & 0.0 & -0.008 & -0.01 & 0.003 & 0.005 & -0.001 & -0.001 \\
-    & & \textbf{log} & 0.25 & 0.322 & 0.0 & 0.0 & -0.008 & -0.01 & 0.003 & 0.005 & -0.001 & -0.001 \\
-    & & \textbf{exp} & 0.25 & 0.322 & 0.0 & 0.0 & -0.008 & -0.01 & 0.003 & 0.005 & -0.001 & -0.001 \\
-    & & \textbf{sqrt} & 0.25 & 0.322 & 0.0 & 0.0 & -0.008 & -0.01 & 0.003 & 0.005 & -0.001 & -0.001 \\
+      & \textbf{id} & 0.250& 0.322 & 0.000& 0.000& -0.008 & -0.010& 0.003 & 0.005 & -0.001 & -0.001 \\
+    & & \textbf{log} & 0.250& 0.322 & 0.000& 0.000& -0.008 & -0.010& 0.003 & 0.005 & -0.001 & -0.001 \\
+    & & \textbf{exp} & 0.250& 0.322 & 0.000& 0.000& -0.008 & -0.010& 0.003 & 0.005 & -0.001 & -0.001 \\
+    & & \textbf{sqrt} & 0.250& 0.322 & 0.000& 0.000& -0.008 & -0.010& 0.003 & 0.005 & -0.001 & -0.001 \\
 \cmidrule{2-13}
-& \multirow{4}{*}{\textbf{mean}}
-      & \textbf{id} & 0.31 & 0.4 & 0.017 & 0.021 & 0.005 & 0.007 & 0.007 & 0.01 & 0.013 & 0.016 \\
-    & & \textbf{log} & 0.31 & 0.4 & 0.017 & 0.021 & 0.005 & 0.007 & 0.007 & 0.01 & 0.013 & 0.016 \\
-    & & \textbf{exp} & 0.31 & 0.4 & 0.017 & 0.021 & 0.005 & 0.007 & 0.007 & 0.01 & 0.013 & 0.016 \\
-    & & \textbf{sqrt} & 0.31 & 0.4 & 0.017 & 0.021 & 0.005 & 0.007 & 0.007 & 0.01 & 0.013 & 0.016 \\
+& \multirow{4}{*}{\textbf{min}}
+      & \textbf{id} & 0.310& 0.400& 0.017 & 0.021 & 0.005 & 0.007 & 0.007 & 0.010& 0.013 & 0.016 \\
+    & & \textbf{log} & 0.310& 0.400& 0.017 & 0.021 & 0.005 & 0.007 & 0.007 & 0.010& 0.013 & 0.016 \\
+    & & \textbf{exp} & 0.310& 0.400& 0.017 & 0.021 & 0.005 & 0.007 & 0.007 & 0.010& 0.013 & 0.016 \\
+    & & \textbf{sqrt} & 0.310& 0.400& 0.017 & 0.021 & 0.005 & 0.007 & 0.007 & 0.010& 0.013 & 0.016 \\
 \cmidrule{2-13}
-& \multirow{4}{*}{\textbf{mean}}
-      & \textbf{id} & 0.164 & 0.213 & 0.004 & 0.005 & -0.005 & -0.007 & 0.005 & 0.007 & 0.008 & 0.01 \\
-    & & \textbf{log} & 0.164 & 0.213 & 0.004 & 0.005 & -0.005 & -0.007 & 0.005 & 0.007 & 0.008 & 0.01 \\
-    & & \textbf{exp} & 0.164 & 0.213 & 0.004 & 0.005 & -0.005 & -0.007 & 0.005 & 0.007 & 0.008 & 0.01 \\
-    & & \textbf{sqrt} & 0.164 & 0.213 & 0.004 & 0.005 & -0.005 & -0.007 & 0.005 & 0.007 & 0.008 & 0.01 \\
+& \multirow{4}{*}{\textbf{max}}
+      & \textbf{id} & 0.164 & 0.213 & 0.004 & 0.005 & -0.005 & -0.007 & 0.005 & 0.007 & 0.008 & 0.010\\
+    & & \textbf{log} & 0.164 & 0.213 & 0.004 & 0.005 & -0.005 & -0.007 & 0.005 & 0.007 & 0.008 & 0.010\\
+    & & \textbf{exp} & 0.164 & 0.213 & 0.004 & 0.005 & -0.005 & -0.007 & 0.005 & 0.007 & 0.008 & 0.010\\
+    & & \textbf{sqrt} & 0.164 & 0.213 & 0.004 & 0.005 & -0.005 & -0.007 & 0.005 & 0.007 & 0.008 & 0.010\\
 \cmidrule{2-13}
-& \multirow{4}{*}{\textbf{mean}}
-      & \textbf{id} & 0.25 & 0.322 & 0.0 & 0.0 & -0.008 & -0.01 & 0.003 & 0.005 & -0.001 & -0.001 \\
-    & & \textbf{log} & 0.25 & 0.322 & 0.0 & 0.0 & -0.008 & -0.01 & 0.003 & 0.005 & -0.001 & -0.001 \\
-    & & \textbf{exp} & 0.25 & 0.322 & 0.0 & 0.0 & -0.008 & -0.01 & 0.003 & 0.005 & -0.001 & -0.001 \\
-    & & \textbf{sqrt} & 0.25 & 0.322 & 0.0 & 0.0 & -0.008 & -0.01 & 0.003 & 0.005 & -0.001 & -0.001 \\
+& \multirow{4}{*}{\textbf{sum}}
+      & \textbf{id} & 0.250& 0.322 & 0.000& 0.000& -0.008 & -0.010& 0.003 & 0.005 & -0.001 & -0.001 \\
+    & & \textbf{log} & 0.250& 0.322 & 0.000& 0.000& -0.008 & -0.010& 0.003 & 0.005 & -0.001 & -0.001 \\
+    & & \textbf{exp} & 0.250& 0.322 & 0.000& 0.000& -0.008 & -0.010& 0.003 & 0.005 & -0.001 & -0.001 \\
+    & & \textbf{sqrt} & 0.250& 0.322 & 0.000& 0.000& -0.008 & -0.010& 0.003 & 0.005 & -0.001 & -0.001 \\
       \midrule
 
       \multirow{5}{*}{\rotatebox{90}{\makecell{\textbf{Pointwise} \\ \textbf{Preferences}}}}
           & & & & & & & & & & & & \\
-          & \multicolumn{2}{c}{\textbf{flant5-base}}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-          & \multicolumn{2}{c}{\textbf{flant5-small}}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
-          & \multicolumn{2}{c}{\textbf{t5-small}}   & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+          & \multicolumn{2}{c}{\textbf{flant5-base}}   & 0.222 & 0.275 & 0.087 & 0.106 & 0.074 & 0.090& 0.077 & 0.097 & 0.100& 0.123 \\
+          & \multicolumn{2}{c}{\textbf{flant5-small}}   & 0.200& 0.254 & 0.028 & 0.034 & 0.033 & 0.041 & 0.050& 0.062 & 0.081 & 0.100 \\
+          & \multicolumn{2}{c}{\textbf{t5-small}}   & 0.164 & 0.213 & 0.004 & 0.005 & -0.005 & -0.007 & 0.005 & 0.007 & 0.008 & 0.010\\
           & & & & & & & & & & & & \\
       \bottomrule 
   \end{tabular}}
