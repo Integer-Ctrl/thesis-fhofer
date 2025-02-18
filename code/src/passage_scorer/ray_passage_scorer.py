@@ -239,12 +239,12 @@ def ray_wrapper(job_id, num_jobs):
                             relevant_results.append(scores)
 
         return results, relevant_results, scored_docs_count
-
-    # Get list of doc ids that should be chunked
-    # For each QID, chunk 50 non relevant documents with a label <= 0
-    # For each QID, chunk 50 relevant documents for each label > 0
-    # If there are less than 50 documents for a label, chunk for each label as much as the smallest label count
-
+   
+    """
+    Get list of doc ids that should be chunked
+    For each QID, chunk 50 non relevant documents with a label <= 0
+    For each QID, chunk 50 relevant documents for each label > 0
+    """
     def get_docs_to_chunk(dataset):
         dict = {}
 
@@ -256,6 +256,7 @@ def ray_wrapper(job_id, num_jobs):
             if qid not in dict:
                 dict[qid] = {}
 
+            # Map non-relevant documents to label 0
             if label <= 0:
                 if '0' not in dict[qid]:
                     dict[qid]['0'] = []
@@ -269,11 +270,8 @@ def ray_wrapper(job_id, num_jobs):
 
         # Round to smallest label count or 50
         for qid in dict:
-            min_label_count = min([[len(count)] for count in dict[qid].values()])
-            min_label_count = min(min_label_count[0], 50)
-
             for label in dict[qid]:
-                dict[qid][label] = dict[qid][label][:min_label_count]
+                dict[qid][label] = dict[qid][label][:50]
 
         return dict
 
@@ -299,6 +297,8 @@ def ray_wrapper(job_id, num_jobs):
         with gzip.open(all_path, 'wt', encoding='UTF-8') as all_qrels_file:
             for scores in results:
                 all_qrels_file.write(json.dumps(scores) + '\n')
+
+        print(f"Job {job_id} processed and saved {docs_count} documents for QID {QID}")
 
 
 if __name__ == '__main__':
