@@ -45,7 +45,7 @@ In contrast to the default algorithms, the desired rank correlation for this the
 % ==================
 \section{Document Selection}\label{eval-doucment-selection}
 
-The first step in the transfer pipeline is to select and segment a subset of documents for each query of a retrieval task from the source datasets. The selected documents play a crucial role in two subsequent steps of the pipeline: (1) the selection of candidate documents from the target corpus and (2) the pairwise preference comparison using \texttt{DouPrompt}. Since only a subset of documents is necessary for each query, three selection conditions were applied.
+The first step in the transfer pipeline is to select and segment a subset of documents for each query of a retrieval task from the source datasets. The selected documents play a crucial role in two subsequent steps of the pipeline: (1) the selection of candidate documents from the target corpus and (2) the pairwise preference comparison using \texttt{DouPrompt}. Since only a subset of documents is necessary for each query, two selection conditions were applied.
 \begin{table}[t]
   \centering
   \caption{The table presents the results of the candidate selection process, showing the minimum (min), maximum (max), and average (mean) number of documents per query for each source dataset. A maximum of 50 documents per query is possible.}
@@ -377,7 +377,7 @@ The first evaluation of the pairwise preferences involves inferring relevance sc
 \end{table}
 
 % Transfer Pipeline to Source Corpus itself
-\subsection{Transfer Pipeline to Source Corpus itself}\label{eval-pairwise-preferences-source}
+\subsection{Transfer Pipeline on Source Corpus}\label{eval-pairwise-preferences-source}
 
 % Transfer Pipeline to ClueWeb22/b
-\subsection{Transfer Pipeline to \texttt{ClueWeb22/b}}\label{eval-pairwise-preferences-target}
+\subsection{Transfer Pipeline on \texttt{ClueWeb22/b}}\label{eval-pairwise-preferences-target}
