@@ -37,16 +37,16 @@ At this stage, the transfer pipeline has identified, for each query, a set of ta
         Name & documents  & Name & Queries &\texttt{qrels} & Labels \\
         \toprule
         
-        Args.me~\cite{ajjour:2019} & 0.4~m & Touché 2020 Task 1~\cite{bondarenko:2020} & 49 & 2,298 & 3 \\
+        Args.me~\cite{ajjour:2019} & 0.4~m & Touché 2020 Task 1~\cite{bondarenko:2020} & 49 & $2\,298$ & 3 \\
         \midrule
 
-        \multirow{3}{*}{Disks4+5~\cite{voorhees:1996}} & \multirow{3}{*}{0.5~m} & Robust04~\cite{voorhees:2004} & 250 & 311,410 & 3 \\
-        & & TREC-7~\cite{voorhees:1998} & 50 & 80,345 & 2 \\
-        & & TREC-8~\cite{voorhees:1999} & 50 & 86,830 & 2 \\
+        \multirow{3}{*}{Disks4+5~\cite{voorhees:1996}} & \multirow{3}{*}{0.5~m} & Robust04~\cite{voorhees:2004} & 250 & $311\,410$ & 3 \\
+        & & TREC-7~\cite{voorhees:1998} & 50 & $80\,345$ & 2 \\
+        & & TREC-8~\cite{voorhees:1999} & 50 & $86\,830$ & 2 \\
         \midrule
 
-        \multirow{2}{*}{MS MARCO Passage~\cite{bajaj:2016}} & \multirow{2}{*}{8.8~m} & TREC 2019 DL Track~\cite{craswell:2019} & 43 & 16,258 & 4 \\
-        & & TREC 2020 DL Track~\cite{craswell:2020} & 45 & 9,098 & 4 \\
+        \multirow{2}{*}{MS MARCO Passage~\cite{bajaj:2016}} & \multirow{2}{*}{8.8~m} & TREC 2019 DL Track~\cite{craswell:2019} & 43 & $9\,260$ & 4 \\
+        & & TREC 2020 DL Track~\cite{craswell:2020} & 54 & $11\,386$ & 4 \\
         
         \bottomrule
     \end{tabular}
@@ -109,7 +109,7 @@ At this stage, all documents with at least one relevance judgment for any query 
 Now that the documents used for relevance transfer have been selected, they are segmented into passages. This segmentation is performed to focus only on the most relevant parts of a document rather than the entire text and to ensure proper processing of text snippets through large language models later. To achieve accurate segmentation with correct sentence separation, the GitHub repository \texttt{grill-lab/trec-cast-tools}\footnote{https://github.com/grill-lab/trec-cast-tools} was utilized. The repository provides a collection of scripts designed to process TREC CAsT Track 2022~\citep{owoicho:2022}. Among its features is the ability to process a document collection and generate passage splits.
 \\\\
 \texttt{trec-cast-tools} leverages \texttt{spaCy}\footnote{https://spacy.io}, a powerful natural language processing library in Python. \texttt{spaCy} offers various features, including tokenization, part-of-speech (POS) tagging, named entity recognition (NER), and lemmatization. It also provides functionality for sentence segmentation, which is used by \texttt{trec-cast-tools}. First, the documents are processed by \texttt{spaCy}, splitting the texts into sentences. Then, \texttt{trec-cast-tools} concatenates these sentences into passages, with each passage limited to a maximum length of 250 words.
-\\\\
+\\\\    
 The selected documents from the source corpus are now available as uniquely identifiable passages, ensuring traceability throughout the transfer pipeline, which are saved in the \texttt{passage store}, see [2] Figure~\ref{fig:document-segmentation}. In cases where a document is judged as relevant to a query, the relevant information is often dispersed throughout the text. Therefore, the documents were segmented into passages. In the next stage of the transfer pipeline, these individual passages are classified to identify those passages with a high density of relevant information. This step optimizes the results of the subsequent candidate selection and enhances the effectiveness of the pairwise preference process at the end of the pipeline by using highly relevant passages for comparison.
 \pagebreak
 
