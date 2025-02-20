@@ -37,8 +37,6 @@ def build_paths(config):
         "PASSAGE_DATASET_SOURCE_SCORE_AQ_PATH": os.path.join(
             SOURCE_PATH, config["PASSAGE_DATASET_SOURCE_SCORE_AQ_PATH"]),
 
-        "RANK_CORRELATION_SCORE_PATH": os.path.join(
-            SOURCE_PATH, config["RANK_CORRELATION_SCORE_PATH"]),
         "RANK_CORRELATION_SCORE_PQ_AQ_PATH": os.path.join(
             SOURCE_PATH, config["RANK_CORRELATION_SCORE_PQ_AQ_PATH"]),
 

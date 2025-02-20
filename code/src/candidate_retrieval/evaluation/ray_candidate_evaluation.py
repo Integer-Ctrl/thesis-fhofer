@@ -10,7 +10,7 @@ ray.init()
 
 
 @ray.remote
-def ray_wrapper():
+def ray_wrapper(job_id, num_workers, num_all_relevant_documents_per_query, num_all_judged_documents_per_query):
     def load_config(filename="/mnt/ceph/storage/data-tmp/current/ho62zoq/thesis-fhofer/code/src/config.json"):
         with open(filename, "r") as f:
             config = json.load(f)
@@ -32,29 +32,24 @@ def ray_wrapper():
         CANDIDATES_PATH = os.path.join(TARGET_PATH, config['CANDIDATE_CHATNOIR_PATH'])
     else:
         CANDIDATES_PATH = os.path.join(TARGET_PATH, config['CANDIDATES_LOCAL_PATH'])
-        FILE_PATTERN = os.path.join(CANDIDATES_PATH, "*.jsonl.gz")
+
+    FILE_PATTERN = os.path.join(CANDIDATES_PATH, "*.jsonl.gz")
 
     PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
+    
+    JOB_ID = job_id
+    NUM_JOBS = num_workers
+    FILES = None
 
-    ##################
-    # LOAD QREL FILE #
-    ##################
-    num_all_relevant_documents_per_query = {}
-    num_all_judged_documents_per_query = {}
+    all_files = [file for file in glob(FILE_PATTERN)]
+    total_files = len(all_files)
 
-    dataset = pt.get_dataset(DOCUMENT_DATASET_TARGET_NAME_PYTERRIER)
-    qrels = dataset.get_qrels(variant='relevance')
-    for index, row in qrels.iterrows():
-        # Count the number of judged documents per query
-        if row['qid'] not in num_all_judged_documents_per_query:
-            num_all_judged_documents_per_query[row['qid']] = 0
-        num_all_judged_documents_per_query[row['qid']] += 1
+    files_per_job = (total_files + NUM_JOBS - 1) // NUM_JOBS
+    start_index = (JOB_ID - 1) * files_per_job
+    end_index = min(start_index + files_per_job, total_files)
 
-        # Count the number of relevant documents per query
-        if row['label'] > 0:
-            if row['qid'] not in num_all_relevant_documents_per_query:
-                num_all_relevant_documents_per_query[row['qid']] = 0
-            num_all_relevant_documents_per_query[row['qid']] += 1
+    # Split the files among the workers
+    FILES = all_files[start_index:end_index]
 
     ########################
     # EVALUATION FUNCTIONS #
@@ -91,8 +86,8 @@ def ray_wrapper():
             # Tight layout for better spacing
             plt.tight_layout()
 
-        # Save plot
-            path = os.path.join(CANDIDATES_PATH, filename)
+            # Save plot
+            path = os.path.join(CANDIDATES_PATH, 'plots', filename)
             plt.savefig(path, format='pdf')
             print(f"Plot saved to {filename}")
 
@@ -172,13 +167,13 @@ def ray_wrapper():
     #           MAIN           #
     ############################
     result_path = os.path.join(CANDIDATES_PATH, 'plots')
-    if not os.path.exists(result_path):
+    if JOB_ID == 1 and not os.path.exists(result_path):
         os.makedirs(result_path)
 
     results = {}
 
     # Evaluate the candidate retrieval approaches
-    for file in glob(FILE_PATTERN):
+    for file in FILES:
         file_name = os.path.basename(file).replace('.jsonl.gz', '')
 
         print(f"Evaluating {file_name}")
@@ -194,19 +189,64 @@ def ray_wrapper():
             'judged_precision': judged_precision
         }
 
+    return results
     # Save the results to a JSON file
-    with open(os.path.join(CANDIDATES_PATH, 'results.json'), 'w') as f:
-        json.dump(results, f, indent=4)
-        print(f"Results saved to {result_path}/evaluation.json")
-
 
 if __name__ == '__main__':
 
-    NUM_WORKERS = 1
+    with open("/mnt/ceph/storage/data-tmp/current/ho62zoq/thesis-fhofer/code/src/config.json", "r") as f:
+        config = json.load(f)
+    CHATNOIR_RETRIEVAL = config['CHATNOIR_RETRIEVAL']
+
+    DOCUMENT_DATASET_SOURCE_NAME = config['DOCUMENT_DATASET_SOURCE_NAME']
+    DOCUMENT_DATASET_TARGET_NAME_PYTERRIER = config['DOCUMENT_DATASET_TARGET_NAME_PYTERRIER']
+
+    SOURCE_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_SOURCE_NAME)
+    TARGET_PATH = os.path.join(SOURCE_PATH, config["DOCUMENT_DATASET_TARGET_NAME"])
+
+    if CHATNOIR_RETRIEVAL:
+        CANDIDATES_PATH = os.path.join(TARGET_PATH, config['CANDIDATE_CHATNOIR_PATH'])
+    else:
+        CANDIDATES_PATH = os.path.join(TARGET_PATH, config['CANDIDATES_LOCAL_PATH'])
+        FILE_PATTERN = os.path.join(CANDIDATES_PATH, "*.jsonl.gz")
+
+    ##################
+    # LOAD QREL FILE #
+    ##################
+    num_all_relevant_documents_per_query = {}
+    num_all_judged_documents_per_query = {}
+
+    dataset = pt.get_dataset(DOCUMENT_DATASET_TARGET_NAME_PYTERRIER)
+    qrels = dataset.get_qrels(variant='relevance')
+    for index, row in qrels.iterrows():
+        # Count the number of judged documents per query
+        if row['qid'] not in num_all_judged_documents_per_query:
+            num_all_judged_documents_per_query[row['qid']] = 0
+        num_all_judged_documents_per_query[row['qid']] += 1
+
+        # Count the number of relevant documents per query
+        if row['label'] > 0:
+            if row['qid'] not in num_all_relevant_documents_per_query:
+                num_all_relevant_documents_per_query[row['qid']] = 0
+            num_all_relevant_documents_per_query[row['qid']] += 1
+
+    #############
+    # START RAY #
+    #############
+    NUM_WORKERS = 20
 
     futures = []
     for job_id in range(1, NUM_WORKERS + 1):
-        futures.append(ray_wrapper.remote())
+        futures.append(ray_wrapper.remote(job_id, NUM_WORKERS, num_all_relevant_documents_per_query, num_all_judged_documents_per_query))
 
     # Wait for all workers to finish
-    ray.get(futures)
+    results_list = ray.get(futures)
+
+    final_result = {}
+    for result in results_list:
+        final_result.update(result)
+    
+    # Write the results to a JSON file
+    with open(os.path.join(CANDIDATES_PATH, 'results.json'), 'w') as f:
+        json.dump(final_result, f, indent=4)
+        print(f"Candidate evaluation results saved to {CANDIDATES_PATH}/")

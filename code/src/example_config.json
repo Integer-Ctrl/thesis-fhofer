@@ -34,10 +34,8 @@
         "PASSAGE_DATASET_SOURCE_SCORE_REL_PATH": "retrieval-scores-rel/",
         "PASSAGE_DATASET_SOURCE_SCORE_AQ_PATH": "retrieval-scores-aq/",
 
-        "RANK_CORRELATION_SCORE_PATH": "rank-correlation-scores.jsonl.gz",
         "RANK_CORRELATION_SCORE_PQ_AQ_PATH": "rank-correlation-scores-pq-aq/",
-        "CROSS_VALIDATION_PATH": "cross-validation.jsonl.gz",
-        "CROSS_VALIDATION_SCORES_PATH": "cross-validation-scores.jsonl.gz",
+        "RANK_CORRELATION_SCORE_AVG_PATH": "avg-rank-correlation-scores.jsonl.gz",
 
 
     "NOTE_2": "dataset which is used to transfer into it from the old dataset",
@@ -53,6 +51,7 @@
 
         "LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH": "rank-correlation-scores-pq-aq/",
         "LABEL_CROSS_VALIDATION_PATH": "cross-validation/",
+        "LABEL_CORRELATION_AVG_PER_QUERY_PATH": "avg-per-query/",
 
         "CANDIDATES_LOCAL_PATH": "candidates/",
         "CANDIDATE_CHATNOIR_PATH": "candidates-chatnoir/",
