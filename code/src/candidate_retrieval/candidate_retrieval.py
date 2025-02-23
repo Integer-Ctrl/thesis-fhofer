@@ -8,13 +8,9 @@ from chatnoir_pyterrier import ChatNoirRetrieve
 from glob import glob
 import pandas as pd
 from spacy_passage_chunker import SpacyPassageChunker
-import time
-from ir_datasets_clueweb22 import register
 
-# Register the ClueWeb22/b dataset
-register()
 
-def candidate_retrieval():
+def ray_wrapper():
 
     def load_config(filename="/mnt/ceph/storage/data-tmp/current/ho62zoq/thesis-fhofer/code/src/config.json"):
         with open(filename, "r") as f:
@@ -37,19 +33,8 @@ def candidate_retrieval():
     SOURCE_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_SOURCE_NAME)
     TARGET_PATH = os.path.join(SOURCE_PATH, config["DOCUMENT_DATASET_TARGET_NAME"])
 
-    # For how many queries the candidates should be created - None for all queries
-    QUERIES = config['QUERIES']  # retrieve for following queries only
-    # Securety check
-    if DOCUMENT_DATASET_TARGET_NAME == 'clueweb22/b':
-        if CHATNOIR_RETRIEVAL is False:
-            print("Target dataset is clueWeb22/b. Please use ChatNoir for retrieval.")
-            exit()
-        if QUERIES is None:
-            print("Target dataset is clueWeb22/b. Please specify the number of queries to process.")
-            exit()
-        print(f"Running candidate retrieval for {DOCUMENT_DATASET_SOURCE_NAME} on target clueWeb22/b")
-
     DOCUMENT_DATASET_SOURCE_INDEX_PATH = os.path.join(SOURCE_PATH, config['DOCUMENT_DATASET_SOURCE_INDEX_PATH'])
+
     PASSAGE_DATASET_SOURCE_PATH = os.path.join(SOURCE_PATH, config['PASSAGE_DATASET_SOURCE_PATH'])
     # Pattern to match the files
     # PASSAGE_DATASET_SOURCE_SCORE_REL_PATH = os.path.join(SOURCE_PATH, config['PASSAGE_DATASET_SOURCE_SCORE_REL_PATH'])
@@ -275,9 +260,6 @@ def candidate_retrieval():
                           unit='query'):
 
             qid = query.query_id
-            # Only retrieve for the specified queries
-            if QUERIES is not None and qid not in QUERIES:
-                continue
             if DOCUMENT_DATASET_SOURCE_NAME == 'disks45/nocr/trec-robust-2004' and qid == '672':
                 continue  # Skip query 672 as it has no relevant passages
             if DOCUMENT_DATASET_SOURCE_NAME == 'disks45/nocr/trec-robust-2004' and qid == '306':
@@ -288,14 +270,10 @@ def candidate_retrieval():
 
             if CHATNOIR_RETRIEVAL:
                 query_results = chatnoir.search(query_text).loc[:, ['qid', 'docno']].head(num_retrieval_docs)
-                # Sleep to prevent chatnoir internal server error
-                time.sleep(5)
                 if query_description:
                     additional_results = chatnoir.search(query_description).loc[:, [
                         'qid', 'docno']].head(num_retrieval_docs)
                     query_results = pd.concat([query_results, additional_results], ignore_index=True)
-                    # Sleep to prevent chatnoir internal server error
-                    time.sleep(5)
             else:
                 query_results = bm25.search(pt_tokenize(query_text), ).loc[:, ['qid', 'docno']].head(num_retrieval_docs)
                 if query_description:
@@ -335,9 +313,6 @@ def candidate_retrieval():
                           unit='query'):
 
             qid = query.query_id
-            # Only retrieve for the specified queries
-            if QUERIES is not None and qid not in QUERIES:
-                continue
             if DOCUMENT_DATASET_SOURCE_NAME == 'disks45/nocr/trec-robust-2004' and qid == '672':
                 continue  # Skip query 672 as it has no relevant passages
             if DOCUMENT_DATASET_SOURCE_NAME == 'disks45/nocr/trec-robust-2004' and qid == '306':
@@ -353,8 +328,6 @@ def candidate_retrieval():
                 if CHATNOIR_RETRIEVAL:
                     query_results = chatnoir.search(
                         source_passages_text_cache[docno][rel_doc_id]).loc[:, ['qid', 'docno']].head(num_retrieval_docs)
-                    # Sleep to prevent chatnoir internal server error
-                    time.sleep(5)
                 else:
                     query_results = bm25.search(pt_tokenize(source_passages_text_cache[docno][rel_doc_id]), ).loc[:, [
                         'qid', 'docno']].head(num_retrieval_docs)
@@ -400,9 +373,6 @@ def candidate_retrieval():
                 for query in dataset.irds_ref().queries_iter():
 
                     qid = query.query_id
-                    # Only retrieve for the specified queries
-                    if QUERIES is not None and qid not in QUERIES:
-                        continue
                     if DOCUMENT_DATASET_SOURCE_NAME == 'disks45/nocr/trec-robust-2004' and qid == '672':
                         continue  # Skip query 672 as it has no relevant passages
                     if DOCUMENT_DATASET_SOURCE_NAME == 'disks45/nocr/trec-robust-2004' and qid == '306':
@@ -458,9 +428,6 @@ def candidate_retrieval():
                 for query in dataset.irds_ref().queries_iter():
 
                     qid = query.query_id
-                    # Only retrieve for the specified queries
-                    if QUERIES is not None and qid not in QUERIES:
-                        continue
                     if DOCUMENT_DATASET_SOURCE_NAME == 'disks45/nocr/trec-robust-2004' and qid == '672':
                         continue  # Skip query 672 as it has no relevant passages
                     if DOCUMENT_DATASET_SOURCE_NAME == 'disks45/nocr/trec-robust-2004' and qid == '306':
@@ -513,89 +480,65 @@ def candidate_retrieval():
     #           MAIN           #
     ############################
 
+    # Parallelization by distributing nearest neighbor retrieval to multiple workers
+    combinations = [
+        (10, 20, False),
+        (50, 20, False),
+        (100, 20, False),
+        (10, 20, True),
+        (50, 20, True),
+        (100, 20, True)
+    ]
+
     # Initialize the chunker
     chunker = PassageChunker()
 
-    # Retrieve the document numbers for each approach
-    # Maximum of 321 requests per query (16050 requests for 50 queries)
-    docnos_naive = naive_retrieval(num_retrieval_docs=1000)  # 1 request/query
-
-    docnos_nn_10 = nearest_neighbor_retrieval(
-        num_top_passages=10, num_retrieval_docs=20, one_per_document=False)  # 10 requests/query
-    docnos_nn_50 = nearest_neighbor_retrieval(
-        num_top_passages=50, num_retrieval_docs=20, one_per_document=False)  # 50 requests/query
-    docnos_nn_100 = nearest_neighbor_retrieval(
-        num_top_passages=100, num_retrieval_docs=20, one_per_document=False)  # 100 requests/query
-
-    docnos_nn_10_opd = nearest_neighbor_retrieval(
-        num_top_passages=10, num_retrieval_docs=20, one_per_document=True)  # 10 requests/query
-    docnos_nn_50_opd = nearest_neighbor_retrieval(
-        num_top_passages=50, num_retrieval_docs=20, one_per_document=True)  # 50 requests/query
-    docnos_nn_100_opd = nearest_neighbor_retrieval(
-        num_top_passages=100, num_retrieval_docs=20, one_per_document=True)  # 100 requests/query
-
-    docnos_union_10 = union_retrieval(docnos_naive, docnos_nn_10)  # 0 requests/query
-    docnos_union_50 = union_retrieval(docnos_naive, docnos_nn_50)  # 0 requests/query
-    docnos_union_100 = union_retrieval(docnos_naive, docnos_nn_100)  # 0 requests/query
-
-    docnos_union_10_opd = union_retrieval(docnos_naive, docnos_nn_10_opd)  # 0 requests/query
-    docnos_union_50_opd = union_retrieval(docnos_naive, docnos_nn_50_opd)  # 0 requests/query
-    docnos_union_100_opd = union_retrieval(docnos_naive, docnos_nn_100_opd)  # 0 requests/query
-
-    docnos_dicts = [
-        docnos_union_10, docnos_union_50, docnos_union_100,
-        docnos_union_10_opd, docnos_union_50_opd, docnos_union_100_opd
-    ]
-
-    # Flatten all docid lists and remove duplicates using set
-    target_qid_docids = list(set(docid for docnos in docnos_dicts for docids in docnos.values() for docid in docids))
-    print("Chunking target documents")
-    chunker.chunk_target_documents(target_qid_docids, batch_size=2000)
-
-    # File names
+    # Naive
     naive_file_name = os.path.join(CANDIDATES_PATH, 'naive.jsonl.gz')
     naive_opd_file_name = os.path.join(CANDIDATES_PATH, 'naive_opd.jsonl.gz')
+    docnos_naive = naive_retrieval(num_retrieval_docs=1000)  # 1 request/query
 
-    nn_10_file_name = os.path.join(CANDIDATES_PATH, 'nearest_neighbor_10.jsonl.gz')
-    nn_50_file_name = os.path.join(CANDIDATES_PATH, 'nearest_neighbor_50.jsonl.gz')
-    nn_100_file_name = os.path.join(CANDIDATES_PATH, 'nearest_neighbor_100.jsonl.gz')
+    target_qid_docids = [docid for docids in docnos_naive.values() for docid in docids]
+    chunker.chunk_target_documents(target_qid_docids, batch_size=2000)
 
-    nn_10_opd_file_name = os.path.join(CANDIDATES_PATH, 'nearest_neighbor_10_opd.jsonl.gz')
-    nn_50_opd_file_name = os.path.join(CANDIDATES_PATH, 'nearest_neighbor_50_opd.jsonl.gz')
-    nn_100_opd_file_name = os.path.join(CANDIDATES_PATH, 'nearest_neighbor_100_opd.jsonl.gz')
+    # Write naive to file if not already exists
+    if not os.path.exists(naive_file_name):
+        write_candidates(naive_file_name, docnos_naive, one_per_document=False)
+    if not os.path.exists(naive_opd_file_name):
+        write_candidates(naive_opd_file_name, docnos_naive, one_per_document=True)
 
-    union_10_file_name = os.path.join(CANDIDATES_PATH, 'union_10.jsonl.gz')
-    union_50_file_name = os.path.join(CANDIDATES_PATH, 'union_50.jsonl.gz')
-    union_100_file_name = os.path.join(CANDIDATES_PATH, 'union_100.jsonl.gz')
 
-    union_10_opd_file_name = os.path.join(CANDIDATES_PATH, 'union_10_opd.jsonl.gz')
-    union_50_opd_file_name = os.path.join(CANDIDATES_PATH, 'union_50_opd.jsonl.gz')
-    union_100_opd_file_name = os.path.join(CANDIDATES_PATH, 'union_100_opd.jsonl.gz')
+    # Nearest Neighbor and Union
+    for combination in combinations:
+        num_top_passages, num_retrieval_docs, one_per_document = combination
 
-    # Write to file
-    print("Writing naive candidates to file")
-    write_candidates(naive_file_name, docnos_naive, one_per_document=False)
-    write_candidates(naive_opd_file_name, docnos_naive, one_per_document=True)
+        if one_per_document:
+            nn_file_name = os.path.join(CANDIDATES_PATH, f'nearest_neighbor_{num_top_passages}_opd.jsonl.gz')
+            union_file_name = os.path.join(CANDIDATES_PATH, f'union_{num_top_passages}_opd.jsonl.gz')
+        else:
+            nn_file_name = os.path.join(CANDIDATES_PATH, f'nearest_neighbor_{num_top_passages}.jsonl.gz')
+            union_file_name = os.path.join(CANDIDATES_PATH, f'union_{num_top_passages}.jsonl.gz')
+        
+        # Skip iteration if files already exist
+        if os.path.exists(nn_file_name) and os.path.exists(union_file_name):
+            print(f"Files {nn_file_name} and {union_file_name} already exist. Skipping iteration")
+            continue
 
-    print("Writing nearest neighbor candidates to file")
-    write_candidates(nn_10_file_name, docnos_nn_10, one_per_document=False)
-    write_candidates(nn_50_file_name, docnos_nn_50, one_per_document=False)
-    write_candidates(nn_100_file_name, docnos_nn_100, one_per_document=False)
+        print(f"Processing {nn_file_name} and {union_file_name}")
+    
+        docnos_nn = nearest_neighbor_retrieval(num_top_passages, num_retrieval_docs, one_per_document)
+        docnos_union = union_retrieval(docnos_naive, docnos_nn)
 
-    write_candidates(nn_10_opd_file_name, docnos_nn_10_opd, one_per_document=True)
-    write_candidates(nn_50_opd_file_name, docnos_nn_50_opd, one_per_document=True)
-    write_candidates(nn_100_opd_file_name, docnos_nn_100_opd, one_per_document=True)
+        # Filter already chunked documents
+        target_qid_docids = [docid for docids in docnos_union.values() for docid in docids]
+        target_qid_docids = [docid for docid in target_qid_docids if docid not in target_docno_passagenos]
+        # Chunk the target documents
+        chunker.chunk_target_documents(target_qid_docids, batch_size=2000)
 
-    print("Writing union candidates to file")
-    write_candidates(union_10_file_name, docnos_union_10, one_per_document=False)
-    write_candidates(union_50_file_name, docnos_union_50, one_per_document=False)
-    write_candidates(union_100_file_name, docnos_union_100, one_per_document=False)
-
-    write_candidates(union_10_opd_file_name, docnos_union_10_opd, one_per_document=True)
-    write_candidates(union_50_opd_file_name, docnos_union_50_opd, one_per_document=True)
-    write_candidates(union_100_opd_file_name, docnos_union_100_opd, one_per_document=True)
+        write_candidates(nn_file_name, docnos_nn, one_per_document)
+        write_candidates(union_file_name, docnos_union, one_per_document)
 
 
 if __name__ == '__main__':
 
-    candidate_retrieval()
+    ray_wrapper()
