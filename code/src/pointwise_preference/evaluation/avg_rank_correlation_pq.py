@@ -46,7 +46,7 @@ def run_cross_validation(candidate_path):
 
     # Extract the file name
     dir_name = os.path.basename(candidate_path)
-    write_path = os.path.join(LABEL_CORRELATION_AVR_PER_QUERY_PATH, f"{dir_name}.jsonl.gz")
+    write_path = os.path.join(LABEL_CORRELATION_AVG_PER_QUERY_PATH, f"{dir_name}.jsonl.gz")
 
     print(f"Processing candidates: {dir_name}")
 
@@ -78,19 +78,19 @@ def run_cross_validation(candidate_path):
     print(f"Correlation scores: {len(correlation_scores)}")
 
     # 3. Avarage correlation scores per query
-    cross_validation_scores = {}
+    avg_correlation_scores = {}
 
     for key1, scores in correlation_scores.items():
         total_score = 0
         for qid, score in scores.items():
             total_score += score
-        cross_validation_scores[key1] = total_score / len(scores)
+        avg_correlation_scores[key1] = total_score / len(scores)
 
     # Sort and save the cross validation scores
-    cross_validation_scores = dict(sorted(cross_validation_scores.items(), key=lambda item: item[1], reverse=True))
+    avg_correlation_scores = dict(sorted(avg_correlation_scores.items(), key=lambda item: item[1], reverse=True))
 
     with gzip.open(write_path, 'wt', encoding='UTF-8') as file:
-        for key, score in cross_validation_scores.items():
+        for key, score in avg_correlation_scores.items():
             file.write(json.dumps({'evaluation_method': key, 'score': score}) + '\n')
 
 
@@ -102,10 +102,10 @@ if __name__ == '__main__':
             TARGET_PATH, config['MONOPROMPT_PATH'], backbone, config['LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH'])
         CANDIDATE_PATTERN = os.path.join(LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH, '*')  # naive, union, ...
 
-        LABEL_CORRELATION_AVR_PER_QUERY_PATH = os.path.join(
-            TARGET_PATH, config['MONOPROMPT_PATH'], backbone, config['LABEL_CORRELATION_AVR_PER_QUERY_PATH'])
-        if not os.path.exists(LABEL_CORRELATION_AVR_PER_QUERY_PATH):
-            os.makedirs(LABEL_CORRELATION_AVR_PER_QUERY_PATH)
+        LABEL_CORRELATION_AVG_PER_QUERY_PATH = os.path.join(
+            TARGET_PATH, config['MONOPROMPT_PATH'], backbone, config['LABEL_CORRELATION_AVG_PER_QUERY_PATH'])
+        if not os.path.exists(LABEL_CORRELATION_AVG_PER_QUERY_PATH):
+            os.makedirs(LABEL_CORRELATION_AVG_PER_QUERY_PATH)
 
         for candidate_path in glob(CANDIDATE_PATTERN):
             run_cross_validation(candidate_path)
