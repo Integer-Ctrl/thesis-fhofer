@@ -1,15 +1,13 @@
 {
     "NOTE_0": "General configurations",
 
-        "DATA_PATH": "/mnt/ceph/storage/data-in-progress/data-teaching/theses/thesis-fhofer/data",
+        "DATA_PATH": "",
 
         "CHATNOIR_RETRIEVAL": false,
         "CHATNOIR_SOURCE_INDICES": "",
         "CHATNOIR_TARGET_INDICES": "clueweb22/b",
-        "QUERIES": ["354", "358"],
-        "CHATNOIR_API_KEY": "CmFhvdOG5IOEqewsrUJNpbWIddMRiAth",
-        "CHATNOIR_API_KEY_OLD": "jAb6Bw9j1sujPJcMeAPa4O19VHKEvHm7",
-        "CHATNOIR_API_KEY_NEW": "CmFhvdOG5IOEqewsrUJNpbWIddMRiAth",
+        "QUERIES": [],
+        "CHATNOIR_API_KEY": "",
 
         "PASSAGE_ID_SEPARATOR": "___",
         "KEY_SEPARATOR": "---",
@@ -26,9 +24,9 @@
     "NOTE_1": "dataset which is used to transfer from it to the new dataset",
 
         "TYPE_SOURCE": "document",
-        "DOCUMENT_DATASET_SOURCE_NAME": "argsme/2020-04-01/touche-2020-task-1",
-        "DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER": "irds:argsme/2020-04-01/touche-2020-task-1",
-        "DOCUMENT_DATASET_SOURCE_NAME_PYTHON_API": "argsme/2020-04-01/touche-2020-task-1",
+        "DOCUMENT_DATASET_SOURCE_NAME": "",
+        "DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER": "irds:",
+        "DOCUMENT_DATASET_SOURCE_NAME_PYTHON_API": "",
         "DOCUMENT_DATASET_SOURCE_INDEX_PATH": "document-indices",
 
         "PASSAGE_DATASET_SOURCE_PATH": "passages.jsonl.gz",
@@ -36,18 +34,16 @@
         "PASSAGE_DATASET_SOURCE_SCORE_REL_PATH": "retrieval-scores-rel/",
         "PASSAGE_DATASET_SOURCE_SCORE_AQ_PATH": "retrieval-scores-aq/",
 
-        "RANK_CORRELATION_SCORE_PATH": "rank-correlation-scores.jsonl.gz",
         "RANK_CORRELATION_SCORE_PQ_AQ_PATH": "rank-correlation-scores-pq-aq/",
-        "CROSS_VALIDATION_PATH": "cross-validation.jsonl.gz",
-        "CROSS_VALIDATION_SCORES_PATH": "cross-validation-scores.jsonl.gz",
+        "RANK_CORRELATION_SCORE_AVG_PATH": "avg-rank-correlation-scores.jsonl.gz",
 
 
     "NOTE_2": "dataset which is used to transfer into it from the old dataset",
 
         "TYPE_TARGET": "document",
-        "DOCUMENT_DATASET_TARGET_NAME": "argsme/2020-04-01/touche-2020-task-1",
-        "DOCUMENT_DATASET_TARGET_NAME_PYTERRIER": "irds:argsme/2020-04-01/touche-2020-task-1",
-        "DOCUMENT_DATASET_TARGET_NAME_PYTHON_API": "argsme/2020-04-01/touche-2020-task-1",
+        "DOCUMENT_DATASET_TARGET_NAME": "",
+        "DOCUMENT_DATASET_TARGET_NAME_PYTERRIER": "irds:",
+        "DOCUMENT_DATASET_TARGET_NAME_PYTHON_API": "",
         "DOCUMENT_DATASET_TARGET_INDEX_PATH": "document-indices",
 
         "PASSAGE_DATASET_TARGET_PATH": "passages.jsonl.gz",
@@ -55,7 +51,7 @@
 
         "LABEL_RANK_CORRELATION_SCORE_PQ_AQ_PATH": "rank-correlation-scores-pq-aq/",
         "LABEL_CROSS_VALIDATION_PATH": "cross-validation/",
-        "LABEL_CORRELATION_AVR_PER_QUERY_PATH": "avr-per-query/",
+        "LABEL_CORRELATION_AVG_PER_QUERY_PATH": "avg-per-query/",
 
         "CANDIDATES_LOCAL_PATH": "candidates/",
         "CANDIDATE_CHATNOIR_PATH": "candidates-chatnoir/",

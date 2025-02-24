@@ -10,7 +10,7 @@ import gzip
 pwd = os.path.dirname(os.path.abspath(__file__))
 
 
-def load_config(filename=pwd + "/../config.json"):
+def load_config(filename= os.path.join(pwd, "../config.json")):
     with open(filename, "r") as f:
         config = json.load(f)
     return config
@@ -101,11 +101,11 @@ class PassageChunker:
 
         print(f"Processed and saved {chunked_docs_count} documents to {PASSAGE_DATASET_SOURCE_PATH}")
 
-
-# Get list of doc ids that should be chunked
-# For each QID, chunk 50 non relevant documents with a label <= 0
-# For each QID, chunk 50 relevant documents for each label > 0
-# If there are less than 50 documents for a label, chunk for each label as much as the smallest label count
+"""
+Get list of doc ids that should be chunked
+For each QID, chunk 50 non relevant documents with a label <= 0
+For each QID, chunk 50 relevant documents for each label > 0
+"""
 def get_docs_to_chunk(dataset):
     dict = {}
 
@@ -117,6 +117,7 @@ def get_docs_to_chunk(dataset):
         if qid not in dict:
             dict[qid] = {}
 
+        # Map non-relevant documents to label 0
         if label <= 0:
             if '0' not in dict[qid]:
                 dict[qid]['0'] = []
@@ -128,15 +129,25 @@ def get_docs_to_chunk(dataset):
                 dict[qid][lable_str] = []
             dict[qid][lable_str] += [doc_id]
 
-    # Round to smallest label count or 50
+    # Cap docs per query-label combination at 50
+    count_docs_per_label = {}
+    count_docs = 0
+
     for qid in dict:
-        min_label_count = min([[len(count)] for count in dict[qid].values()])
-        min_label_count = min(min_label_count[0], 50)
 
         for label in dict[qid]:
-            dict[qid][label] = dict[qid][label][:min_label_count]
+            dict[qid][label] = dict[qid][label][:50]
 
-        print(f"QID: {qid} has {len(dict[qid].keys())} labels with {min_label_count} documents each")
+            if label not in count_docs_per_label:
+                count_docs_per_label[label] = 0
+            count_docs_per_label[label] += len(dict[qid][label])
+            count_docs += len(dict[qid][label])
+
+            print(f"QID: {qid} has {len(dict[qid][label])} documents for label {label}")
+        
+    print(f"Average number of document per qid: {count_docs/len(dict)}")
+    for label in count_docs_per_label:
+        print(f"Average number of document for label: {label} is {count_docs_per_label[label]/len(dict)}")      
 
     # Flatten the dictionary
     doc_ids = []

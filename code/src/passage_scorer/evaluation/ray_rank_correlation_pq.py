@@ -37,8 +37,6 @@ def ray_wrapper(JOB_ID, NUM_JOBS):
 
     PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
 
-    AGGREGATION_METHODS = config['AGGREGATION_METHODS']
-    TRANSFORMATION_METHODS = config['TRANSFORMATION_METHODS']
     EVALUATION_METHODS = config['EVALUATION_METHODS']
 
     CHATNOIR_RETRIEVAL = config['CHATNOIR_RETRIEVAL']
@@ -71,9 +69,10 @@ def ray_wrapper(JOB_ID, NUM_JOBS):
                     qid_docno_passages_scores_cache[qid][docno] = []
                 qid_docno_passages_scores_cache[qid][docno] += [line]
 
-    # Function to get dictonary of aggregated score for a document using passage scores
-    # Return a list of dictionaries with aggregated scores for each document {docno, qid, metric: score}
-
+    """
+    Function to get dictonary of aggregated score for a document using passage scores
+    Return a list of dictionaries with aggregated scores for each document {docno, qid, metric: score}
+    """
     def get_qid_docno_aggregated_scores(qid_docno_passages_scores, aggregation_method):
         # All metrics that are available in the passage scores
 
@@ -100,7 +99,6 @@ def ray_wrapper(JOB_ID, NUM_JOBS):
         return aggregated_scores
 
     # Function to get transformed scores
-
     def get_qid_docno_transformed_scores(qid_docno_aggregated_scores, transformation_method, bins=[0.3, 0.7]):
 
         qid_docno_aggregated_scores_transformed = copy.deepcopy(qid_docno_aggregated_scores)
@@ -120,9 +118,7 @@ def ray_wrapper(JOB_ID, NUM_JOBS):
         return qid_docno_aggregated_scores_transformed
 
     # Function to get evaluated score based on the specified metric and evaluation method (pearson, spearman, kendall)
-
-    def get_evaluated_score(qid_docno_transformed_scores, qid,
-                            metric='ndcg10_bm25', evaluation_method='pearson'):
+    def get_evaluated_score(qid_docno_transformed_scores, qid, metric, evaluation_method):
 
         # Lists to store the matched scores for correlation calculation
         transformed_scores = []
@@ -166,8 +162,8 @@ def ray_wrapper(JOB_ID, NUM_JOBS):
     #           MAIN           #
     ############################
     combinations = []
-    for aggregation_method in AGGREGATION_METHODS:
-        for transformation_method in TRANSFORMATION_METHODS:
+    for aggregation_method in ['max']:
+        for transformation_method in ['id']:
             for evaluation_method in EVALUATION_METHODS:
                 combinations += [(aggregation_method, transformation_method, evaluation_method)]
 
@@ -217,7 +213,7 @@ def ray_wrapper(JOB_ID, NUM_JOBS):
 
 if __name__ == '__main__':
 
-    NUM_WORKERS = 50
+    NUM_WORKERS = 6
 
     futures = []
     for i in range(1, NUM_WORKERS + 1):

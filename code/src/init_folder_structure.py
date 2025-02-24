@@ -6,7 +6,7 @@ import os
 pwd = os.path.dirname(os.path.abspath(__file__))
 
 
-def load_config(filename=pwd + "/config.json"):
+def load_config(filename= os.path.join(pwd, "config.json")):
     with open(filename, "r") as f:
         config = json.load(f)
     return config
@@ -37,8 +37,6 @@ def build_paths(config):
         "PASSAGE_DATASET_SOURCE_SCORE_AQ_PATH": os.path.join(
             SOURCE_PATH, config["PASSAGE_DATASET_SOURCE_SCORE_AQ_PATH"]),
 
-        "RANK_CORRELATION_SCORE_PATH": os.path.join(
-            SOURCE_PATH, config["RANK_CORRELATION_SCORE_PATH"]),
         "RANK_CORRELATION_SCORE_PQ_AQ_PATH": os.path.join(
             SOURCE_PATH, config["RANK_CORRELATION_SCORE_PQ_AQ_PATH"]),
 

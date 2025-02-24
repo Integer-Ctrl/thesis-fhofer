@@ -2,22 +2,21 @@ from tqdm import tqdm
 import gzip
 import json
 import os
-import matplotlib.pyplot as plt
 import ir_datasets
 import pyterrier as pt
 from chatnoir_pyterrier import ChatNoirRetrieve
-import re
 from glob import glob
 import pandas as pd
 from spacy_passage_chunker import SpacyPassageChunker
 import ray
 import sys
+import shutil
 
 ray.init()
 
 
 @ray.remote
-def ray_wrapper(job_id, NUM_QUERIES):
+def ray_wrapper(job_id):
     # Symlink ir_dataset
     symlink_path = '/home/ray/.ir_datasets/disks45/corpus'
     target_path = '/mnt/ceph/storage/data-tmp/current/ho62zoq/.ir_datasets/disks45/corpus'
@@ -42,11 +41,6 @@ def ray_wrapper(job_id, NUM_QUERIES):
     DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER = config['DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER']
     DOCUMENT_DATASET_TARGET_NAME_PYTHON_API = config['DOCUMENT_DATASET_TARGET_NAME_PYTHON_API']
 
-    # Securety check
-    if DOCUMENT_DATASET_TARGET_NAME == 'clueweb22/b' and NUM_QUERIES is None:
-        print("Target dataset is ClueWeb22/b. Please specify the number of queries to process.")
-        return
-
     SOURCE_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_SOURCE_NAME)
     TARGET_PATH = os.path.join(SOURCE_PATH, config["DOCUMENT_DATASET_TARGET_NAME"])
 
@@ -54,15 +48,16 @@ def ray_wrapper(job_id, NUM_QUERIES):
 
     PASSAGE_DATASET_SOURCE_PATH = os.path.join(SOURCE_PATH, config['PASSAGE_DATASET_SOURCE_PATH'])
     # Pattern to match the files
-    PASSAGE_DATASET_SOURCE_SCORE_REL_PATH = os.path.join(SOURCE_PATH, config['PASSAGE_DATASET_SOURCE_SCORE_REL_PATH'])
-    FILE_PATTERN = os.path.join(PASSAGE_DATASET_SOURCE_SCORE_REL_PATH, "qid_*.jsonl.gz")
+    # PASSAGE_DATASET_SOURCE_SCORE_REL_PATH = os.path.join(SOURCE_PATH, config['PASSAGE_DATASET_SOURCE_SCORE_REL_PATH'])
+    PASSAGE_DATASET_SOURCE_SCORE_PATH = os.path.join(SOURCE_PATH, config['PASSAGE_DATASET_SOURCE_SCORE_AQ_PATH'])
+    FILE_PATTERN = os.path.join(PASSAGE_DATASET_SOURCE_SCORE_PATH, "qid_*.jsonl.gz")
 
     if CHATNOIR_RETRIEVAL:
         CANDIDATES_PATH = os.path.join(TARGET_PATH, config['CANDIDATE_CHATNOIR_PATH'])
     else:
         CANDIDATES_PATH = os.path.join(TARGET_PATH, config['CANDIDATES_LOCAL_PATH'])
 
-    PASSAGE_SCORES_CROSS_VALIDATION_SCORES_PATH = os.path.join(SOURCE_PATH, config['CROSS_VALIDATION_SCORES_PATH'])
+    RANK_CORRELATION_SCORE_AVG_PATH = os.path.join(SOURCE_PATH, config['RANK_CORRELATION_SCORE_AVG_PATH'])
 
     PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
     KEY_SEPARATOR = config['KEY_SEPARATOR']
@@ -156,14 +151,15 @@ def ray_wrapper(job_id, NUM_QUERIES):
     # GET PASSAGES FOR PAIRWISE PREFERENCE CANDIDATES #
     ###################################################
 
-    # Get type of metric with highest rank correlation
+    # Get type of metric with highest rank correlation (decending order in file)
     best_scoring_metric_retriever = None
-    with gzip.open(PASSAGE_SCORES_CROSS_VALIDATION_SCORES_PATH, 'rt', encoding='UTF-8') as file:
+    with gzip.open(RANK_CORRELATION_SCORE_AVG_PATH, 'rt', encoding='UTF-8') as file:
         for line in file:  # already decending sorted
             data = json.loads(line)  # return only best scoring method
-            best_scoring_metric = data['eval_method___retriever___metric'].split(KEY_SEPARATOR)[-1]
-            best_scoring_retriever = data['eval_method___retriever___metric'].split(KEY_SEPARATOR)[1]
-            best_scoring_metric_retriever = best_scoring_metric + '_' + best_scoring_retriever
+            _, _, _, retriever, metric = data['eval---aggr---tra---retriever---metric'].split(KEY_SEPARATOR)
+
+            best_scoring_metric_retriever = metric + '_' + retriever
+            print(f"Best scoring metric retriever: {best_scoring_metric_retriever}")
             break
 
     # Get all passage scores in dictionary format qid: {docno: score} # just score of the best scoring method
@@ -178,9 +174,16 @@ def ray_wrapper(job_id, NUM_QUERIES):
                 # Store the best score in the passages_score_cache
                 if qid not in passages_score_cache:
                     passages_score_cache[qid] = {}
-                passages_score_cache[qid][docno] = data[best_scoring_metric_retriever]
+                passages_score_cache[qid][docno] = {}
+                passages_score_cache[qid][docno]['score'] = data[best_scoring_metric_retriever]  # assigned passage score
+                passages_score_cache[qid][docno]['label'] = data['label']                        # actual label of retrieval task
 
-    # Get for all queries the best and worst passages in dictionary format query_id: [docno] without duplicates docno
+    """
+    Determine for all queries the best and worst passages
+        - one approach limits the number of passages per document to one (opd)
+        - the other approach has no limitation
+        - ensure that best passages are from relevant documents and worst passages are from non-relevant documents
+    """
     queries_best_passages_cache = {}  # multiple passages of one document possible
     queries_worst_passages_cache = {}  # multiple passages of one document possible
     queries_best_passages_opd_cache = {}  # opd = one per documnet, maximum of one passage per document
@@ -188,35 +191,41 @@ def ray_wrapper(job_id, NUM_QUERIES):
 
     for qid, passageno_scores in passages_score_cache.items():
         # Parse docnos and sort by score
-        docnos_best_passagenos_opd = {}
-        docnos_worst_passagenos_opd = {}
-        for passageno, score in passageno_scores.items():
+        docnos_best_passagenos = []
+        docnos_worst_passagenos = []
+        docnos_best_passagenos_opd = {}   # opd
+        docnos_worst_passagenos_opd = {}  # opd
+
+        for passageno, score_label in passageno_scores.items():
             # Extract docno by removing the suffix ___x
             docno, _ = passageno.split(PASSAGE_ID_SEPARATOR)
+            score = score_label['score']
+            label = score_label['label']
 
-            # Keep the highest-scoring passageno for each docno for opd approach
-            if docno not in docnos_best_passagenos_opd or score > docnos_best_passagenos_opd[docno][1]:
-                docnos_best_passagenos_opd[docno] = (passageno, score)
+            # Relevant passages
+            if label > 0:
+                docnos_best_passagenos += [(passageno, score)]
+                # Keep the highest-scoring passageno for each docno for opd approach
+                if (docno not in docnos_best_passagenos_opd or score > docnos_best_passagenos_opd[docno][1]):
+                    docnos_best_passagenos_opd[docno] = (passageno, score)
 
-            # Keep the lowest-scoring passageno for each docno for opd approach
-            if docno not in docnos_worst_passagenos_opd or score < docnos_worst_passagenos_opd[docno][1]:
-                docnos_worst_passagenos_opd[docno] = (passageno, score)
+            # Non-relevant passages
+            if label <= 0:
+                docnos_worst_passagenos += [(passageno, score)]
+                # Keep the lowest-scoring passageno for each docno for opd approach
+                if (docno not in docnos_worst_passagenos_opd or score < docnos_worst_passagenos_opd[docno][1]):
+                    docnos_worst_passagenos_opd[docno] = (passageno, score)
 
         # Sort by score descending
-        queries_best_passages_cache[qid] = [item[0]
-                                            for item in sorted(passageno_scores.items(), key=lambda x: x[1], reverse=True)]
-
+        queries_best_passages_cache[qid] = [item[0] for item in sorted(docnos_best_passagenos, key=lambda x: x[1], reverse=True)]
         # Sort by score ascending
-        queries_worst_passages_cache[qid] = [item[0]
-                                             for item in sorted(passageno_scores.items(), key=lambda x: x[1])]
-        # opd: Extract highest-scored passagenos and sort them in descending order
-        best_passagenos = [item[0]
-                           for item in sorted(docnos_best_passagenos_opd.values(), key=lambda x: x[1], reverse=True)]
-        queries_best_passages_opd_cache[qid] = best_passagenos
+        queries_worst_passages_cache[qid] = [item[0] for item in sorted(docnos_worst_passagenos, key=lambda x: x[1])]
 
+        # opd: Extract highest-scored passagenos and sort them in descending order
+        best_passagenos = [item[0] for item in sorted(docnos_best_passagenos_opd.values(), key=lambda x: x[1], reverse=True)]
+        queries_best_passages_opd_cache[qid] = best_passagenos
         # opd: Extract lowest-scored passagenos and sort them in ascending order
-        worst_passagenos = [item[0]
-                            for item in sorted(docnos_best_passagenos_opd.values(), key=lambda x: x[1])]
+        worst_passagenos = [item[0]for item in sorted(docnos_worst_passagenos_opd.values(), key=lambda x: x[1])]
         queries_worst_passages_opd_cache[qid] = worst_passagenos
 
     # Get for each query all relevant passages in dictionary format qid: [passageno]
@@ -243,8 +252,6 @@ def ray_wrapper(job_id, NUM_QUERIES):
     def naive_retrieval(num_retrieval_docs):
         qid_docnos_naive_retrieval = {}
         dataset = pt.get_dataset(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
-        # Count processed queries
-        query_count = 0
 
         # Retrieve top 2000 documents for each query
         # 1000 documents via the query text and 1000 documents via the query description
@@ -262,11 +269,6 @@ def ray_wrapper(job_id, NUM_QUERIES):
         for query in tqdm(dataset.irds_ref().queries_iter(),
                           desc='Retrieving naive top documents',
                           unit='query'):
-
-            # Stop after NUM_QUERIES queries
-            if NUM_QUERIES is not None and query_count >= NUM_QUERIES:
-                break
-            query_count += 1
 
             qid = query.query_id
             if DOCUMENT_DATASET_SOURCE_NAME == 'disks45/nocr/trec-robust-2004' and qid == '672':
@@ -304,8 +306,6 @@ def ray_wrapper(job_id, NUM_QUERIES):
     def nearest_neighbor_retrieval(num_top_passages, num_retrieval_docs, one_per_document):
         qid_docnos_nearest_neighbor_retrieval = {}
         dataset = pt.get_dataset(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
-        # Count processed queries
-        query_count = 0
 
         # Retrieve for each relevant passage for its corresponding qid the top 20 docnos
         if CHATNOIR_RETRIEVAL:  # Case if target is ClueWeb22/b
@@ -322,11 +322,6 @@ def ray_wrapper(job_id, NUM_QUERIES):
         for query in tqdm(dataset.irds_ref().queries_iter(),
                           desc='Retrieving nearest neighbor top documents',
                           unit='query'):
-
-            # Stop after NUM_QUERIES queries
-            if NUM_QUERIES is not None and query_count >= NUM_QUERIES:
-                break
-            query_count += 1
 
             qid = query.query_id
             if DOCUMENT_DATASET_SOURCE_NAME == 'disks45/nocr/trec-robust-2004' and qid == '672':
@@ -381,19 +376,12 @@ def ray_wrapper(job_id, NUM_QUERIES):
 
     def write_candidates(file_name, candidates, one_per_document):
         dataset = pt.get_dataset(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
-        # Count processed queries
-        query_count = 0
 
         if one_per_document:
             # opd: add 15 known relevant and 5 known non-relevant passages for each query
             # maximum of one passage per document as known relevant or non-relevant passage
             with gzip.open(file_name, 'wt', encoding='UTF-8') as file:
                 for query in dataset.irds_ref().queries_iter():
-
-                    # Stop after NUM_QUERIES queries
-                    if NUM_QUERIES is not None and query_count >= NUM_QUERIES:
-                        break
-                    query_count += 1
 
                     qid = query.query_id
                     if DOCUMENT_DATASET_SOURCE_NAME == 'disks45/nocr/trec-robust-2004' and qid == '672':
@@ -449,11 +437,6 @@ def ray_wrapper(job_id, NUM_QUERIES):
             # The top 15 (5) passages are allowed to be from the same source document
             with gzip.open(file_name, 'wt', encoding='UTF-8') as file:
                 for query in dataset.irds_ref().queries_iter():
-
-                    # Stop after NUM_QUERIES queries
-                    if NUM_QUERIES is not None and query_count >= NUM_QUERIES:
-                        break
-                    query_count += 1
 
                     qid = query.query_id
                     if DOCUMENT_DATASET_SOURCE_NAME == 'disks45/nocr/trec-robust-2004' and qid == '672':
@@ -518,6 +501,7 @@ def ray_wrapper(job_id, NUM_QUERIES):
         (100, 20, True)
     ]
 
+    print(f"Job ID: {job_id}")
     num_top_passages, num_retrieval_docs, one_per_document = combinations[job_id - 1]
 
     # Initialize the chunker
@@ -525,14 +509,20 @@ def ray_wrapper(job_id, NUM_QUERIES):
 
     # Determine file names
     naive_file_name = os.path.join(CANDIDATES_PATH, 'naive.jsonl.gz')
+    local_naive_file_name = 'naive.jsonl.gz'
     naive_opd_file_name = os.path.join(CANDIDATES_PATH, 'naive_opd.jsonl.gz')
+    local_naive_opd_file_name = 'naive_opd.jsonl.gz'
 
     if one_per_document:
         nn_file_name = os.path.join(CANDIDATES_PATH, f'nearest_neighbor_{num_top_passages}_opd.jsonl.gz')
+        local_nn_file_name = f'nearest_neighbor_{num_top_passages}_opd.jsonl.gz'
         union_file_name = os.path.join(CANDIDATES_PATH, f'union_{num_top_passages}_opd.jsonl.gz')
+        local_union_file_name = f'union_{num_top_passages}_opd.jsonl.gz'
     else:
         nn_file_name = os.path.join(CANDIDATES_PATH, f'nearest_neighbor_{num_top_passages}.jsonl.gz')
+        local_nn_file_name = f'nearest_neighbor_{num_top_passages}.jsonl.gz'
         union_file_name = os.path.join(CANDIDATES_PATH, f'union_{num_top_passages}.jsonl.gz')
+        local_union_file_name = f'union_{num_top_passages}.jsonl.gz'
 
     # Skip job if files already exist
     if os.path.exists(nn_file_name) and os.path.exists(union_file_name):
@@ -550,30 +540,30 @@ def ray_wrapper(job_id, NUM_QUERIES):
 
     # Write to file
     if job_id == 1:  # Only write naive once
-        write_candidates(naive_file_name, docnos_naive, one_per_document=False)
-        write_candidates(naive_opd_file_name, docnos_naive, one_per_document=True)
+        write_candidates(local_naive_file_name, docnos_naive, one_per_document=False)
+        write_candidates(local_naive_opd_file_name, docnos_naive, one_per_document=True)
+        shutil.move(local_naive_file_name, naive_file_name)
+        shutil.move(local_naive_opd_file_name, naive_opd_file_name)
     if one_per_document:
-        write_candidates(nn_file_name, docnos_nn, one_per_document=True)
-        write_candidates(union_file_name, docnos_union, one_per_document=True)
+        write_candidates(local_nn_file_name, docnos_nn, one_per_document=True)
+        write_candidates(local_union_file_name, docnos_union, one_per_document=True)
+        shutil.move(local_nn_file_name, nn_file_name)
+        shutil.move(local_union_file_name, union_file_name)
     else:
-        write_candidates(nn_file_name, docnos_nn, one_per_document=False)
-        write_candidates(union_file_name, docnos_union, one_per_document=False)
+        write_candidates(local_nn_file_name, docnos_nn, one_per_document=False)
+        write_candidates(local_union_file_name, docnos_union, one_per_document=False)
+        shutil.move(local_nn_file_name, nn_file_name)
+        shutil.move(local_union_file_name, union_file_name)
 
 
 if __name__ == '__main__':
 
     NUM_WORKERS = 6
-    # For how many queries the candidates should be created - None for all queries
-    NUM_QUERIES = None
-    if len(sys.argv) > 1:
-        NUM_QUERIES = int(sys.argv[1])
-        print(f"Creating candidates for the first {NUM_QUERIES} queries")
-    else:
-        print("Creating candidates for all queries")
 
     futures = []
     for job_id in range(1, NUM_WORKERS + 1):
-        futures.append(ray_wrapper.options(memory=96 * 1024 * 1024 * 1024).remote(job_id, NUM_QUERIES))
+        futures.append(ray_wrapper.remote(job_id))
+        # futures.append(ray_wrapper.options(memory=32 * 1024 * 1024 * 1024).remote(job_id))
 
     # Wait for all workers to finish
     ray.get(futures)
