@@ -1,12 +1,11 @@
 import os
-import gzip
 import json
 
 separator = '---'
 dataset_order = ['touche-2020-task-1', 'trec-robust-2004', 'trec7', 'trec8', 'trec-dl-2019/judged', 'trec-dl-2020/judged']
 dataset_num_queries = {
     'touche-2020-task-1': 49,
-    'trec-robust-2004': 249,  # qid 672(249) and MAYBE 347(248)
+    'trec-robust-2004': 249,
     'trec7': 50,
     'trec8': 50,
     'trec-dl-2019/judged': 43,
@@ -40,13 +39,13 @@ def print_table():
 
         dataset = next(ds for ds in dataset_order if ds in path)
 
-        #### REMOVE WHEN ROBUST04 IS DONE ####
-        if 'trec-robust-2004' in dataset:
-            for approach in approach_order:
-                recall[approach][dataset] = 0.000
-                docs[approach][dataset] = 0.000
-            continue
-        #### REMOVE WHEN ROBUST04 IS DONE ####
+        # #### REMOVE WHEN ROBUST04 IS DONE ####
+        # if 'trec-robust-2004' in dataset:
+        #     for approach in approach_order:
+        #         recall[approach][dataset] = 0.000
+        #         docs[approach][dataset] = 0.000
+        #     continue
+        # #### REMOVE WHEN ROBUST04 IS DONE ####
 
         file_path = os.path.join(path, 'results.json')
         with open(file_path, 'rt') as f:

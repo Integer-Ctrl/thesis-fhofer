@@ -25,7 +25,7 @@ def print_selected_queries():
 
 DATA_PATH = '/mnt/ceph/storage/data-in-progress/data-teaching/theses/thesis-fhofer/data'
 CLUEWEB_PATH = '/clueweb22/b/candidates-chatnoir'
-APPROACH = '/union_50_opd.jsonl.gz'
+APPROACH = '/union_100_opd.jsonl.gz'
 
 
 def write_docs_to_judge():
