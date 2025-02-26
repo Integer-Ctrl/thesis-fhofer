@@ -23,7 +23,7 @@ BACKBONES =  ['google/flan-t5-base',
               'google/flan-t5-small',
               'google-t5/t5-small']
 AVG_PATH = 'avg-per-query'
-APPROACH = 'nearest_neighbor_100_opd.jsonl.gz'
+APPROACH = 'union_100_opd.jsonl.gz'
 
 correlation_scores = {}
 
@@ -40,18 +40,18 @@ for PATH in PATHS:
         path = f'{DATA_PATH}/{PATH}/{PATH}/duoprompt/{BACKBONE}/{AVG_PATH}/{APPROACH}'
         print(path)
 
-        #### REMOVE WHEN ROBUST04 IS DONE ####
-        if 'trec-robust-2004' in path:
-            for aggre_met in aggre_order:
-                correlation_scores[PATH][BACKBONE][aggre_met] = {}
-                for tra_met in tra_order:
-                    correlation_scores[PATH][BACKBONE][aggre_met][tra_met] = {}
-                    correlation_scores[PATH][BACKBONE][aggre_met][tra_met]['kendall'] = 0.0
-                    correlation_scores[PATH][BACKBONE][aggre_met][tra_met]['kendall-greedy'] = 0.0
-                    correlation_scores[PATH][BACKBONE][aggre_met][tra_met]['spearman'] = 0.0
-                    correlation_scores[PATH][BACKBONE][aggre_met][tra_met]['spearman-greedy'] = 0.0
-            continue
-        #### REMOVE WHEN ROBUST04 IS DONE ####
+        # #### REMOVE WHEN ROBUST04 IS DONE ####
+        # if 'trec-robust-2004' in path:
+        #     for aggre_met in aggre_order:
+        #         correlation_scores[PATH][BACKBONE][aggre_met] = {}
+        #         for tra_met in tra_order:
+        #             correlation_scores[PATH][BACKBONE][aggre_met][tra_met] = {}
+        #             correlation_scores[PATH][BACKBONE][aggre_met][tra_met]['kendall'] = 0.0
+        #             correlation_scores[PATH][BACKBONE][aggre_met][tra_met]['kendall-greedy'] = 0.0
+        #             correlation_scores[PATH][BACKBONE][aggre_met][tra_met]['spearman'] = 0.0
+        #             correlation_scores[PATH][BACKBONE][aggre_met][tra_met]['spearman-greedy'] = 0.0
+        #     continue
+        # #### REMOVE WHEN ROBUST04 IS DONE ####
 
         with gzip.open(path, 'rt', encoding='UTF-8') as file:
             for line in file:
@@ -95,3 +95,4 @@ for backbone in BACKBONES:
                 spearman = correlation_scores[PATH][backbone][aggre_met][tra_met]['spearman-greedy']
                 print(f'& {round(kendall, 3)} & {round(spearman, 3)}', end=' ')
             print('\\\\')
+        print('\cmidrule{2-15}')
