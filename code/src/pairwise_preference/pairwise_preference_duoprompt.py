@@ -6,6 +6,10 @@ import ir_datasets
 import time
 from tqdm import tqdm
 from glob import glob
+from ir_datasets_clueweb22 import register
+
+# Register the ClueWeb22/b dataset
+register()
 
 # Load the configuration settings
 pwd = os.path.dirname(os.path.abspath(__file__))
@@ -32,7 +36,8 @@ if CHATNOIR_RETRIEVAL:
     CANDIDATES_PATH = os.path.join(TARGET_PATH, config['CANDIDATE_CHATNOIR_PATH'])
 else:
     CANDIDATES_PATH = os.path.join(TARGET_PATH, config['CANDIDATES_LOCAL_PATH'])
-FILE_PATTERN = os.path.join(CANDIDATES_PATH, "*.jsonl.gz")
+# FILE_PATTERN = os.path.join(CANDIDATES_PATH, "*.jsonl.gz")
+FILE_PATTERN = os.path.join(CANDIDATES_PATH, "union_100_opd.jsonl.gz")
 
 ONLY_JUDGED = config['ONLY_JUDGED']  # only infer the scores for the judged documents
 PREFERENCE_BACKBONE = config['PREFERENCE_BACKBONE']
