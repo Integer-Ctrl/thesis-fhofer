@@ -223,7 +223,7 @@ The candidate selection process, evaluated in Section~\ref{eval-candidate-select
 For each query in a retrieval task, all passages from the selected candidate documents were paired with the 15 most relevant and 5 least relevant passages for that query. These 20 passages were determined through the passage-scoring step described in Section~\ref{passage-scoring}. As evaluated in Section~\ref{eval-passage-scoring}, the passage scores were derived from the retriever-metric combination with the highest rank correlation, ensuring the selection of the 15 highest-scoring relevant and the 5 lowest-scoring non-relevant passages per query. Since Section~\ref{eval-candidate-selection} showed that nearest neighbor approaches performed better when limited to selecting at most one passage per document, this restriction was also applied when selecting the 20 passages, as outlined in Section~\ref{composing-final-candidates} under \texttt{Diversified Selection}.
 % For each query in a retrieval task, all passages from the selected candidate documents were paired with the 15 most relevant and 5 most non-relevant passages for that query. These 20 passages were determined using the passage-scoring step described in Section~\ref{passage-scoring}. Based on the evaluation in Section~\ref{eval-passage-scoring}, the passage scores from the retriever-metric combination with the highest rank correlation were used to select the 15 highest-scoring relevant passages and the 5 lowest-scoring non-relevant passages per query. Since the evaluation in Section~\ref{eval-candidate-selection} demonstrated that nearest neighbor approaches with a restriction of at most one passage per document performed better than those without this limitation, the same restriction was applied when selecting the 20 passages, as described in Section~\ref{composing-final-candidates} \texttt{Diversified Selection}.
 \\\\
-To determine the relevance of candidate documents from the target corpus, tuples consisting of \texttt{(query, known passage, passage to judge)}, were processed using various versions of Google's \texttt{T5} model, Figure~\ref{fig:pairwise-preferences}. For each tuple, the model was prompted to predict the relevance of the target passage to the query, based on the known source passage. After processing all comparisons, each target passage received 20 relevance scores, one for each comparison to a selected source passage. To derive an overall passage score, these individual scores were aggregated and transformed using different methods. The tested aggregation methods included \texttt{mean, min, max, sum}, while the transformation methods included \texttt{id, log, exp, sqrt}. Finally, the relevance score of a document was determined by taking the maximum of all its passage scores.
+To determine the relevance of candidate documents from the target corpus, tuples consisting of \texttt{(query, known passage, passage to judge)}, were processed using various versions of Google's \texttt{T5} model, Figure~\ref{fig:pairwise-preferences}. For each tuple, the model was prompted to predict the relevance of the target passage to the query, based on the known source passage. After processing all comparisons, each target passage received 20 relevance scores, one for each comparison to a selected source passage. To derive an overall passage score, these individual scores were aggregated and transformed using different methods. The tested aggregation methods included \texttt{mean, min, max, sum}, while the transformation methods included \texttt{id, log, exp, sqrt}. Finally, a document's relevance score was determined by taking the maximum of all its passage scores, based on the assumption that a document is only as relevant as its most relevant passage~\citep{craswell:2019}.
 % To determine relevance for candidate documents from the target corpus, tuples consisting of \texttt{(query, known source passage, target passage to judge)} were processed using various versions of Google's \texttt{T5} model. For each tuple, the model was prompted to predicted the relevance of the target passage in relation to the query, based on the known passage. After doing all comparisons, each target passage received 20 relevance scores, one for each comparison to a selected source passage. To get an overall passage score, all passage scores of the same passage were aggregated and transformed using various methods. Tested aggregation methods are \texttt{mean, min, max, sum} and transformation methods are \texttt{id, log, exp, sqrt}. The final document relevance score was then assigned by taking the maximum of all its passage scores.
 \\\\
 For comparison, a pointwise approach was tested alongside the pairwise preference approach. In this setup, the \texttt{T5} models received only the query and the target passage, without comparisons to known passages, and was prompted to determine the passage's relevance to the query. Since this approach evaluated each passage independently, no aggregation or transformation was needed at the passage level. However, to derive the final document relevance score, the maximum of all passage scores for the document was used again.
@@ -410,5 +410,51 @@ To better analyze the rank correlation results, Figure~\ref{fig:score-distributi
 \\\\
 When comparing pointwise models, it is evident that more advanced models introduce greater variance into the score distribution, enabling finer-grained relevance differentiation. This trend is also reflected in the rank correlation results, where \texttt{flan-t5-base} outperforms the other two models in the pointwise setting. However, the pairwise approaches exhibit significantly higher score variance overall. Looking at the distribution of the pairwise models, notable differences emerge. While \texttt{t5-small} tends to underestimate relevance scores, \texttt{flan-t5-small} assigns generally higher scores on average. In contrast, \texttt{flan-t5-base} produces the highest score variance, allowing for more effective passage differentiation. Additionally, unlike \texttt{flan-t5-small} or \texttt{t5-small}, its score distribution is more spread out rather than forming a sharp peak, suggesting a more nuanced relevance assessment. This broader score distribution is a key reason why \texttt{flan-t5-base} achieved the best overall results for both standard and greedy rank correlation. In conclusion, the ability to infer a broad spectrum of relevance scores seems to allow for better passage differentiation, reinforcing the idea that a passage's overall relevance is dependent on its weakest passage regarding that the \texttt{min} aggregation performed best.
 
+\pagebreak
 % Transfer Pipeline to ClueWeb22/b
 \subsection{Transfer Pipeline on \texttt{ClueWeb22/b}}\label{eval-pairwise-preferences-target}
+
+\begin{table}[t]
+    \centering
+    \footnotesize
+    \caption{Empirically selected queries from six retrieval tasks used in the transfer pipeline to generate new relevance judgments for ClueWeb22/b.}
+    \label{tab:cw22-queries}
+    \begin{tabular}{crl}
+        \toprule
+        \textbf{Dataset} & \textbf{Query ID} & \textbf{Query Text} \\
+        \midrule
+        
+        \multirow{2}{*}{\textbf{Touché 20}}
+            &      34 & \glqq Are social networking sites good for our society?\grqq{} \\
+            &      49 & \glqq Should body cameras be mandatory for police?\grqq{} \\
+        \midrule
+        \multirow{2}{*}{\textbf{Robust04}}
+            &     448 & \glqq ship losses\grqq{} \\
+            &     681 & \glqq wind power location\grqq{} \\
+        \midrule
+        \multirow{2}{*}{\textbf{TREC-7}}
+            &     354 & \glqq journalist risks\grqq{} \\
+            &     358 & \glqq blood-alcohol fatalities\grqq{} \\
+        \midrule
+        \multirow{2}{*}{\textbf{TREC-8}}
+            &     422 & \glqq art, stolen, forged\grqq{} \\
+            &     441 & \glqq Lyme disease\grqq{} \\
+        \midrule
+        \multirow{2}{*}{\textbf{TREC-19 DL}}
+            & 1037798 & \glqq who is robert gray\grqq{} \\
+            & 1129237 & \glqq hydrogen is a liquid below what temperature\grqq{} \\
+        \midrule
+        \multirow{2}{*}{\textbf{TREC-20 DL}}
+            &  997622 & \glqq where is the show shameless filmed\grqq{} \\
+            & 1051399 & \glqq who sings monk theme song\grqq{} \\
+            & 1127540 & \glqq meaning of shebang\grqq{} \\
+
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+The transfer to \texttt{ClueWeb22/b} followed the same setup as the self-transfer evaluation. However, a key challenge in this transfer is the absence of existing relevance judgments for the queries of the six tested retrieval tasks needed for evaluation. To address this issue, two to three queries from each retrieval task were manually selected, as shown in Table~\ref{tab:cw22-queries}. The relevance transfer pipeline was then applied to generate new relevance judgments specifically for documents associated with these queries.
+\\\\
+Since the candidate selection evaluation in Section~\ref{eval-candidate-selection} identified \linebreak \mbox{\texttt{Union opd.\ 100}} as the most effective approach, it was again used to determine candidate documents within the \texttt{ClueWeb22/b} corpus. After selecting the candidate documents for the chosen queries, a pooling process was conducted [\textcolor{red}{Maik, please specify how pooling was done}]. The remaining documents after pooling were then manually assessed to determine their relevance to the corresponding queries.
+\\\\
+This additional manual judgment step was necessary to enable an evaluation of the transfer pipeline on \texttt{ClueWeb22/b} under the same conditions as the self-transfer evaluation. The rank correlation scores between the inferred relevance labels and the manually assessed relevance labels for the target corpus are listed in Table~\ref{tab:target-pairwise-preferences}. The rank correlation for each selected query from Table~\ref{tab:cw22-queries} was computed based on all remaining candidates from the \texttt{Union opd.\ 100} approach after pooling.
