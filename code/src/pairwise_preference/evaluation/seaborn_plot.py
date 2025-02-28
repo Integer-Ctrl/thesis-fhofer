@@ -29,7 +29,8 @@ for backbone in BACKBONES:
 
     # Load data for this backbone
     for dataset in PATHS:
-        path = f'{DATA_PATH}/{dataset}/{dataset}/duoprompt/{backbone}/{APPROACH}'
+        # path = f'{DATA_PATH}/{dataset}/{dataset}/duoprompt/{backbone}/{APPROACH}'  # self-transfer
+        path = f'{DATA_PATH}/{dataset}/clueweb22/b/duoprompt/{backbone}/{APPROACH}'  # cw22-transfer
         with gzip.open(path, 'rt', encoding='UTF-8') as f:
             for line in f:
                 data.append(json.loads(line.strip()))
@@ -54,14 +55,18 @@ for model_name, df in data_dict.items():
     # Set y-axis to scientific notation
     g.ax.ticklabel_format(style='scientific', axis='y', scilimits=(0,0))
 
+    # Set y-axis to scientific notation
+    g.ax.ticklabel_format(style='scientific', axis='y', scilimits=(0,0))
+    g.ax.yaxis.get_offset_text().set_fontsize(14)
+
     # Labels and title
     g.ax.set_xlabel('Score', fontsize=24)
     g.ax.set_ylabel('Absolute Frequency', fontsize=24)
     # g.ax.set_title(f'Distribution of relevance scores generated using {model_name}', 
     #                fontsize=16, weight="bold", loc="center")
     g.ax.grid(True, linestyle="--", alpha=0.6)
-    g.tick_params(labelsize=16)
+    g.tick_params(labelsize=18)
 
     # Save the plot instead of showing it
-    plt.savefig(f'pairwise_score_distribution_{model_name}.pdf', bbox_inches='tight')
+    plt.savefig(f'pairwise_cw22_score_distribution_{model_name}.pdf', bbox_inches='tight')
     plt.close()

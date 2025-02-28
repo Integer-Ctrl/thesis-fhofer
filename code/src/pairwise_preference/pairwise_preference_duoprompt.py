@@ -62,12 +62,14 @@ def get_key(list):
 # Known passage is either known relevant or known non relevant
 candidates_cache = {}
 if os.path.exists(DUOPROMPT_CACHE):
+    print("Reading cache")
     with gzip.open(DUOPROMPT_CACHE, 'rt') as file:
         for line in file:
             line = json.loads(line)
 
             key = get_key([line['qid'], line['known_passage_id'], line['passage_to_judge_id']])
             candidates_cache[key] = line['score']
+    print(f"Cache size: {len(candidates_cache)}")
 
 
 def process_candidates(candidates_path, pairwise_preferences_path, judged_doc_ids):
@@ -86,6 +88,7 @@ def process_candidates(candidates_path, pairwise_preferences_path, judged_doc_id
     grouped_relevant_candidates = {}
     grouped_non_relevant_candidates = {}
 
+    print("Reading candidates")
     with gzip.open(candidates_path, 'rt') as file:
         for line in file:
             # Add all candidates to the list, also those that are already in the cache due to the cache is overwritten
@@ -124,6 +127,7 @@ def process_candidates(candidates_path, pairwise_preferences_path, judged_doc_id
             else:
                 print("Error: Candidate is neither known relevant nor known non relevant")
                 exit()
+    print("Finished reading candidates")
 
     # Check if candidates are in cache already and if not infer them
     # Iterate over the grouped candidates and infer the relevance
