@@ -109,13 +109,13 @@ if __name__ == '__main__':
     docs = yield_docs(dataset, False, True, doc_ids)
     write_lines_to_file(docs, OUTPUT_FILE)
 
-    with open(f'{DATA_DIR}/queries.jsonl', 'w') as f:
+    with open(f'{DATA_DIR}/clueweb22-transfer/queries.jsonl', 'w') as f:
         for qid, query in selected_queries().items():
             f.write(json.dumps({"qid": qid, "query": query, "original_query": {}}) + '\n')
 
-    with open(f'{DATA_DIR}/queries.xml', 'w') as f:
+    with open(f'{DATA_DIR}/clueweb22-transfer/queries.xml', 'w') as f:
         f.write("<topics>\n")
         for qid, query in selected_queries().items():
             f.write(f'  <topic number="{qid}">\n    <query>{query}</query>\n  </topic>\n')
 
-        f.write("<topics>")
+        f.write("</topics>")
