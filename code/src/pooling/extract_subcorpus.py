@@ -7,7 +7,28 @@ from tqdm import tqdm
 from base64 import b64encode
 from pathlib import Path
 from typing import Any, Iterable, Optional
+import ir_datasets
 
+SELECTED_QUERIES = {
+    'msmarco-passage/trec-dl-2019/judged': ('1037798', '1129237'),
+    'msmarco-passage/trec-dl-2020/judged': ('997622', '1051399', '1127540'),
+    'argsme/2020-04-01/touche-2020-task-1': ('49', '34'),
+    'disks45/nocr/trec-robust-2004': ('681', '448'),
+    'disks45/nocr/trec7': ('354', '358'),
+    'disks45/nocr/trec8': ('441', '422')
+}
+
+
+def selected_queries():
+    ret = {}
+    for dataset_id, qids in SELECTED_QUERIES.items():
+        dataset = ir_datasets.load(dataset_id)
+        for q in dataset.queries_iter():
+            if str(q.query_id) in qids:
+                assert q.query_id not in ret
+
+                ret[q.query_id] = q.default_text()
+    return ret
 
 def write_lines_to_file(lines: Iterable[str], path: Path) -> None:
     if os.path.abspath(path).endswith(".gz"):
@@ -87,3 +108,14 @@ if __name__ == '__main__':
 
     docs = yield_docs(dataset, False, True, doc_ids)
     write_lines_to_file(docs, OUTPUT_FILE)
+
+    with open(f'{DATA_DIR}/queries.jsonl', 'w') as f:
+        for qid, query in selected_queries().items():
+            f.write(json.dumps({"qid": qid, "query": query, "original_query": {}}) + '\n')
+
+    with open(f'{DATA_DIR}/queries.xml', 'w') as f:
+        f.write("<topics>\n")
+        for qid, query in selected_queries().items():
+            f.write(f'  <topic number="{qid}">\n    <query>{query}</query>\n  </topic>\n')
+
+        f.write("<topics>")

@@ -4,7 +4,8 @@ import pandas as pd
 from tqdm import tqdm
 
 tira = Client(allow_local_execution=True)
-CORPUS_DIRECTORY = 'subsampled-ms-marco-deep-learning-20241201-training'
+DATA_DIR = '/mnt/ceph/storage/data-in-progress/data-teaching/theses/thesis-fhofer/data'
+CORPUS_DIRECTORY = f'{DATA_DIR}/clueweb22-transfer/'
 
 RETRIEVAL_SYSTEMS = [
     'ir-benchmarks/tira-ir-starter/BM25 (tira-ir-starter-pyterrier)',
