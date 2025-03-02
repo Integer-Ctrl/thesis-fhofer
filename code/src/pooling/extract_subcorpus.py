@@ -60,4 +60,23 @@ def map_doc(self, doc: tuple, include_original=True) -> str:
 
 
 if __name__ == '__main__':
-    print('foo')
+    DATA_DIR = '/mnt/ceph/storage/data-in-progress/data-teaching/theses/thesis-fhofer/data'
+    PATHS = [
+        'argsme/2020-04-01/touche-2020-task-1/clueweb22/b/candidates-chatnoir/doc_ids.jsonl',
+        'disks45/nocr/trec-robust-2004/clueweb22/b/candidates-chatnoir/doc_ids.jsonl',
+        'disks45/nocr/trec7/clueweb22/b/candidates-chatnoir/doc_ids.jsonl',
+        'disks45/nocr/trec8/clueweb22/b/candidates-chatnoir/doc_ids.jsonl',
+        'msmarco-passage/trec-dl-2019/judged/clueweb22/b/candidates-chatnoir/doc_ids.jsonl',
+        'msmarco-passage/trec-dl-2020/judged/clueweb22/b/candidates-chatnoir/doc_ids.jsonl'
+    ]
+
+    doc_ids = set()
+
+    for json_file in PATHS:
+        with open(f'{DATA_DIR}/{json_file}', 'r') as f:
+            for l in f:
+                l = json.loads(l)
+                for doc_id in l['doc_ids']:
+                    doc_ids.add(doc_id)
+    print(len(doc_ids))
+    
