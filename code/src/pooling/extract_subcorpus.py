@@ -9,6 +9,8 @@ from pathlib import Path
 from typing import Any, Iterable, Optional
 import ir_datasets
 
+# export IR_DATASETS_HOME=/mnt/ceph/tira/state/ir_datasets/
+
 SELECTED_QUERIES = {
     'msmarco-passage/trec-dl-2019/judged': ('1037798', '1129237'),
     'msmarco-passage/trec-dl-2020/judged': ('997622', '1051399', '1127540'),
@@ -17,7 +19,6 @@ SELECTED_QUERIES = {
     'disks45/nocr/trec7': ('354', '358'),
     'disks45/nocr/trec8': ('441', '422')
 }
-
 
 def selected_queries():
     ret = {}
