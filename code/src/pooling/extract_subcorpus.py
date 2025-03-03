@@ -74,16 +74,19 @@ if __name__ == '__main__':
     from ir_datasets_clueweb22 import register
     register()
     DATA_DIR = '/mnt/ceph/storage/data-in-progress/data-teaching/theses/thesis-fhofer/data'
+    CORPUS_DIR = f'{DATA_DIR}/clueweb22-transfer-english-only'
+
     PATHS = [
-        'argsme/2020-04-01/touche-2020-task-1/clueweb22/b/candidates-chatnoir/doc_ids.jsonl',
-        'disks45/nocr/trec-robust-2004/clueweb22/b/candidates-chatnoir/doc_ids.jsonl',
-        'disks45/nocr/trec7/clueweb22/b/candidates-chatnoir/doc_ids.jsonl',
-        'disks45/nocr/trec8/clueweb22/b/candidates-chatnoir/doc_ids.jsonl',
-        'msmarco-passage/trec-dl-2019/judged/clueweb22/b/candidates-chatnoir/doc_ids.jsonl',
-        'msmarco-passage/trec-dl-2020/judged/clueweb22/b/candidates-chatnoir/doc_ids.jsonl'
+        #'argsme/2020-04-01/touche-2020-task-1/clueweb22/b/candidates-chatnoir/doc_ids.jsonl',
+        #'disks45/nocr/trec-robust-2004/clueweb22/b/candidates-chatnoir/doc_ids.jsonl',
+        #'disks45/nocr/trec7/clueweb22/b/candidates-chatnoir/doc_ids.jsonl',
+        #'disks45/nocr/trec8/clueweb22/b/candidates-chatnoir/doc_ids.jsonl',
+        #'msmarco-passage/trec-dl-2019/judged/clueweb22/b/candidates-chatnoir/doc_ids.jsonl',
+        #'msmarco-passage/trec-dl-2020/judged/clueweb22/b/candidates-chatnoir/doc_ids.jsonl'
+        'maik_cw22_doc_ids.jsonl',
     ]
 
-    OUTPUT_FILE = f'{DATA_DIR}/clueweb22-transfer/documents.jsonl.gz'
+    OUTPUT_FILE = f'{CORPUS_DIR}/documents.jsonl.gz'
     doc_ids = set()
     dataset = load("clueweb22/b")
     already_covered_ids = set()
@@ -109,11 +112,11 @@ if __name__ == '__main__':
     docs = yield_docs(dataset, False, True, doc_ids)
     write_lines_to_file(docs, OUTPUT_FILE)
 
-    with open(f'{DATA_DIR}/clueweb22-transfer/queries.jsonl', 'w') as f:
+    with open(f'{CORPUS_DIR}/queries.jsonl', 'w') as f:
         for qid, query in selected_queries().items():
             f.write(json.dumps({"qid": qid, "query": query, "original_query": {}}) + '\n')
 
-    with open(f'{DATA_DIR}/clueweb22-transfer/queries.xml', 'w') as f:
+    with open(f'{CORPUS_DIR}/queries.xml', 'w') as f:
         f.write("<topics>\n")
         for qid, query in selected_queries().items():
             f.write(f'  <topic number="{qid}">\n    <query>{query}</query>\n  </topic>\n')
