@@ -1,188 +1,164 @@
 import re
 import gzip
-from tqdm import tqdm
 import json
 import numpy as np
-import pyterrier as pt
 import os
 import copy
 from greedy_series import GreedySeries
-import time
 from glob import glob
-import sys
 
 
-# Load the configuration settings
-pwd = os.path.dirname(os.path.abspath(__file__))
+def ray_wrapper(JOB_ID, NUM_JOBS):
+    def load_config(filename='/mnt/ceph/storage/data-tmp/current/ho62zoq/thesis-fhofer/code/src/config.json'):
+        with open(filename, "r") as f:
+            config = json.load(f)
+        return config
 
+    # Get the configuration settings
+    config = load_config()
 
-def load_config(filename=pwd + "/../../config.json"):
-    with open(filename, "r") as f:
-        config = json.load(f)
-    return config
+    DOCUMENT_DATASET_SOURCE_NAME = config['DOCUMENT_DATASET_SOURCE_NAME']
 
+    SOURCE_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_SOURCE_NAME)
 
-# Get the configuration settings
-config = load_config()
+    # Pattern to match the files
+    PASSAGE_DATASET_SOURCE_SCORE_AQ_PATH = os.path.join(SOURCE_PATH, config['PASSAGE_DATASET_SOURCE_SCORE_AQ_PATH'])
+    FILE_PATTERN = os.path.join(PASSAGE_DATASET_SOURCE_SCORE_AQ_PATH, "qid_*.jsonl.gz")
+    # Regular expression to extract the number
+    NUMBER_PATTERN = re.compile(r"qid_(\d+)\.jsonl\.gz")
 
-DOCUMENT_DATASET_SOURCE_NAME = config['DOCUMENT_DATASET_SOURCE_NAME']
-DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER = config['DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER']
-NUMBER_OF_CROSS_VALIDATION_FOLDS = config['NUMBER_OF_CROSS_VALIDATION_FOLDS']
+    RANK_CORRELATION_SCORE_PQ_AQ_PATH = os.path.join(
+        SOURCE_PATH, config['RANK_CORRELATION_SCORE_PQ_AQ_PATH'])
 
-SOURCE_PATH = os.path.join(config['DATA_PATH'], DOCUMENT_DATASET_SOURCE_NAME)
+    PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
 
-# Pattern to match the files
-PASSAGE_DATASET_SOURCE_SCORE_AQ_PATH = os.path.join(SOURCE_PATH, config['PASSAGE_DATASET_SOURCE_SCORE_AQ_PATH'])
-FILE_PATTERN = os.path.join(PASSAGE_DATASET_SOURCE_SCORE_AQ_PATH, "qid_*.jsonl.gz")
-# Regular expression to extract the number
-NUMBER_PATTERN = re.compile(r"qid_(\d+)\.jsonl\.gz")
+    EVALUATION_METHODS = config['EVALUATION_METHODS']
 
-RANK_CORRELATION_SCORE_PQ_AQ_PATH = os.path.join(
-    SOURCE_PATH, config['RANK_CORRELATION_SCORE_PQ_AQ_PATH'])
+    CHATNOIR_RETRIEVAL = config['CHATNOIR_RETRIEVAL']
+    PT_RETRIEVERS = config['PT_RETRIEVERS']
 
-PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
+    if CHATNOIR_RETRIEVAL:
+        PT_RETRIEVERS = ['BM25_chatnoir']
 
-AGGREGATION_METHODS = config['AGGREGATION_METHODS']
-TRANSFORMATION_METHODS = config['TRANSFORMATION_METHODS']
-EVALUATION_METHODS = config['EVALUATION_METHODS']
+    METRICS = []
+    for metric in config['METRICS']:
+        for retriever in PT_RETRIEVERS:
+            METRICS.append(metric + '_' + retriever)
 
-CHATNOIR_RETRIEVAL = config['CHATNOIR_RETRIEVAL']
-PT_RETRIEVERS = config['PT_RETRIEVERS']
+    # Read passsage scores and cache them
+    qid_docno_passages_scores_cache = {}
+    for file_path in glob(FILE_PATTERN):
+        # Extract the file name
+        file_name = os.path.basename(file_path)
+        # Extract the query ID from the file path
+        qid = int(NUMBER_PATTERN.search(file_name).group(1))
 
-if CHATNOIR_RETRIEVAL:
-    PT_RETRIEVERS = ['BM25_chatnoir']
+        with gzip.open(file_path, 'rt', encoding='UTF-8') as file:
+            for line in file:
+                line = json.loads(line)
+                docno, passageno = line['docno'].split(PASSAGE_ID_SEPARATOR)
+                qid = line['qid']
+                if qid not in qid_docno_passages_scores_cache:
+                    qid_docno_passages_scores_cache[qid] = {}
+                if docno not in qid_docno_passages_scores_cache[qid]:
+                    qid_docno_passages_scores_cache[qid][docno] = []
+                qid_docno_passages_scores_cache[qid][docno] += [line]
 
-METRICS = []
-for metric in config['METRICS']:
-    for retriever in PT_RETRIEVERS:
-        METRICS.append(metric + '_' + retriever)
+    """
+    Function to get dictonary of aggregated score for a document using passage scores
+    Return a list of dictionaries with aggregated scores for each document {docno, qid, metric: score}
+    """
+    def get_qid_docno_aggregated_scores(qid_docno_passages_scores, aggregation_method):
+        # All metrics that are available in the passage scores
 
-# Script should only compute passage scores for none existing qids
-if len(sys.argv) < 3:
-    print("Please provide a job ID and the number of jobs as an argument.")
-    sys.exit(1)
+        aggregated_scores = []
 
-JOB_ID = int(sys.argv[1])
-NUM_JOBS = int(sys.argv[2])
+        for qid, docno_passages_scores in qid_docno_passages_scores.items():
+            for docno, passages_scores in docno_passages_scores.items():
 
-# Read passsage scores and cache them
-qid_docno_passages_scores_cache = {}
-for file_path in glob(FILE_PATTERN):
-    # Extract the file name
-    file_name = os.path.basename(file_path)
-    # Extract the query ID from the file path
-    qid = int(NUMBER_PATTERN.search(file_name).group(1))
+                aggregated_doc_scores = {'docno': docno, 'qid': qid, 'label': passages_scores[0]['label']}
+                for metric in METRICS:
+                    scores = [passage[metric] for passage in passages_scores]
 
-    with gzip.open(file_path, 'rt', encoding='UTF-8') as file:
-        for line in file:
-            line = json.loads(line)
-            docno, passageno = line['docno'].split(PASSAGE_ID_SEPARATOR)
-            qid = line['qid']
-            if qid not in qid_docno_passages_scores_cache:
-                qid_docno_passages_scores_cache[qid] = {}
-            if docno not in qid_docno_passages_scores_cache[qid]:
-                qid_docno_passages_scores_cache[qid][docno] = []
-            qid_docno_passages_scores_cache[qid][docno] += [line]
+                    if aggregation_method == 'mean':
+                        aggregated_doc_scores[metric] = float(np.mean(scores))
+                    elif aggregation_method == 'max':
+                        aggregated_doc_scores[metric] = float(np.max(scores))
+                    elif aggregation_method == 'min':
+                        aggregated_doc_scores[metric] = float(np.min(scores))
+                    elif aggregation_method == 'sum':
+                        aggregated_doc_scores[metric] = float(np.sum(scores))
 
+                aggregated_scores.append(aggregated_doc_scores)
 
-# Function to get dictonary of aggregated score for a document using passage scores
-# Return a list of dictionaries with aggregated scores for each document {docno, qid, metric: score}
-def get_qid_docno_aggregated_scores(qid_docno_passages_scores, aggregation_method):
-    # All metrics that are available in the passage scores
+        return aggregated_scores
 
-    aggregated_scores = []
+    # Function to get transformed scores
+    def get_qid_docno_transformed_scores(qid_docno_aggregated_scores, transformation_method, bins=[0.3, 0.7]):
 
-    for qid, docno_passages_scores in qid_docno_passages_scores.items():
-        for docno, passages_scores in docno_passages_scores.items():
-
-            aggregated_doc_scores = {'docno': docno, 'qid': qid, 'label': passages_scores[0]['label']}
+        qid_docno_aggregated_scores_transformed = copy.deepcopy(qid_docno_aggregated_scores)
+        for entry in qid_docno_aggregated_scores_transformed:
             for metric in METRICS:
-                scores = [passage[metric] for passage in passages_scores]
+                if transformation_method == 'id':
+                    pass
+                elif transformation_method == 'log' and entry[metric] > 0:
+                    entry[metric] = float(np.log(entry[metric]))
+                elif transformation_method == 'exp':
+                    entry[metric] = float(np.exp(entry[metric]))
+                elif transformation_method == 'sqrt' and entry[metric] > 0:
+                    entry[metric] = float(np.sqrt(entry[metric]))
+                # elif transformation_method == 'binned':
+                #     entry[metric] = float(np.digitize(entry[metric], bins))
 
-                if aggregation_method == 'mean':
-                    aggregated_doc_scores[metric] = float(np.mean(scores))
-                elif aggregation_method == 'max':
-                    aggregated_doc_scores[metric] = float(np.max(scores))
-                elif aggregation_method == 'min':
-                    aggregated_doc_scores[metric] = float(np.min(scores))
-                elif aggregation_method == 'sum':
-                    aggregated_doc_scores[metric] = float(np.sum(scores))
+        return qid_docno_aggregated_scores_transformed
 
-            aggregated_scores.append(aggregated_doc_scores)
+    # Function to get evaluated score based on the specified metric and evaluation method (pearson, spearman, kendall)
+    def get_evaluated_score(qid_docno_transformed_scores, qid, metric, evaluation_method):
 
-    return aggregated_scores
+        # Lists to store the matched scores for correlation calculation
+        transformed_scores = []
+        relevance_labels = []
 
+        # Filter scores for the given query ID (qid)
+        filtered_scores = [entry for entry in qid_docno_transformed_scores if entry['qid'] == qid]
 
-# Function to get transformed scores
-def get_qid_docno_transformed_scores(qid_docno_aggregated_scores, transformation_method, bins=[0.3, 0.7]):
+        transformed_scores = [entry[metric] for entry in filtered_scores]
+        relevance_labels = [entry['label'] for entry in filtered_scores]
 
-    qid_docno_aggregated_scores_transformed = copy.deepcopy(qid_docno_aggregated_scores)
-    for entry in qid_docno_aggregated_scores_transformed:
-        for metric in METRICS:
-            if transformation_method == 'id':
-                pass
-            elif transformation_method == 'log' and entry[metric] > 0:
-                entry[metric] = float(np.log(entry[metric]))
-            elif transformation_method == 'exp':
-                entry[metric] = float(np.exp(entry[metric]))
-            elif transformation_method == 'sqrt' and entry[metric] > 0:
-                entry[metric] = float(np.sqrt(entry[metric]))
-            # elif transformation_method == 'binned':
-            #     entry[metric] = float(np.digitize(entry[metric], bins))
+        # Ensure we have pairs to evaluate correlation
+        if len(transformed_scores) > 1:
+            # Convert lists to pandas Series
+            transformed_series = GreedySeries(transformed_scores)
+            relevance_series = GreedySeries(relevance_labels)
 
-    return qid_docno_aggregated_scores_transformed
+            # Calculate correlation based on the specified method
+            if len(set(relevance_labels)) == 1:
+                print('Correlation is NaN. All relevance_scores have the same value')
+                correlation = 0
+            elif len(set(transformed_scores)) == 1:
+                print('Correlation is NaN. All transformed_scores have the same value')
+                correlation = 0
+            elif evaluation_method == 'pearson':
+                correlation = transformed_series.corr(relevance_series, method='pearson')
+            elif evaluation_method == 'kendall':
+                correlation = transformed_series.corr(relevance_series, method='kendall')
+            elif evaluation_method == 'spearman':
+                correlation = transformed_series.corr(relevance_series, method='spearman')
+            elif evaluation_method == 'pearson-greedy':
+                correlation = transformed_series.corr(relevance_series, method='pearson-greedy')
+            elif evaluation_method == 'kendall-greedy':
+                correlation = transformed_series.corr(relevance_series, method='kendall-greedy')
+            elif evaluation_method == 'spearman-greedy':
+                correlation = transformed_series.corr(relevance_series, method='spearman-greedy')
 
+            return correlation
 
-# Function to get evaluated score based on the specified metric and evaluation method (pearson, spearman, kendall)
-def get_evaluated_score(qid_docno_transformed_scores, qid,
-                        metric='ndcg10_bm25', evaluation_method='pearson'):
-
-    # Lists to store the matched scores for correlation calculation
-    transformed_scores = []
-    relevance_labels = []
-
-    # Filter scores for the given query ID (qid)
-    filtered_scores = [entry for entry in qid_docno_transformed_scores if entry['qid'] == qid]
-
-    transformed_scores = [entry[metric] for entry in filtered_scores]
-    relevance_labels = [entry['label'] for entry in filtered_scores]
-
-    # Ensure we have pairs to evaluate correlation
-    if len(transformed_scores) > 1:
-        # Convert lists to pandas Series
-        transformed_series = GreedySeries(transformed_scores)
-        relevance_series = GreedySeries(relevance_labels)
-
-        # Calculate correlation based on the specified method
-        if len(set(relevance_labels)) == 1:
-            print('Correlation is NaN. All relevance_scores have the same value')
-            correlation = 0
-        elif len(set(transformed_scores)) == 1:
-            print('Correlation is NaN. All transformed_scores have the same value')
-            correlation = 0
-        elif evaluation_method == 'pearson':
-            correlation = transformed_series.corr(relevance_series, method='pearson')
-        elif evaluation_method == 'kendall':
-            correlation = transformed_series.corr(relevance_series, method='kendall')
-        elif evaluation_method == 'spearman':
-            correlation = transformed_series.corr(relevance_series, method='spearman')
-        elif evaluation_method == 'pearson-greedy':
-            correlation = transformed_series.corr(relevance_series, method='pearson-greedy')
-        elif evaluation_method == 'kendall-greedy':
-            correlation = transformed_series.corr(relevance_series, method='kendall-greedy')
-        elif evaluation_method == 'spearman-greedy':
-            correlation = transformed_series.corr(relevance_series, method='spearman-greedy')
-
-        return correlation
-
-
-if __name__ == '__main__':
-
-    start_time = time.time()
-
+    ############################
+    #           MAIN           #
+    ############################
     combinations = []
-    for aggregation_method in AGGREGATION_METHODS:
-        for transformation_method in TRANSFORMATION_METHODS:
+    for aggregation_method in ['max']:
+        for transformation_method in ['id']:
             for evaluation_method in EVALUATION_METHODS:
                 combinations += [(aggregation_method, transformation_method, evaluation_method)]
 
@@ -229,5 +205,7 @@ if __name__ == '__main__':
         for evaluation_entry in correlation_scores:
             file.write(json.dumps(evaluation_entry) + '\n')
 
-    end_time = time.time()
-    print(f"Job {JOB_ID} finished rank correlation per query in {(end_time - start_time) / 60} minutes.")
+
+if __name__ == '__main__':
+
+    ray_wrapper(1, 1)

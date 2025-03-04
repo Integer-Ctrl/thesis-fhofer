@@ -12,7 +12,7 @@ ray.init()
 
 
 @ray.remote
-def ray_wrapper(job_id, num_jobs):
+def ray_wrapper(job_id, num_jobs, qrels_cache, docs_to_score):
     def load_config(filename="/mnt/ceph/storage/data-tmp/current/ho62zoq/thesis-fhofer/code/src/config.json"):
         with open(filename, "r") as f:
             config = json.load(f)
@@ -45,19 +45,10 @@ def ray_wrapper(job_id, num_jobs):
     NUM_JOBS = num_jobs
     QIDS = None
 
-    # Read qrels and cache relevant qrels
-    dataset = pt.get_dataset(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
-    qrels = dataset.get_qrels(variant='relevance')
-    qrels_cache = {}
-    for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
-        if row['qid'] not in qrels_cache:
-            qrels_cache[row['qid']] = qrels.loc[
-                (qrels['qid'] == row['qid'])
-            ].rename(columns={'qid': 'query', 'docno': 'docid', 'label': 'rel'})  # Rename columns
-            qrels_cache[row['qid']]['query'] = 0  # Dummy value to enable merge of run and qrels (TrecEval)
-
     # Distribute QIDs among jobs
     keys = list(qrels_cache.keys())
+    keys = [key for key in keys if not os.path.exists(os.path.join(PASSAGE_DATASET_SOURCE_SCORE_REL_PATH, f"qid_{key}.jsonl.gz"))]
+
     total_qids = len(keys)
 
     # Determine the range of QIDs for this job
@@ -240,47 +231,6 @@ def ray_wrapper(job_id, num_jobs):
 
         return results, relevant_results, scored_docs_count
 
-    # Get list of doc ids that should be chunked
-    # For each QID, chunk 50 non relevant documents with a label <= 0
-    # For each QID, chunk 50 relevant documents for each label > 0
-    # If there are less than 50 documents for a label, chunk for each label as much as the smallest label count
-
-    def get_docs_to_chunk(dataset):
-        dict = {}
-
-        for qrel in dataset.irds_ref().qrels_iter():
-            qid = qrel.query_id
-            doc_id = qrel.doc_id
-            label = qrel.relevance
-
-            if qid not in dict:
-                dict[qid] = {}
-
-            if label <= 0:
-                if '0' not in dict[qid]:
-                    dict[qid]['0'] = []
-                dict[qid]['0'] += [doc_id]
-
-            if label > 0:
-                lable_str = str(label)
-                if lable_str not in dict[qid]:
-                    dict[qid][lable_str] = []
-                dict[qid][lable_str] += [doc_id]
-
-        # Round to smallest label count or 50
-        for qid in dict:
-            min_label_count = min([[len(count)] for count in dict[qid].values()])
-            min_label_count = min(min_label_count[0], 50)
-
-            for label in dict[qid]:
-                dict[qid][label] = dict[qid][label][:min_label_count]
-
-        return dict
-
-    # Avoids chunking docs for qid_x that have not been selected in document_chunker_serial.py
-    # Elsewise, if another qid_y got an document assigned that has a qrel with qid_x, the document would be scored
-    docs_to_score = get_docs_to_chunk(dataset)
-
     for QID in QIDS:
         relevant_path = os.path.join(PASSAGE_DATASET_SOURCE_SCORE_REL_PATH, f"qid_{QID}.jsonl.gz")
         all_path = os.path.join(PASSAGE_DATASET_SOURCE_SCORE_AQ_PATH, f"qid_{QID}.jsonl.gz")
@@ -300,14 +250,72 @@ def ray_wrapper(job_id, num_jobs):
             for scores in results:
                 all_qrels_file.write(json.dumps(scores) + '\n')
 
+        print(f"Job {job_id} processed and saved {docs_count} documents for QID {QID}")
+
+
+"""
+Get list of doc ids that should be chunked
+For each QID, chunk 50 non relevant documents with a label <= 0
+For each QID, chunk 50 relevant documents for each label > 0
+"""
+def get_docs_to_chunk(dataset):
+    dict = {}
+
+    for qrel in dataset.irds_ref().qrels_iter():
+        qid = qrel.query_id
+        doc_id = qrel.doc_id
+        label = qrel.relevance
+
+        if qid not in dict:
+            dict[qid] = {}
+
+        # Map non-relevant documents to label 0
+        if label <= 0:
+            if '0' not in dict[qid]:
+                dict[qid]['0'] = []
+            dict[qid]['0'] += [doc_id]
+
+        if label > 0:
+            lable_str = str(label)
+            if lable_str not in dict[qid]:
+                dict[qid][lable_str] = []
+            dict[qid][lable_str] += [doc_id]
+
+    # Round to smallest label count or 50
+    for qid in dict:
+        for label in dict[qid]:
+            dict[qid][label] = dict[qid][label][:50]
+
+    return dict
+
 
 if __name__ == '__main__':
 
-    NUM_WORKERS = 50
+    with open("/mnt/ceph/storage/data-tmp/current/ho62zoq/thesis-fhofer/code/src/config.json", "r") as f:
+        config = json.load(f)
+    DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER = config['DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER']
+    print(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
+
+    # Read qrels and cache relevant qrels
+    dataset = pt.get_dataset(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
+    qrels = dataset.get_qrels(variant='relevance')
+    qrels_cache = {}
+    for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
+        if row['qid'] not in qrels_cache:
+            qrels_cache[row['qid']] = qrels.loc[
+                (qrels['qid'] == row['qid'])
+            ].rename(columns={'qid': 'query', 'docno': 'docid', 'label': 'rel'})  # Rename columns
+            qrels_cache[row['qid']]['query'] = 0  # Dummy value to enable merge of run and qrels (TrecEval)
+    
+    # Avoids chunking docs for qid_x that have not been selected in document_chunker_serial.py
+    # Elsewise, if another qid_y got an document assigned that has a qrel with qid_x, the document would be scored
+    docs_to_score = get_docs_to_chunk(dataset)
+
+    NUM_WORKERS = 20
 
     futures = []
     for job_id in range(1, NUM_WORKERS + 1):
-        futures.append(ray_wrapper.remote(job_id, NUM_WORKERS))
+        futures.append(ray_wrapper.remote(job_id, NUM_WORKERS, qrels_cache, docs_to_score))
 
     # Wait for all tasks to complete
     ray.get(futures)

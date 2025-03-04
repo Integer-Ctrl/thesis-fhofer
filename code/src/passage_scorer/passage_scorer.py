@@ -277,11 +277,9 @@ def get_docs_to_chunk(dataset):
 
     # Round to smallest label count or 50
     for qid in dict:
-        min_label_count = min([[len(count)] for count in dict[qid].values()])
-        min_label_count = min(min_label_count[0], 50)
 
         for label in dict[qid]:
-            dict[qid][label] = dict[qid][label][:min_label_count]
+            dict[qid][label] = dict[qid][label][:50]
 
     return dict
 
