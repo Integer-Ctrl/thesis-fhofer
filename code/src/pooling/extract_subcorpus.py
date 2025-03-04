@@ -8,6 +8,7 @@ from base64 import b64encode
 from pathlib import Path
 from typing import Any, Iterable, Optional
 import ir_datasets
+from func_timeout import func_timeout
 
 # export IR_DATASETS_HOME=/mnt/ceph/tira/state/ir_datasets/
 
@@ -43,18 +44,19 @@ def write_lines_to_file(lines: Iterable[str], path: Path) -> None:
         with path.open("wt") as file:
             file.writelines("%s\n" % line for line in lines if line)
 
+def doc_text(docs_store, doc_id):
+    return map_doc(docs_store.get(doc_id), False)
+
 def yield_docs(dataset, include_original, skip_duplicate_ids, allowed_ids):
     already_covered_ids = set()
     docs_store = dataset.docs_store()
 
     for doc_id in tqdm(allowed_ids, "Load Documents"):
-        doc = docs_store.get(doc_id)
-        if skip_duplicate_ids and doc.doc_id in already_covered_ids:
-            continue
-
-        yield map_doc(doc, include_original)
-        if skip_duplicate_ids:
-            already_covered_ids.add(doc.doc_id)
+        try:
+            dt = func_timeout(60, doc_text, (docs_store, doc_id))
+            yield dt
+        except:
+            pass
 
 def map_doc(doc: tuple, include_original=True) -> str:
     """Maps a document of any dataset (loaded through ir_datasets) to a standarized format
@@ -78,12 +80,12 @@ if __name__ == '__main__':
     CORPUS_DIR = f'{DATA_DIR}/clueweb22-transfer-english-only'
 
     PATHS = [
-        #'argsme/2020-04-01/touche-2020-task-1/clueweb22/b/candidates-chatnoir/doc_ids.jsonl',
-        #'disks45/nocr/trec-robust-2004/clueweb22/b/candidates-chatnoir/doc_ids.jsonl',
-        #'disks45/nocr/trec7/clueweb22/b/candidates-chatnoir/doc_ids.jsonl',
-        #'disks45/nocr/trec8/clueweb22/b/candidates-chatnoir/doc_ids.jsonl',
-        #'msmarco-passage/trec-dl-2019/judged/clueweb22/b/candidates-chatnoir/doc_ids.jsonl',
-        #'msmarco-passage/trec-dl-2020/judged/clueweb22/b/candidates-chatnoir/doc_ids.jsonl'
+        'argsme/2020-04-01/touche-2020-task-1/clueweb22/b/candidates-chatnoir/doc_ids.jsonl',
+        'disks45/nocr/trec-robust-2004/clueweb22/b/candidates-chatnoir/doc_ids.jsonl',
+        'disks45/nocr/trec7/clueweb22/b/candidates-chatnoir/doc_ids.jsonl',
+        'disks45/nocr/trec8/clueweb22/b/candidates-chatnoir/doc_ids.jsonl',
+        'msmarco-passage/trec-dl-2019/judged/clueweb22/b/candidates-chatnoir/doc_ids.jsonl',
+        'msmarco-passage/trec-dl-2020/judged/clueweb22/b/candidates-chatnoir/doc_ids.jsonl',
         'maik_cw22_doc_ids.jsonl',
     ]
 
