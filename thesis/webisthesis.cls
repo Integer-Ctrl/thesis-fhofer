@@ -443,8 +443,8 @@
 
 \newenvironment{frontmatter}{%
   \pagenumbering{roman}%
-  \frontpage%
-  \declaration%
+  % \frontpage%
+  % \declaration%
 }{%
   \clearpage%
   \pagenumbering{arabic}%

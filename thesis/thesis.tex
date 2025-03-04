@@ -25,7 +25,7 @@
 %\ThesisSetTitle{Reusing Old Relevance Judgments to Evaluate Modern Neural Retrieval Models}
 %\ThesisSetTitle{Transferring Relevance Judgments from Older to Newer Web Crawls}
 %\ThesisSetTitle{Integrating Pairwise Preferences into State-of-the-Art Information Retrieval Systems}
-\ThesisSetKeywords{pairwise preferenes, IR} % only for PDF meta attributes
+\ThesisSetKeywords{pairwise preference, IR} % only for PDF meta attributes
 \ThesisSetLocation{Jena 07743, Germany} 
 
 \ThesisSetAuthor{Fabian Hofer}
@@ -65,7 +65,10 @@
 \usepackage{svg}
 \usepackage{longtable}
 \usepackage{makecell}
-
+\usepackage{pdfpages}
+\usepackage{subcaption}
+\usepackage{graphicx}
+\usepackage{caption}
 \usepackage{fontawesome}
 %    For lots of awesome glyphs: https://mirror.physik.tu-berlin.de/pub/CTAN/fonts/fontawesome/doc/fontawesome.pdf
 
@@ -88,11 +91,13 @@
 \usehyperref[]
 
 \begin{document}
-\begin{frontmatter}
-\begin{abstract}
-\include{abstract}
-\end{abstract}
 
+\include{front_page}
+
+\begin{frontmatter}
+% \begin{abstract}
+\include{abstract}
+% \end{abstract}
 \tableofcontents
 
 % \chapter*{Acknowledgements} % optional
@@ -119,6 +124,8 @@
 % Bibliography
 \bibliographystyle{plainnat} % requires package natbib. An alternative is apalike
 \bibliography{literature}    % load file literature.bib
+
+\includepdf[pages=1]{declaration_of_academic_integrity.pdf}
 
 \end{document}
 

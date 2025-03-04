@@ -15,21 +15,6 @@ import ray
 ray.init()
 
 
-def load_config(filename='/mnt/ceph/storage/data-tmp/current/ho62zoq/thesis-fhofer/code/src/config.json'):
-    with open(filename, "r") as f:
-        config = json.load(f)
-    return config
-
-
-# Get the configuration settings
-config = load_config()
-SOURCE_PATH = os.path.join(config['DATA_PATH'], config['DOCUMENT_DATASET_SOURCE_NAME'])
-TARGET_PATH = os.path.join(SOURCE_PATH, config['DOCUMENT_DATASET_TARGET_NAME'])
-
-BACKBONES = config['BACKBONES']  # all backbones
-DUOPROMPT_PATH = config['DUOPROMPT_PATH']
-
-
 @ray.remote
 def ray_wrapper(JOB_ID, NUM_JOBS, qrels_cache):
     def load_config(filename='/mnt/ceph/storage/data-tmp/current/ho62zoq/thesis-fhofer/code/src/config.json'):
@@ -52,19 +37,6 @@ def ray_wrapper(JOB_ID, NUM_JOBS, qrels_cache):
     AGGREGATION_METHODS = config['AGGREGATION_METHODS']
     TRANSFORMATION_METHODS = config['TRANSFORMATION_METHODS']
     EVALUATION_METHODS = config['EVALUATION_METHODS']
-
-    # # Read qrels and cache relevant qrels
-    # dataset = pt.get_dataset(DOCUMENT_DATASET_TARGET_NAME_PYTERRIER)
-    # qrels = dataset.get_qrels(variant='relevance')
-    # qrels_cache = {}
-    # for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
-    #     if row['qid'] not in qrels_cache:
-    #         qrels_cache[row['qid']] = qrels.loc[
-    #             (qrels['qid'] == row['qid'])
-    #         ]
-
-    # Read pairwise preference scores {qid: docno: passage_id: scores[]}
-    # Which known relevant passages are used for pairwise preferences is not important here
 
     def read_pairwise_preferences(path):
         qid_docno_passage_scores = {}
@@ -303,8 +275,17 @@ def ray_wrapper(JOB_ID, NUM_JOBS, qrels_cache):
 
 if __name__ == '__main__':
 
+    # Get the configuration settings
+    with open('/mnt/ceph/storage/data-tmp/current/ho62zoq/thesis-fhofer/code/src/config.json', "r") as f:
+        config = json.load(f)
+    DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER = config['DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER']
+    SOURCE_PATH = os.path.join(config['DATA_PATH'], config['DOCUMENT_DATASET_SOURCE_NAME'])
+    TARGET_PATH = os.path.join(SOURCE_PATH, config['DOCUMENT_DATASET_TARGET_NAME'])
+    BACKBONES = config['BACKBONES']  # all backbones
+    DUOPROMPT_PATH = config['DUOPROMPT_PATH']
+
     # Read qrels and cache relevant qrels
-    dataset = pt.get_dataset("irds:disks45/nocr/trec-robust-2004")
+    dataset = pt.get_dataset(DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER)
     qrels = dataset.get_qrels(variant='relevance')
     qrels_cache = {}
     for index, row in tqdm(qrels.iterrows(), desc='Caching qrels', unit='qrel'):
@@ -329,7 +310,7 @@ if __name__ == '__main__':
             if not os.path.exists(write_path):
                 os.makedirs(write_path)
 
-    NUM_WORKERS = 100
+    NUM_WORKERS = 96
 
     futures = []
     for i in range(1, NUM_WORKERS + 1):
