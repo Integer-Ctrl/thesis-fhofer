@@ -50,6 +50,7 @@ if not os.path.exists(DUOPROMPT_PATH):
 
 KEY_SEPARATOR = config['KEY_SEPARATOR']
 PASSAGE_ID_SEPARATOR = config['PASSAGE_ID_SEPARATOR']
+QUERIES = config['QUERIES']
 
 
 # Helper function to access the cache
@@ -253,13 +254,29 @@ def process_candidates(candidates_path, pairwise_preferences_path, judged_doc_id
 # Get the judged documents if the ONLY_JUDGED flag is set
 def get_judged_doc_ids():
     judged_doc_ids = {}
-    dataset = ir_datasets.load(DOCUMENT_DATASET_TARGET_NAME_PYTHON_API)
 
-    for qrel in dataset.qrels_iter():
-        qid = qrel.query_id	
-        if qid not in judged_doc_ids:
-            judged_doc_ids[qid] = set()
-        judged_doc_ids[qid].add(qrel.doc_id)
+    if DOCUMENT_DATASET_TARGET_NAME_PYTHON_API == "clueweb22/b":
+        if QUERIES is None:
+            print("Error: QUERIES is not set")
+            exit()
+        
+        print("Reading judgment pool, ONLY_JUDGED and clueweb22/b")
+        pool_ids_path = '/mnt/ceph/storage/data-in-progress/data-teaching/theses/thesis-fhofer/data/clueweb22-transfer/judgment-pool.json'
+        with open(pool_ids_path, 'r') as file:
+            pool_ids = json.load(file)
+            for qid in QUERIES:
+                judged_doc_ids[qid] = set(pool_ids[qid])
+                print(f"Pooled documents for query {qid}: {len(pool_ids[qid])}")
+                print(f"Used documents for query {qid}: {len(judged_doc_ids[qid])}")
+
+    else:
+        dataset = ir_datasets.load(DOCUMENT_DATASET_TARGET_NAME_PYTHON_API)
+
+        for qrel in dataset.qrels_iter():
+            qid = qrel.query_id	
+            if qid not in judged_doc_ids:
+                judged_doc_ids[qid] = set()
+            judged_doc_ids[qid].add(qrel.doc_id)
 
     return judged_doc_ids
 

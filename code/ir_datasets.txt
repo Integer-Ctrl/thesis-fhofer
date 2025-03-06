@@ -8,3 +8,10 @@ msmarco-passage/trec-dl-2019/judged     "1037798", "1129237"
 msmarco-passage/trec-dl-2020/judged     "997622", "1051399", "1127540"
 
 clueweb22/b
+
+argsme-2020-04-01-touche-2020-task-1
+disks45-nocr-trec-robust-2004
+disks45-nocr-trec7
+disks45-nocr-trec8
+msmarco-passage-trec-dl-2019-judged
+msmarco-passage-trec-dl-2020-judged

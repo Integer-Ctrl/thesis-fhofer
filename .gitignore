@@ -1,4 +1,4 @@
-pyenv
+pyenv*
 clueweb22_env
 __pycache__
 *.json.gz

@@ -16,10 +16,10 @@
 
 # Load Python virtual environment
 echo "Loading Python virtual environment..."
-source ../../../thesis-fhofer/pyenv/bin/activate
+source ../../../thesis-fhofer/pyenv2/bin/activate
 echo "Python virtual environment loaded."
 
 # Run Pointwise preference with monoprompt on candidates
 echo "Running pointwise_preference_monoprompt.py..."
-python3 -u ../src/pointwise_preference/pointwise_preference_monoprompt.py
+python3 -u ../src/pointwise_preference/pointwise_preference_monoprompt_multi.py
 echo "Pointwise preferences completed."
