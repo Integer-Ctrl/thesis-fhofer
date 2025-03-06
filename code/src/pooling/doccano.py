@@ -16,10 +16,15 @@ DATA_PATH = '/mnt/ceph/storage/data-in-progress/data-teaching/theses/thesis-fhof
 CW22_PATH = 'clueweb22/b'
 BACKBONES = ["google/flan-t5-base", "google/flan-t5-small", "google-t5/t5-small"]
 CANDIDATE_APPROACH = 'union_100_opd.jsonl.gz'
-DOCCANO_PATH = os.path.join(DATA_PATH, 'clueweb22-transfer')
+# DOCCANO_PATH = os.path.join(DATA_PATH, 'clueweb22-transfer', 'doccano.jsonl')
+DOCCANO_PATH = os.path.join(DATA_PATH, 'doccano.jsonl')
 BEST_PASSAGE_NUM = 3
 
+collection = {}
+
 for dataset_name, query_ids in SELECTED_QUERIES.items():
+    print(f"Processing dataset {dataset_name}")
+    collection[dataset_name] = {}
 
     '''
     Load candidates with passage to judge text
@@ -52,6 +57,7 @@ for dataset_name, query_ids in SELECTED_QUERIES.items():
     Create doccano entries for each tested backbone
     '''
     for backbone in BACKBONES:
+        collection[dataset_name][backbone] = {}
 
         duoprompt_path = os.path.join(DATA_PATH, dataset_name, CW22_PATH, 'duoprompt', backbone, CANDIDATE_APPROACH)
         monoprompt_path = os.path.join(DATA_PATH, dataset_name, CW22_PATH, 'monoprompt', backbone, CANDIDATE_APPROACH)
@@ -137,3 +143,13 @@ for dataset_name, query_ids in SELECTED_QUERIES.items():
                             'score': score
                         }
                     })
+        
+        collection[dataset_name][backbone] = {
+            'duoprompt': doccano_input_duoprompt,
+            'monoprompt': doccano_input_monoprompt
+        }
+
+print("Writing doccano file")
+with open(DOCCANO_PATH, 'w') as file:
+    json.dump(collection, file)
+print("Finished writing doccano file")
