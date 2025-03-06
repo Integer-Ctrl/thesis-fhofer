@@ -16,10 +16,10 @@
 
 # Load Python virtual environment
 echo "Loading Python virtual environment..."
-source ../../../thesis-fhofer/pyenv/bin/activate
+source ../../../thesis-fhofer/pyenv2/bin/activate
 echo "Python virtual environment loaded."
 
 # Run pairwise preference with duoprompt on candidates
 echo "Running pairwise_preference_duoprompt.py..."
-python3 -u ../src/pairwise_preference/pairwise_preference_duoprompt.py
+python3 -u ../src/pairwise_preference/pairwise_preference_duoprompt_multi.py
 echo "Pairwise preferences completed."
