@@ -93,6 +93,8 @@
 \begin{document}
 
 \include{front_page}
+% starting chapter abstract on the right side
+\newpage\null\thispagestyle{empty}\newpage
 
 \begin{frontmatter}
 % \begin{abstract}
@@ -111,14 +113,28 @@
 %    requires package algorithm2e
 
 % optional: list of symbols/notation (e.g., using the nomencl package) but usually not needed
-\end{frontmatter}
 
+% starting chapter1 on the right side
+\newpage\null\thispagestyle{empty}\newpage
+\end{frontmatter}
 \include{chapter1}
+
+% starting chapter2 on the right side
+\newpage\null\thispagestyle{empty}\newpage
 \include{chapter2}
+
+% starting chapter3 on the right side
+\newpage\null\thispagestyle{empty}\newpage
 \include{chapter3}
+
+% starting chapter4 on the right side
+\newpage\null\thispagestyle{empty}\newpage
 \include{chapter4}
+
 \include{chapter5}
 
+% starting chapter appendixA on the right side
+\newpage\null\thispagestyle{empty}\newpage
 \include{appendixA}
 
 % Bibliography
