@@ -8,7 +8,7 @@ import os
 import copy
 from greedy_series import GreedySeries
 from glob import glob
-import sys
+import re
 
 
 def ray_wrapper(JOB_ID, NUM_JOBS, qrels_cache):
@@ -160,7 +160,7 @@ def ray_wrapper(JOB_ID, NUM_JOBS, qrels_cache):
             relevance_labels = []
 
             # Add the scores and relevance labels to the lists in the correct order
-            for docno, label in qrels_cache[qid]:
+            for docno, label in qrels_cache[qid].items():
 
                 if docno not in qid_docno_score[qid]:
                     # Only evaluate on judged documents
@@ -288,16 +288,18 @@ if __name__ == '__main__':
         with open(annotated_qid_path, 'r') as file:
             for line in file:
                 qrel = json.loads(line)
-                qid = qrel['qid']
+                qid = qrel['query_id']
                 doc_id = qrel['document_id']
-                label =  int(qrel['label'].split('(')[1].split(')')[0])
-                print(label)
+                label_match = re.search(r"\((\d+)\)", qrel['label'][0])
+                label =  int(label_match.group(1))
 
                 if qid not in qrels_cache:
                     qrels_cache[qid] = {}
                 # 3 passages judged per document --> use highest relevance label
                 if doc_id not in qrels_cache[qid] or label > qrels_cache[qid][doc_id]:
                     qrels_cache[qid][doc_id] = label
+    for qid in qrels_cache.keys():
+        print(f"Query {qid} has {len(qrels_cache[qid])} judged documents")
 
     for backbone in BACKBONES:
         PAIRWISE_PREFERENCES_PATTERN = os.path.join(TARGET_PATH, DUOPROMPT_PATH, backbone, 'eval_candidates.jsonl.gz')  # glob pattern
