@@ -17,7 +17,7 @@ PATHS = [
 BACKBONES =  ['google/flan-t5-base',
               'google/flan-t5-small',
               'google-t5/t5-small']
-APPROACH = 'union_100_opd.jsonl.gz'
+APPROACH = 'eval_candidates.jsonl.gz'
 
 # Step 1: Load data once and store in a dictionary
 data_dict = {}

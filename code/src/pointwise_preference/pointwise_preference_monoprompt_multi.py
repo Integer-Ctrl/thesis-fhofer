@@ -39,7 +39,8 @@ if CHATNOIR_RETRIEVAL:
 else:
     CANDIDATES_PATH = os.path.join(TARGET_PATH, config['CANDIDATES_LOCAL_PATH'])
 # CANDIDATES_FILE_PATTERN = os.path.join(CANDIDATES_PATH, "*.jsonl.gz")
-CANDIDATES_FILE_PATTERN = os.path.join(CANDIDATES_PATH, "union_100_opd.jsonl.gz")
+# CANDIDATES_FILE_PATTERN = os.path.join(CANDIDATES_PATH, "union_100_opd.jsonl.gz")
+CANDIDATES_FILE_PATTERN = os.path.join(CANDIDATES_PATH, "eval_candidates.jsonl.gz")
 
 ONLY_JUDGED = config['ONLY_JUDGED']  # only infer the scores for the judged documents
 BACKBONES = config['BACKBONES']
