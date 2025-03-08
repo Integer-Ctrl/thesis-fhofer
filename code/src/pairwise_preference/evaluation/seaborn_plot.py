@@ -17,7 +17,9 @@ PATHS = [
 BACKBONES =  ['google/flan-t5-base',
               'google/flan-t5-small',
               'google-t5/t5-small']
-APPROACH = 'eval_candidates.jsonl.gz'
+
+APPROACH = 'union_100_opd.jsonl.gz'
+CW22_APPROACH = 'eval_candidates.jsonl.gz'
 
 # Step 1: Load data once and store in a dictionary
 data_dict = {}
@@ -29,8 +31,8 @@ for backbone in BACKBONES:
 
     # Load data for this backbone
     for dataset in PATHS:
-        # path = f'{DATA_PATH}/{dataset}/{dataset}/duoprompt/{backbone}/{APPROACH}'  # self-transfer
-        path = f'{DATA_PATH}/{dataset}/clueweb22/b/duoprompt/{backbone}/{APPROACH}'  # cw22-transfer
+        path = f'{DATA_PATH}/{dataset}/{dataset}/duoprompt/{backbone}/{APPROACH}'  # self-transfer
+        # path = f'{DATA_PATH}/{dataset}/clueweb22/b/duoprompt/{backbone}/{CW22_APPROACH}'  # cw22-transfer
         with gzip.open(path, 'rt', encoding='UTF-8') as f:
             for line in f:
                 data.append(json.loads(line.strip()))
@@ -45,8 +47,11 @@ for backbone in BACKBONES:
 
 # Step 2: Generate plots using preloaded data
 for model_name, df in data_dict.items():
+
+    # Define bin edges for the full range [0,1] with 50 bins
+    bins = np.linspace(0, 1, 51)  # 51 edges define 50 bins
     # Create a histogram plot
-    g = sns.displot(df, x='score', kde=False, bins=50, height=6, aspect=1.5)
+    g = sns.displot(df, x='score', kde=False, bins=bins, height=6, aspect=1.5)
 
     # Set fixed x-axis and y-axis limit
     g.ax.set_xlim(0, 1)
@@ -68,5 +73,6 @@ for model_name, df in data_dict.items():
     g.tick_params(labelsize=18)
 
     # Save the plot instead of showing it
-    plt.savefig(f'pairwise_cw22_score_distribution_{model_name}.pdf', bbox_inches='tight')
+    plt.savefig(f'pairwise_self_score_distribution_{model_name}.pdf', bbox_inches='tight')
+    # plt.savefig(f'pairwise_cw22_score_distribution_{model_name}.pdf', bbox_inches='tight')
     plt.close()
