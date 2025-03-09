@@ -274,7 +274,7 @@ for PREFERENCE_BACKBONE in BACKBONES:
                 exit()
             
             print("Reading judgment pool, ONLY_JUDGED and clueweb22/b")
-            pool_ids_path = '/mnt/ceph/storage/data-in-progress/data-teaching/theses/thesis-fhofer/data/clueweb22-transfer/judgment-pool.json'
+            pool_ids_path = '/mnt/ceph/storage/data-in-progress/data-teaching/theses/thesis-fhofer/data/clueweb22-transfer/judgment-pool-10.json'
             with open(pool_ids_path, 'r') as file:
                 pool_ids = json.load(file)
                 for qid in QUERIES:

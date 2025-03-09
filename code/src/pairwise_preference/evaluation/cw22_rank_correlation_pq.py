@@ -290,6 +290,9 @@ if __name__ == '__main__':
                 qrel = json.loads(line)
                 qid = qrel['query_id']
                 doc_id = qrel['document_id']
+                if len(qrel['label']) != 1:
+                    print(f"Query {qid} has more than one label for document {doc_id}")
+                    continue
                 label_match = re.search(r"\((\d+)\)", qrel['label'][0])
                 label =  int(label_match.group(1))
 
