@@ -145,3 +145,106 @@
     \end{tabular}}
     \renewcommand{\arraystretch}{1.0}
 \end{table}
+
+\begin{table}[t]
+  \centering
+  \footnotesize
+  \caption{Rank correlations of the inferred relevance judgements to the manually created judgments for \texttt{ClueWeb22/b} reported in terms of the \texttt{greedy} version of Kendall's $\tau$ and Spearman's $\rho$.}
+  \label{tab:app:self-pairwise-preferences}
+  \resizebox{\textwidth}{!}{%
+  \renewcommand{\arraystretch}{1.0}
+  \begin{tabular}{cclccccccccccccc}
+      \toprule
+
+      \multicolumn{3}{c}{\textbf{Approach}} & \multicolumn{2}{c}{\textbf{Touché 20}} & \multicolumn{2}{c}{\textbf{Robust04}} & \multicolumn{2}{c}{\textbf{TREC-7}} & \multicolumn{2}{c}{\textbf{TREC-8}} & \multicolumn{2}{c}{\textbf{TREC-19 DL}} & \multicolumn{2}{c}{\textbf{TREC-20 DL}} \\
+      \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9} \cmidrule(lr){10-11} \cmidrule(lr){12-13} \cmidrule(lr){14-15}
+                          & & & $\tau$ & $\rho$ & $\tau$ & $\rho$ & $\tau$ & $\rho$ & $\tau$ & $\rho$ & $\tau$ & $\rho$ & $\tau$ & $\rho$ \\
+      \midrule
+      \multirow{16}{*}{\rotatebox{90}{\makecell{\textbf{Pairwise Preferences} \\ \textbf{flan-t5-base}}}}
+      & \multirow{4}{*}{\textbf{mean}}
+                & \textbf{id}   & 0.462 & 0.476 & 0.121 & 0.121 & 0.401 & 0.417 & 0.335 & 0.345 & 0.413 & 0.434 & 0.234 & 0.238 \\
+              & & \textbf{log}  & 0.462 & 0.476 & 0.094 & 0.096 & 0.385 & 0.402 & 0.335 & 0.345 & 0.413 & 0.434 & 0.234 & 0.238 \\
+              & & \textbf{exp}  & 0.462 & 0.476 & 0.075 & 0.075 & 0.418 & 0.435 & 0.327 & 0.337 & 0.413 & 0.434 & 0.234 & 0.238 \\
+              & & \textbf{sqrt} & 0.462 & 0.476 & 0.075 & 0.075 & 0.401 & 0.417 & 0.327 & 0.337 & 0.413 & 0.434 & 0.234 & 0.238 \\
+      \cmidrule{2-15}
+      & \multirow{4}{*}{\textbf{min}}
+                & \textbf{id}   & \textbf{0.503} & \textbf{0.520} & \textbf{0.275} & \textbf{0.279} & \textbf{0.418} & \textbf{0.435} & \textbf{0.363} & \textbf{0.377} & \textbf{0.471} & \textbf{0.485} & \textbf{0.353} & \textbf{0.361} \\
+              & & \textbf{log}  & \textbf{0.503} & \textbf{0.520} & \textbf{0.238} & \textbf{0.242} & \textbf{0.418} & \textbf{0.435} & \textbf{0.363} & \textbf{0.377} & \textbf{0.471} & \textbf{0.485} & \textbf{0.394} & \textbf{0.393} \\
+              & & \textbf{exp}  & \textbf{0.503} & \textbf{0.520} & \textbf{0.283} & \textbf{0.287} & \textbf{0.418} & \textbf{0.435} & \textbf{0.363} & \textbf{0.377} & \textbf{0.471} & \textbf{0.485} & \textbf{0.353} & \textbf{0.361} \\
+              & & \textbf{sqrt} & \textbf{0.503} & \textbf{0.520} & \textbf{0.283} & \textbf{0.287} & \textbf{0.418} & \textbf{0.435} & \textbf{0.363} & \textbf{0.377} & \textbf{0.471} & \textbf{0.485} & \textbf{0.353} & \textbf{0.361} \\
+      \cmidrule{2-15}
+      & \multirow{4}{*}{\textbf{max}}
+                & \textbf{id}   & 0.356 & 0.363 & -0.123 & -0.128 & 0.313 & 0.318 & 0.237 & 0.250 & 0.158 & 0.162 & 0.332 & 0.343 \\
+              & & \textbf{log}  & 0.330 & 0.340 & -0.204 & -0.211 & 0.313 & 0.318 & 0.237 & 0.250 & 0.158 & 0.162 & 0.345 & 0.356 \\
+              & & \textbf{exp}  & 0.356 & 0.363 & -0.123 & -0.128 & 0.313 & 0.318 & 0.237 & 0.250 & 0.158 & 0.162 & 0.307 & 0.317 \\
+              & & \textbf{sqrt} & 0.356 & 0.363 & -0.123 & -0.128 & 0.311 & 0.318 & 0.237 & 0.250 & 0.158 & 0.162 & 0.345 & 0.356 \\
+      \cmidrule{2-15}
+      & \multirow{4}{*}{\textbf{sum}}
+                & \textbf{id}   & 0.462 & 0.476 & 0.121 & 0.121 & 0.401 & 0.417 & 0.335 & 0.345 & 0.413 & 0.434 & 0.234 & 0.238 \\
+              & & \textbf{log}  & 0.462 & 0.476 & 0.094 & 0.096 & 0.385 & 0.402 & 0.335 & 0.345 & 0.413 & 0.434 & 0.234 & 0.238 \\
+              & & \textbf{exp}  & 0.462 & 0.476 & 0.257 & 0.260 & 0.398 & 0.417 & 0.327 & 0.337 & 0.401 & 0.421 & 0.261 & 0.270 \\
+              & & \textbf{sqrt} & 0.462 & 0.476 & 0.075 & 0.075 & 0.401 & 0.417 & 0.327 & 0.337 & 0.413 & 0.434 & 0.234 & 0.238 \\
+      \midrule
+
+      \multirow{16}{*}{\rotatebox{90}{\makecell{\textbf{Pairwise Preferences} \\ \textbf{flan-t5-small}}}}
+      & \multirow{4}{*}{\textbf{mean}}
+                & \textbf{id}   & 0.187 & 0.189 & -0.292 & -0.300 & 0.413 & 0.428 & 0.243 & 0.256 & 0.517 & 0.530 & \textbf{0.425} & \textbf{0.440} \\
+              & & \textbf{log}  & 0.187 & 0.189 & -0.292 & -0.300 & 0.413 & 0.428 & 0.243 & 0.256 & 0.517 & 0.530 & 0.380 & 0.394 \\
+              & & \textbf{exp}  & 0.187 & 0.189 & -0.292 & -0.300 & 0.413 & 0.428 & 0.254 & 0.269 & 0.517 & 0.530 & \textbf{0.403} & \textbf{0.418} \\
+              & & \textbf{sqrt} & 0.187 & 0.189 & -0.292 & -0.300 & 0.413 & 0.428 & 0.243 & 0.256 & 0.517 & 0.530 & \textbf{0.444} & \textbf{0.460} \\
+      \cmidrule{2-15}
+      & \multirow{4}{*}{\textbf{min}}
+                & \textbf{id}   & \textbf{0.300} & \textbf{0.303} & -\textbf{0.280} & -\textbf{0.287} & \textbf{0.451} & \textbf{0.476} & \textbf{0.280} & \textbf{0.298} & \textbf{0.545} & \textbf{0.552} & 0.358 & 0.376 \\
+              & & \textbf{log}  & \textbf{0.300} & \textbf{0.303} & -\textbf{0.267} & -\textbf{0.274} & \textbf{0.451} & \textbf{0.476} & \textbf{0.280} & \textbf{0.298} & \textbf{0.547} & \textbf{0.557} & \textbf{0.391} & \textbf{0.411} \\
+              & & \textbf{exp}  & \textbf{0.300} & \textbf{0.303} & -\textbf{0.280} & -\textbf{0.287} & \textbf{0.468} & \textbf{0.494} & \textbf{0.280} & \textbf{0.298} & \textbf{0.545} & \textbf{0.552} & 0.391 & 0.411 \\
+              & & \textbf{sqrt} & \textbf{0.300} & \textbf{0.303} & -\textbf{0.280} & -\textbf{0.287} & \textbf{0.451} & \textbf{0.476} & \textbf{0.280} & \textbf{0.296} & \textbf{0.545} & \textbf{0.552} & 0.391 & 0.411 \\
+      \cmidrule{2-15}
+      & \multirow{4}{*}{\textbf{max}}
+                & \textbf{id}   & 0.098 & 0.101 & -0.315 & -0.325 & 0.271 & 0.279 & 0.116 & 0.122 & 0.300 & 0.309 & 0.257 & 0.270 \\
+              & & \textbf{log}  & 0.126 & 0.129 & -0.303 & -0.313 & 0.259 & 0.267 & 0.116 & 0.122 & 0.303 & 0.313 & 0.264 & 0.277 \\
+              & & \textbf{exp}  & 0.098 & 0.101 & -0.315 & -0.325 & 0.244 & 0.252 & 0.116 & 0.122 & 0.306 & 0.314 & 0.264 & 0.277 \\
+              & & \textbf{sqrt} & 0.098 & 0.101 & -0.315 & -0.325 & 0.259 & 0.267 & 0.116 & 0.122 & 0.295 & 0.304 & 0.257 & 0.270 \\
+      \cmidrule{2-15}
+      & \multirow{4}{*}{\textbf{sum}}
+                & \textbf{id}   & 0.187 & 0.189 & -0.292 & -0.300 & 0.413 & 0.428 & 0.243 & 0.256 & 0.517 & 0.530 & \textbf{0.425} & \textbf{0.440} \\
+              & & \textbf{log}  & 0.187 & 0.189 & -0.292 & -0.300 & 0.413 & 0.428 & 0.243 & 0.256 & 0.517 & 0.530 & 0.380 & 0.394 \\
+              & & \textbf{exp}  & 0.205 & 0.207 & -0.292 & -0.300 & 0.413 & 0.428 & 0.243 & 0.258 & 0.528 & 0.535 & 0.380 & 0.394 \\
+              & & \textbf{sqrt} & 0.187 & 0.189 & -0.292 & -0.300 & 0.413 & 0.428 & 0.243 & 0.256 & 0.517 & 0.530 & \textbf{0.444} & \textbf{0.460} \\
+      \midrule
+
+      \multirow{16}{*}{\rotatebox{90}{\makecell{\textbf{Pairwise Preferences} \\ \textbf{t5-small}}}}
+      & \multirow{4}{*}{\textbf{mean}}
+                & \textbf{id}   & \textbf{0.460} & \textbf{0.482} & 0.029 & 0.029 & 0.224 & 0.231 & -0.058 & -0.062 & 0.132 & 0.135 & \textbf{0.285} & \textbf{0.302} \\
+              & & \textbf{log}  & \textbf{0.460} & \textbf{0.482} & 0.029 & 0.029 & 0.224 & 0.231 & -0.058 & -0.062 & 0.142 & 0.146 & \textbf{0.285} & \textbf{0.302} \\
+              & & \textbf{exp}  & \textbf{0.460} & \textbf{0.482} & 0.029 & 0.029 & 0.267 & 0.273 & -0.068 & -0.072 & 0.142 & 0.146 & \textbf{0.285} & \textbf{0.302} \\
+              & & \textbf{sqrt} & \textbf{0.460} & \textbf{0.482} & 0.029 & 0.029 & 0.212 & 0.218 & -0.048 & -0.052 & 0.132 & 0.135 & \textbf{0.285} & \textbf{0.302} \\
+      \cmidrule{2-15}
+      & \multirow{4}{*}{\textbf{min}}
+                & \textbf{id}   & 0.262 & 0.278 & \textbf{0.366} & \textbf{0.379} & 0.222 & 0.228 & -0.008 & -0.010 & 0.012 & 0.006 & 0.251 & 0.260 \\
+              & & \textbf{log}  & 0.306 & 0.322 & \textbf{0.321} & \textbf{0.334} & 0.222 & 0.228 & -0.008 & -0.010 & 0.006 & 0.001 & 0.210 & 0.219 \\
+              & & \textbf{exp}  & 0.306 & 0.322 & \textbf{0.321} & \textbf{0.334} & 0.237 & 0.244 & -0.008 & -0.010 & 0.012 & 0.006 & 0.251 & 0.260 \\
+              & & \textbf{sqrt} & 0.306 & 0.322 & \textbf{0.300} & \textbf{0.316} & 0.237 & 0.244 & -0.008 & -0.010 & 0.006 & 0.001 & 0.251 & 0.260 \\
+      \cmidrule{2-15}
+      & \multirow{4}{*}{\textbf{max}}
+                & \textbf{id}   & 0.439 & 0.463 & 0.020 & 0.019 & \textbf{0.272} & \textbf{0.280} & \textbf{0.091} & \textbf{0.092} & \textbf{0.254} & \textbf{0.261} & 0.278 & 0.294 \\
+              & & \textbf{log}  & 0.439 & 0.463 & 0.032 & 0.031 & \textbf{0.272} & \textbf{0.280} & \textbf{0.091} & \textbf{0.092} & \textbf{0.243} & \textbf{0.250} & 0.278 & 0.294 \\
+              & & \textbf{exp}  & 0.439 & 0.463 & 0.020 & 0.019 & \textbf{0.272} & \textbf{0.280} & \textbf{0.091} & \textbf{0.092} & \textbf{0.254} & \textbf{0.261} & 0.278 & 0.294 \\
+              & & \textbf{sqrt} & 0.439 & 0.463 & 0.020 & 0.019 & \textbf{0.272} & \textbf{0.280} & \textbf{0.091} & \textbf{0.092} & \textbf{0.254} & \textbf{0.261} & 0.278 & 0.294 \\
+      \cmidrule{2-15}
+      & \multirow{4}{*}{\textbf{sum}}
+                & \textbf{id}   & \textbf{0.460} & \textbf{0.482} & 0.029 & 0.029 & 0.224 & 0.231 & -0.058 & -0.062 & 0.132 & 0.135 & \textbf{0.285} & \textbf{0.302} \\
+              & & \textbf{log}  & \textbf{0.460} & \textbf{0.482} & 0.029 & 0.029 & 0.224 & 0.231 & -0.058 & -0.062 & 0.142 & 0.146 & \textbf{0.285} & \textbf{0.302} \\
+              & & \textbf{exp}  & 0.277 & 0.299 & 0.029 & 0.029 & 0.269 & 0.276 & 0.110 & 0.115 & 0.142 & 0.146 & 0.248 & 0.265 \\
+              & & \textbf{sqrt} & \textbf{0.460} & \textbf{0.482} & 0.029 & 0.029 & 0.212 & 0.218 & -0.048 & -0.052 & 0.132 & 0.135 & \textbf{0.285} & \textbf{0.302} \\
+      \midrule
+
+      \multirow{5}{*}{\rotatebox{90}{\makecell{\textbf{Pointwise} \\ \textbf{Preferences}}}}
+          & & & & & & & & & & & & & & \\
+          & \multicolumn{2}{c}{\textbf{flan-t5-base}}  & 0.410 & 0.428 & -0.120 & -0.123 & 0.113 & 0.117 & 0.099 & 0.103 & 0.125 & 0.121 & 0.339 & 0.352 \\
+          & \multicolumn{2}{c}{\textbf{flan-t5-small}} & 0.378 & 0.392 & -0.142 & -0.144 & 0.167 & 0.170 & 0.130 & 0.144 & 0.271 & 0.275 & 0.287 & 0.310 \\
+          & \multicolumn{2}{c}{\textbf{t5-small}}      & 0.386 & 0.393 & 0.302 & 0.306 & 0.200 & 0.207 & 0.222 & 0.232 & 0.441 & 0.449 & 0.304 & 0.325 \\
+          & & & & & & & & & & & & & & \\
+      \bottomrule 
+  \end{tabular}}
+  \renewcommand{\arraystretch}{1.0}
+\end{table}
