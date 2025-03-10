@@ -23,7 +23,7 @@ BACKBONES =  ['google/flan-t5-base',
               'google/flan-t5-small',
               'google-t5/t5-small']
 AVG_PATH = 'avg-per-query'
-APPROACH = 'union_100_opd.jsonl.gz'
+APPROACH = 'eval_candidates.jsonl.gz'
 
 correlation_scores = {}
 
@@ -37,7 +37,8 @@ for PATH in PATHS:
         if BACKBONE not in correlation_scores[PATH]:
             correlation_scores[PATH][BACKBONE] = {}
     
-        path = f'{DATA_PATH}/{PATH}/{PATH}/monoprompt/{BACKBONE}/{AVG_PATH}/{APPROACH}'
+        # path = f'{DATA_PATH}/{PATH}/{PATH}/monoprompt/{BACKBONE}/{AVG_PATH}/{APPROACH}'
+        path = f'{DATA_PATH}/{PATH}/clueweb22/b/monoprompt/{BACKBONE}/{AVG_PATH}/{APPROACH}'
         print(path)
 
         # #### REMOVE WHEN ROBUST04 IS DONE ####
