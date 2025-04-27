@@ -23,7 +23,6 @@
 
     "NOTE_1": "dataset which is used to transfer from it to the new dataset",
 
-        "TYPE_SOURCE": "document",
         "DOCUMENT_DATASET_SOURCE_NAME": "",
         "DOCUMENT_DATASET_SOURCE_NAME_PYTERRIER": "irds:",
         "DOCUMENT_DATASET_SOURCE_NAME_PYTHON_API": "",
@@ -40,7 +39,6 @@
 
     "NOTE_2": "dataset which is used to transfer into it from the old dataset",
 
-        "TYPE_TARGET": "document",
         "DOCUMENT_DATASET_TARGET_NAME": "",
         "DOCUMENT_DATASET_TARGET_NAME_PYTERRIER": "irds:",
         "DOCUMENT_DATASET_TARGET_NAME_PYTHON_API": "",
